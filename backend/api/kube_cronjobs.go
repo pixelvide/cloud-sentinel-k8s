@@ -2,7 +2,6 @@ package api
 
 import (
 	"net/http"
-	"strings"
 	"time"
 
 	"cloud-sentinel-k8s/models"
@@ -28,7 +27,8 @@ func GetCronJobs(c *gin.Context) {
 		return
 	}
 
-	namespaces := strings.Split(ns, ",")
+	// Parse namespaces
+	namespaces := ParseNamespaces(ns)
 
 	type CronJobInfo struct {
 		Name         string `json:"name"`
@@ -43,10 +43,7 @@ func GetCronJobs(c *gin.Context) {
 	var cronjobs []CronJobInfo
 
 	for _, singleNs := range namespaces {
-		singleNs = strings.TrimSpace(singleNs)
-		if singleNs == "" {
-			continue
-		}
+		// Note: singleNs can be empty if searchAll is true
 
 		list, err := clientset.BatchV1().CronJobs(singleNs).List(c.Request.Context(), metav1.ListOptions{})
 		if err != nil {

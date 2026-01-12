@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
-	"strings"
 
 	"cloud-sentinel-k8s/models"
 
@@ -30,7 +29,8 @@ func GetEvents(c *gin.Context) {
 		return
 	}
 
-	namespaces := strings.Split(ns, ",")
+	// Parse namespaces
+	namespaces := ParseNamespaces(ns)
 
 	type EventInfo struct {
 		Name      string `json:"name"`
@@ -47,10 +47,7 @@ func GetEvents(c *gin.Context) {
 	var events []EventInfo
 
 	for _, singleNs := range namespaces {
-		singleNs = strings.TrimSpace(singleNs)
-		if singleNs == "" {
-			continue
-		}
+		// Note: singleNs can be empty if searchAll is true
 
 		list, err := clientset.CoreV1().Events(singleNs).List(c.Request.Context(), metav1.ListOptions{})
 		if err != nil {

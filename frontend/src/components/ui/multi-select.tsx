@@ -22,28 +22,88 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface MultiSelectProps {
-    options: {
+    options?: {
         label: string;
         value: string;
         icon?: React.ComponentType<{ className?: string }>;
+    }[];
+    groups?: {
+        label: string;
+        options: {
+            label: string;
+            value: string;
+            icon?: React.ComponentType<{ className?: string }>;
+        }[];
     }[];
     selected: string[];
     onChange: (selected: string[]) => void;
     placeholder?: string;
     loading?: boolean;
+    showSearch?: boolean;
 }
 
 export function MultiSelect({
-    options,
+    options = [],
+    groups = [],
     selected,
     onChange,
     placeholder = "Select...",
     loading = false,
-}: MultiSelectProps) {
+    allOption,
+    showSearch = true,
+}: MultiSelectProps & { allOption?: { label: string; value: string } }) {
     const [open, setOpen] = React.useState(false);
+
+    const flatOptions = React.useMemo(() => {
+        if (groups.length > 0) {
+            return groups.flatMap(g => g.options);
+        }
+        return options;
+    }, [groups, options]);
 
     const handleUnselect = (value: string) => {
         onChange(selected.filter((item) => item !== value));
+    };
+
+    const renderOption = (option: { label: string; value: string; icon?: React.ComponentType<{ className?: string }> }) => {
+        const isSelected = selected.includes(option.value) || (allOption && selected.includes(allOption.value));
+        const toggleOption = () => {
+            if (allOption && selected.includes(allOption.value)) {
+                // Requirement 1: If "All" is active, clicking changes to Just This One.
+                onChange([option.value]);
+                return;
+            }
+
+            // Is it explicitly in the selected list?
+            if (selected.includes(option.value)) {
+                onChange(selected.filter((item) => item !== option.value));
+            } else {
+                const newSelected = [...selected, option.value];
+                // Requirement 2: If selecting this makes it "All", switch to "All" value.
+                if (allOption && newSelected.length === flatOptions.length) {
+                    onChange([allOption.value]);
+                } else {
+                    onChange(newSelected);
+                }
+            }
+        };
+
+        return (
+            <CommandItem
+                key={option.value}
+                onSelect={toggleOption}
+            >
+                <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={toggleOption}
+                    className="mr-2"
+                />
+                {option.icon && (
+                    <option.icon className="mr-2 h-4 w-4 text-muted-foreground" />
+                )}
+                <span>{option.label}</span>
+            </CommandItem>
+        );
     };
 
     return (
@@ -59,10 +119,12 @@ export function MultiSelect({
                     <div className="flex gap-1 flex-wrap">
                         {loading ? (
                             <span className="text-muted-foreground">Loading...</span>
+                        ) : allOption && selected.includes(allOption.value) ? (
+                            <span className="text-foreground">{allOption.label}</span>
                         ) : selected.length === 0 ? (
                             <span className="text-muted-foreground">{placeholder}</span>
-                        ) : selected.length === options.length && options.length > 0 ? (
-                            <span className="text-foreground">All Selected ({options.length})</span>
+                        ) : selected.length === flatOptions.length && flatOptions.length > 0 && !allOption ? (
+                            <span className="text-foreground">All Selected ({flatOptions.length})</span>
                         ) : (
                             <div className="flex gap-1 flex-wrap">
                                 {selected.length > 2 ? (
@@ -73,7 +135,7 @@ export function MultiSelect({
                                         {selected.length} selected
                                     </Badge>
                                 ) : (
-                                    options
+                                    flatOptions
                                         .filter((option) => selected.includes(option.value))
                                         .map((option) => (
                                             <Badge
@@ -116,75 +178,76 @@ export function MultiSelect({
             </PopoverTrigger>
             <PopoverContent className="w-[300px] p-0" align="start">
                 <Command>
-                    <CommandInput placeholder="Search..." />
+                    {showSearch && <CommandInput placeholder="Search..." />}
                     <CommandList>
                         <CommandEmpty>No results found.</CommandEmpty>
                         <CommandGroup>
-                            <CommandItem
-                                onSelect={() => {
-                                    if (selected.length === options.length) {
-                                        onChange([]);
-                                    } else {
-                                        onChange(options.map((option) => option.value));
-                                    }
-                                }}
-                            >
-                                <Checkbox
-                                    checked={selected.length === options.length}
-                                    onCheckedChange={() => {
-                                        if (selected.length === options.length) {
-                                            onChange([]);
-                                        } else {
-                                            onChange(options.map((option) => option.value));
-                                        }
-                                    }}
-                                    className="mr-2"
-                                />
-                                <span className="font-semibold">Select All</span>
-                            </CommandItem>
-                            <CommandSeparator className="my-1" />
-                            {options.map((option) => {
-                                const isSelected = selected.includes(option.value);
-                                return (
+                            {allOption ? (
+                                <>
                                     <CommandItem
-                                        key={option.value}
                                         onSelect={() => {
-                                            const allSelected = selected.length === options.length;
-                                            if (isSelected) {
-                                                // If all are selected and user clicks one, select only that one
-                                                if (allSelected) {
-                                                    onChange([option.value]);
-                                                } else {
-                                                    onChange(selected.filter((item) => item !== option.value));
-                                                }
+                                            if (selected.includes(allOption.value)) {
+                                                onChange([]);
                                             } else {
-                                                onChange([...selected, option.value]);
+                                                onChange([allOption.value]);
                                             }
                                         }}
                                     >
                                         <Checkbox
-                                            checked={isSelected}
+                                            checked={selected.includes(allOption.value)}
                                             onCheckedChange={() => {
-                                                const allSelected = selected.length === options.length;
-                                                if (isSelected) {
-                                                    if (allSelected) {
-                                                        onChange([option.value]);
-                                                    } else {
-                                                        onChange(selected.filter((item) => item !== option.value));
-                                                    }
+                                                if (selected.includes(allOption.value)) {
+                                                    onChange([]);
                                                 } else {
-                                                    onChange([...selected, option.value]);
+                                                    onChange([allOption.value]);
                                                 }
                                             }}
                                             className="mr-2"
                                         />
-                                        {option.icon && (
-                                            <option.icon className="mr-2 h-4 w-4 text-muted-foreground" />
-                                        )}
-                                        <span>{option.label}</span>
+                                        <span className="font-semibold">{allOption.label}</span>
                                     </CommandItem>
-                                );
-                            })}
+                                    <CommandSeparator className="my-1" />
+                                </>
+                            ) : (
+                                <>
+                                    <CommandItem
+                                        onSelect={() => {
+                                            if (selected.length === flatOptions.length) {
+                                                onChange([]);
+                                            } else {
+                                                onChange(flatOptions.map((option) => option.value));
+                                            }
+                                        }}
+                                    >
+                                        <Checkbox
+                                            checked={selected.length === flatOptions.length}
+                                            onCheckedChange={() => {
+                                                if (selected.length === flatOptions.length) {
+                                                    onChange([]);
+                                                } else {
+                                                    onChange(flatOptions.map((option) => option.value));
+                                                }
+                                            }}
+                                            className="mr-2"
+                                        />
+                                        <span className="font-semibold">Select All</span>
+                                    </CommandItem>
+                                    <CommandSeparator className="my-1" />
+                                </>
+                            )}
+
+                            {groups.length > 0 ? (
+                                groups.map((group) => (
+                                    <React.Fragment key={group.label}>
+                                        <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-muted/30">
+                                            {group.label}
+                                        </div>
+                                        {group.options.map(renderOption)}
+                                    </React.Fragment>
+                                ))
+                            ) : (
+                                options.map(renderOption)
+                            )}
                         </CommandGroup>
                     </CommandList>
                 </Command>

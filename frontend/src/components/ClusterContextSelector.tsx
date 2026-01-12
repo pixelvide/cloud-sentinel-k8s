@@ -73,9 +73,12 @@ function ClusterContextSelectorContent() {
                     const nsList = data.namespaces || [];
                     setNamespaces(nsList);
 
-                    // Logic: If NO namespace is currently selected in URL, select ALL by default.
-                    if (currentNamespaces.length === 0 && nsList.length > 0) {
-                        updateNamespaces(nsList);
+                    // Logic: Default to 'All Namespaces' if not set
+                    if (!searchParams.get("namespace")) {
+                        const params = new URLSearchParams(searchParams.toString());
+                        params.set("namespace", "__all__");
+                        // use replace from router, not redirect
+                        router.replace(`${pathname}?${params.toString()}`);
                     }
                 }
             } catch (error) {
@@ -93,8 +96,8 @@ function ClusterContextSelectorContent() {
     const updateContext = (ctx: string) => {
         const params = new URLSearchParams(searchParams.toString());
         params.set("context", ctx);
-        // Reset namespace when context changes
-        params.delete("namespace");
+        // Default to All Namespaces when context changes
+        params.set("namespace", "__all__");
         router.replace(`${pathname}?${params.toString()}`);
     };
 
@@ -137,6 +140,7 @@ function ClusterContextSelectorContent() {
                         onChange={updateNamespaces}
                         placeholder={nsLoading ? "Loading..." : "Select Namespaces"}
                         loading={nsLoading}
+                        allOption={{ label: "All Namespaces", value: "__all__" }}
                     />
                 </div>
             )}

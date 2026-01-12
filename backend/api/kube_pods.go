@@ -2,7 +2,6 @@ package api
 
 import (
 	"net/http"
-	"strings"
 	"time"
 
 	"cloud-sentinel-k8s/models"
@@ -17,10 +16,7 @@ func GetPods(c *gin.Context) {
 	ns := c.Query("namespace")
 	ctxName := c.Query("context")
 
-	if ns == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "namespace required"})
-		return
-	}
+	// ns optional, empty means all namespaces
 
 	clientset, _, err := GetClientInfo(user.StorageNamespace, ctxName)
 	if err != nil {
@@ -28,8 +24,8 @@ func GetPods(c *gin.Context) {
 		return
 	}
 
-	// Split namespaces by comma
-	namespaces := strings.Split(ns, ",")
+	// Parse namespaces
+	namespaces := ParseNamespaces(ns)
 
 	type PodInfo struct {
 		Name           string   `json:"name"`
@@ -44,10 +40,7 @@ func GetPods(c *gin.Context) {
 	var pods []PodInfo
 
 	for _, singleNs := range namespaces {
-		singleNs = strings.TrimSpace(singleNs)
-		if singleNs == "" {
-			continue
-		}
+		// Note: singleNs can be empty if searchAll is true
 
 		list, err := clientset.CoreV1().Pods(singleNs).List(c.Request.Context(), metav1.ListOptions{})
 		if err != nil {

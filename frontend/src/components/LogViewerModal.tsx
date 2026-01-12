@@ -34,7 +34,7 @@ export function LogViewerModal({
     const [isWrapEnabled, setIsWrapEnabled] = useState(false);
     const [showTimestamps, setShowTimestamps] = useState(true);
     const [showPrefix, setShowPrefix] = useState(allContainers.length > 1);
-    const [selectedContainers, setSelectedContainers] = useState<string[]>(["__all_containers__"]);
+    const [selectedContainers, setSelectedContainers] = useState<string[]>(["__all__"]);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     // Handle Resize Logic
@@ -146,7 +146,7 @@ export function LogViewerModal({
             const wsUrl = `${protocol}//${wsHost}/api/v1/kube/logs?context=${context}&namespace=${namespace}&pod=${pod}&container=${containerParam}&timestamps=${showTimestamps}&prefix=${showPrefix}`;
 
             setStatus("connecting");
-            term.writeln(`\x1b[33mConnecting to logs for ${pod} [${containerParam === "__all_containers__" ? "All Containers" : containerParam}]...\x1b[0m`);
+            term.writeln(`\x1b[33mConnecting to logs for ${pod} [${containerParam === "__all__" ? "All Containers" : containerParam}]...\x1b[0m`);
 
             const ws = new WebSocket(wsUrl);
             wsRef.current = ws;
@@ -204,16 +204,16 @@ export function LogViewerModal({
     }, [isOpen, context, namespace, pod, selectedContainers, showTimestamps, showPrefix]); // Re-run when container changes
 
     const toggleContainer = (c: string) => {
-        if (c === "__all_containers__") {
-            if (selectedContainers.includes("__all_containers__")) {
+        if (c === "__all__") {
+            if (selectedContainers.includes("__all__")) {
                 setSelectedContainers([]);
             } else {
-                setSelectedContainers(["__all_containers__"]);
+                setSelectedContainers(["__all__"]);
             }
         } else {
             // If "All" is currently selected, clicking a specific container 
             // should Deselect All and Select ONLY the clicked one (Focus Mode).
-            if (selectedContainers.includes("__all_containers__")) {
+            if (selectedContainers.includes("__all__")) {
                 setSelectedContainers([c]);
                 return;
             }
@@ -225,9 +225,9 @@ export function LogViewerModal({
                 newSelection.push(c);
             }
 
-            // If all individual containers are selected, switch back to "__all_containers__"
+            // If all individual containers are selected, switch back to "__all__"
             if (newSelection.length === allContainers.length) {
-                newSelection = ["__all_containers__"];
+                newSelection = ["__all__"];
             }
 
             setSelectedContainers(newSelection);
@@ -235,7 +235,7 @@ export function LogViewerModal({
     };
 
     const isContainerSelected = (c: string) => {
-        return selectedContainers.includes("__all_containers__") || selectedContainers.includes(c);
+        return selectedContainers.includes("__all__") || selectedContainers.includes(c);
     };
 
     return (
@@ -261,7 +261,7 @@ export function LogViewerModal({
                                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                 className="h-8 pl-3 pr-2 text-xs font-mono bg-zinc-800 border-zinc-700 text-zinc-200 rounded-md hover:bg-zinc-700/50 transition-colors flex items-center gap-2"
                             >
-                                {selectedContainers.includes("__all_containers__") ? "All Containers" : `${selectedContainers.length} Container${selectedContainers.length > 1 ? 's' : ''}`}
+                                {selectedContainers.includes("__all__") ? "All Containers" : `${selectedContainers.length} Container${selectedContainers.length > 1 ? 's' : ''}`}
                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}>
                                     <path d="m6 9 6 6 6-6" />
                                 </svg>
@@ -272,11 +272,11 @@ export function LogViewerModal({
                                     <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
                                     <div className="absolute right-0 top-full mt-1 w-56 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-50 p-1 flex flex-col gap-0.5">
                                         <button
-                                            onClick={() => toggleContainer("__all_containers__")}
-                                            className={`flex items-center gap-2 w-full px-2 py-1.5 text-xs font-mono transition-colors ${selectedContainers.includes("__all_containers__") ? 'bg-primary/20 text-primary' : 'text-zinc-400 hover:bg-white/5'}`}
+                                            onClick={() => toggleContainer("__all__")}
+                                            className={`flex items-center gap-2 w-full px-2 py-1.5 text-xs font-mono transition-colors ${selectedContainers.includes("__all__") ? 'bg-primary/20 text-primary' : 'text-zinc-400 hover:bg-white/5'}`}
                                         >
-                                            <div className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center ${selectedContainers.includes("__all_containers__") ? 'border-primary bg-primary' : 'border-zinc-600'}`}>
-                                                {selectedContainers.includes("__all_containers__") && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="text-black"><polyline points="20 6 9 17 4 12" /></svg>}
+                                            <div className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center ${selectedContainers.includes("__all__") ? 'border-primary bg-primary' : 'border-zinc-600'}`}>
+                                                {selectedContainers.includes("__all__") && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="text-black"><polyline points="20 6 9 17 4 12" /></svg>}
                                             </div>
                                             All Containers
                                         </button>

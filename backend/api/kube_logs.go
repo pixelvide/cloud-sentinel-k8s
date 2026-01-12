@@ -58,7 +58,7 @@ func HandleLogs(c *gin.Context) {
 
 	// Parse requested containers
 	var targetContainers []string
-	if containerName == "__all_containers__" {
+	if containerName == "__all__" {
 		pod, err := clientset.CoreV1().Pods(ns).Get(c.Request.Context(), podName, metav1.GetOptions{})
 		if err != nil {
 			ws.WriteMessage(websocket.TextMessage, []byte("Error getting pod: "+err.Error()))
@@ -79,7 +79,7 @@ func HandleLogs(c *gin.Context) {
 
 	// Unified streaming logic for both single and multi-container requests
 	// Default showPrefix to true if we are streaming multiple sources
-	if prefixStr == "" && (len(targetContainers) > 1 || containerName == "__all_containers__") {
+	if prefixStr == "" && (len(targetContainers) > 1 || containerName == "__all__") {
 		showPrefix = true
 	}
 	streamContainers(c, ws, clientset, ns, podName, targetContainers, showTimestamps, showPrefix)

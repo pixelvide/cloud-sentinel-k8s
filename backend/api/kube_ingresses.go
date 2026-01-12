@@ -2,7 +2,6 @@ package api
 
 import (
 	"net/http"
-	"strings"
 	"time"
 
 	"cloud-sentinel-k8s/models"
@@ -28,8 +27,8 @@ func GetIngresses(c *gin.Context) {
 		return
 	}
 
-	// Split namespaces by comma
-	namespaces := strings.Split(ns, ",")
+	// Parse namespaces
+	namespaces := ParseNamespaces(ns)
 
 	type IngressInfo struct {
 		Name      string   `json:"name"`
@@ -42,10 +41,7 @@ func GetIngresses(c *gin.Context) {
 	var ingresses []IngressInfo
 
 	for _, singleNs := range namespaces {
-		singleNs = strings.TrimSpace(singleNs)
-		if singleNs == "" {
-			continue
-		}
+		// Note: singleNs can be empty if searchAll is true
 
 		// Try both networking.k8s.io/v1 and beta versions if needed, but v1 is standard now
 		list, err := clientset.NetworkingV1().Ingresses(singleNs).List(c.Request.Context(), metav1.ListOptions{})

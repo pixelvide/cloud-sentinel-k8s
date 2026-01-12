@@ -2,7 +2,6 @@ package api
 
 import (
 	"net/http"
-	"strings"
 	"time"
 
 	"cloud-sentinel-k8s/models"
@@ -28,8 +27,8 @@ func GetDaemonSets(c *gin.Context) {
 		return
 	}
 
-	// Split namespaces by comma
-	namespaces := strings.Split(ns, ",")
+	// Parse namespaces
+	namespaces := ParseNamespaces(ns)
 
 	type DaemonSetInfo struct {
 		Name             string `json:"name"`
@@ -45,10 +44,7 @@ func GetDaemonSets(c *gin.Context) {
 	var daemonsets []DaemonSetInfo
 
 	for _, singleNs := range namespaces {
-		singleNs = strings.TrimSpace(singleNs)
-		if singleNs == "" {
-			continue
-		}
+		// Note: singleNs can be empty if searchAll is true
 
 		list, err := clientset.AppsV1().DaemonSets(singleNs).List(c.Request.Context(), metav1.ListOptions{})
 		if err != nil {
