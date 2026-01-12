@@ -1,0 +1,42 @@
+# Binary
+cloud-sentinel
+*.exe
+
+# Dependencies (vendored)
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.local
+
+# Logs
+*.log
+
+# Test files
+*.test
+coverage.out
+coverage.html
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Kubeconfig (sensitive)
+*.kubeconfig
+kubeconfig/
+
+# Database
+*.db
+*.sqlite
