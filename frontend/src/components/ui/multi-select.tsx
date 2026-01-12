@@ -40,6 +40,7 @@ interface MultiSelectProps {
     placeholder?: string;
     loading?: boolean;
     showSearch?: boolean;
+    popoverClassName?: string;
 }
 
 export function MultiSelect({
@@ -51,6 +52,7 @@ export function MultiSelect({
     loading = false,
     allOption,
     showSearch = true,
+    popoverClassName,
 }: MultiSelectProps & { allOption?: { label: string; value: string } }) {
     const [open, setOpen] = React.useState(false);
 
@@ -180,7 +182,7 @@ export function MultiSelect({
                     )}
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[300px] p-0" align="start">
+            <PopoverContent className={cn("w-[300px] p-0", popoverClassName)} align="start">
                 <Command>
                     {showSearch && <CommandInput placeholder="Search..." />}
                     <CommandList>

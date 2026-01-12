@@ -51,7 +51,6 @@ export function LogViewerModal({
         }
         return ["__all__"];
     });
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     // Handle Resize Logic
     const handleResize = () => {
@@ -224,40 +223,6 @@ export function LogViewerModal({
 
     }, [isOpen, context, namespace, selectedContainers, selectedPods, showTimestamps, showPrefix, selector]); // Re-run when container changes
 
-    const toggleContainer = (c: string) => {
-        if (c === "__all__") {
-            if (selectedContainers.includes("__all__")) {
-                setSelectedContainers([]);
-            } else {
-                setSelectedContainers(["__all__"]);
-            }
-        } else {
-            // If "All" is currently selected, clicking a specific container 
-            // should Deselect All and Select ONLY the clicked one (Focus Mode).
-            if (selectedContainers.includes("__all__")) {
-                setSelectedContainers([c]);
-                return;
-            }
-
-            let newSelection = [...selectedContainers];
-            if (newSelection.includes(c)) {
-                newSelection = newSelection.filter(x => x !== c);
-            } else {
-                newSelection.push(c);
-            }
-
-            // If all individual containers are selected, switch back to "__all__"
-            if (newSelection.length === allContainers.length) {
-                newSelection = ["__all__"];
-            }
-
-            setSelectedContainers(newSelection);
-        }
-    };
-
-    const isContainerSelected = (c: string) => {
-        return selectedContainers.includes("__all__") || selectedContainers.includes(c);
-    };
 
     // Pod selection handlers
     const handlePodSelection = (newSelection: string[]) => {
@@ -271,7 +236,7 @@ export function LogViewerModal({
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="sm:max-w-6xl h-[90vh] bg-[#09090b] border-zinc-800 p-0 flex flex-col gap-0 overflow-hidden">
+            <DialogContent className="sm:max-w-6xl h-[90vh] bg-[#09090b] border-zinc-800 p-0 flex flex-col gap-0 overflow-hidden dark">
                 <DialogHeader className="p-4 border-b border-zinc-800 bg-zinc-900/50 flex flex-row items-center justify-between space-y-0 text-left">
                     <div className="flex flex-col gap-1">
                         <DialogTitle className="flex items-center gap-2 text-sm font-mono text-zinc-200">
@@ -297,83 +262,31 @@ export function LogViewerModal({
                                     placeholder="Select Pods"
                                     showSearch={false}
                                     allOption={{ label: "All Pods", value: "__all__" }}
+                                    popoverClassName="dark"
                                 />
                             </div>
                         )}
 
                         {/* Container Selector */}
-                        <div className="relative">
-                            <button
-                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                className="h-8 pl-3 pr-2 text-xs font-mono bg-zinc-800 border-zinc-700 text-zinc-200 rounded-md hover:bg-zinc-700/50 transition-colors flex items-center gap-2"
-                            >
-                                {selectedContainers.includes("__all__") ? "All Containers" : `${selectedContainers.length} Container${selectedContainers.length > 1 ? 's' : ''}`}
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}>
-                                    <path d="m6 9 6 6 6-6" />
-                                </svg>
-                            </button>
-
-                            {isDropdownOpen && (
-                                <>
-                                    <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
-                                    <div className="absolute right-0 top-full mt-1 w-56 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-50 p-1 flex flex-col gap-0.5">
-                                        <button
-                                            onClick={() => toggleContainer("__all__")}
-                                            className={`flex items-center gap-2 w-full px-2 py-1.5 text-xs font-mono transition-colors ${selectedContainers.includes("__all__") ? 'bg-primary/20 text-primary' : 'text-zinc-400 hover:bg-white/5'}`}
-                                        >
-                                            <div className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center ${selectedContainers.includes("__all__") ? 'border-primary bg-primary' : 'border-zinc-600'}`}>
-                                                {selectedContainers.includes("__all__") && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="text-black"><polyline points="20 6 9 17 4 12" /></svg>}
-                                            </div>
-                                            All Containers
-                                        </button>
-
-                                        {/* Standard Containers Section */}
-                                        {containers.length > 0 && (
-                                            <>
-                                                <div className="px-2 py-1 mt-1 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Containers</div>
-                                                {containers.map(c => {
-                                                    const isSelected = isContainerSelected(c);
-                                                    return (
-                                                        <button
-                                                            key={c}
-                                                            onClick={() => toggleContainer(c)}
-                                                            className={`flex items-center gap-2 w-full px-2 py-1.5 text-xs font-mono transition-colors ${isSelected ? 'bg-primary/20 text-primary' : 'text-zinc-400 hover:bg-white/5'}`}
-                                                        >
-                                                            <div className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center ${isSelected ? 'border-primary bg-primary' : 'border-zinc-600'}`}>
-                                                                {isSelected && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="text-black"><polyline points="20 6 9 17 4 12" /></svg>}
-                                                            </div>
-                                                            {c}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </>
-                                        )}
-
-                                        {/* Init Containers Section */}
-                                        {initContainers && initContainers.length > 0 && (
-                                            <>
-                                                <div className="h-px bg-zinc-800 my-1 mt-2" />
-                                                <div className="px-2 py-1 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Init Containers</div>
-                                                {initContainers.map(c => {
-                                                    const isSelected = isContainerSelected(c);
-                                                    return (
-                                                        <button
-                                                            key={c}
-                                                            onClick={() => toggleContainer(c)}
-                                                            className={`flex items-center gap-2 w-full px-2 py-1.5 text-xs font-mono transition-colors ${isSelected ? 'bg-primary/20 text-primary' : 'text-zinc-400 hover:bg-white/5'}`}
-                                                        >
-                                                            <div className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center ${isSelected ? 'border-primary bg-primary' : 'border-zinc-600'}`}>
-                                                                {isSelected && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="text-black"><polyline points="20 6 9 17 4 12" /></svg>}
-                                                            </div>
-                                                            {c}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </>
-                                        )}
-                                    </div>
-                                </>
-                            )}
+                        <div className="w-48 overflow-hidden">
+                            <MultiSelect
+                                groups={[
+                                    {
+                                        label: "Containers",
+                                        options: containers.map(c => ({ value: c, label: c }))
+                                    },
+                                    {
+                                        label: "Init Containers",
+                                        options: (initContainers || []).map(c => ({ value: c, label: c }))
+                                    }
+                                ].filter(g => g.options.length > 0)}
+                                selected={selectedContainers}
+                                onChange={setSelectedContainers}
+                                placeholder="Select Containers"
+                                showSearch={false}
+                                allOption={{ label: "All Containers", value: "__all__" }}
+                                popoverClassName="dark"
+                            />
                         </div>
 
                         <div className="h-4 w-px bg-zinc-800 mx-1" />
