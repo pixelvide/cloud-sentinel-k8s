@@ -39,6 +39,7 @@ func GetDaemonSets(c *gin.Context) {
 		UpToDate         int32  `json:"up_to_date"`
 		Available        int32  `json:"available"`
 		Age              string `json:"age"`
+		Selector         string `json:"selector"`
 	}
 
 	var daemonsets []DaemonSetInfo
@@ -65,6 +66,7 @@ func GetDaemonSets(c *gin.Context) {
 				UpToDate:         ds.Status.UpdatedNumberScheduled,
 				Available:        ds.Status.NumberAvailable,
 				Age:              ds.CreationTimestamp.Time.Format(time.RFC3339),
+				Selector:         metav1.FormatLabelSelector(ds.Spec.Selector),
 			})
 		}
 	}

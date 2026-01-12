@@ -39,10 +39,16 @@ func GetPods(c *gin.Context) {
 
 	var pods []PodInfo
 
+	selector := c.Query("selector")
+
 	for _, singleNs := range namespaces {
 		// Note: singleNs can be empty if searchAll is true
+		listOpts := metav1.ListOptions{}
+		if selector != "" {
+			listOpts.LabelSelector = selector
+		}
 
-		list, err := clientset.CoreV1().Pods(singleNs).List(c.Request.Context(), metav1.ListOptions{})
+		list, err := clientset.CoreV1().Pods(singleNs).List(c.Request.Context(), listOpts)
 		if err != nil {
 			if len(namespaces) == 1 {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

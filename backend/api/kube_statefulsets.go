@@ -38,6 +38,7 @@ func GetStatefulSets(c *gin.Context) {
 		CurrentReplicas int32  `json:"current_replicas"`
 		UpdatedReplicas int32  `json:"updated_replicas"`
 		Age             string `json:"age"`
+		Selector        string `json:"selector"`
 	}
 
 	var statefulsets []StatefulSetInfo
@@ -67,6 +68,7 @@ func GetStatefulSets(c *gin.Context) {
 				CurrentReplicas: ss.Status.CurrentReplicas,
 				UpdatedReplicas: ss.Status.UpdatedReplicas,
 				Age:             ss.CreationTimestamp.Time.Format(time.RFC3339),
+				Selector:        metav1.FormatLabelSelector(ss.Spec.Selector),
 			})
 		}
 	}

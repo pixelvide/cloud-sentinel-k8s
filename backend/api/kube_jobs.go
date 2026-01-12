@@ -38,6 +38,7 @@ func GetJobs(c *gin.Context) {
 		Failed      int32  `json:"failed"`
 		Active      int32  `json:"active"`
 		Age         string `json:"age"`
+		Selector    string `json:"selector"`
 	}
 
 	var jobs []JobInfo
@@ -67,6 +68,7 @@ func GetJobs(c *gin.Context) {
 				Failed:      j.Status.Failed,
 				Active:      j.Status.Active,
 				Age:         j.CreationTimestamp.Time.Format(time.RFC3339),
+				Selector:    metav1.FormatLabelSelector(j.Spec.Selector),
 			})
 		}
 	}

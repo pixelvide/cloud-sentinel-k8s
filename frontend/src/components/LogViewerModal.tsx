@@ -7,6 +7,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import { API_URL } from "@/lib/config";
 import { Terminal as TerminalIcon, Loader2, WrapText, Clock, Tag } from "lucide-react";
+import { MultiSelect } from "@/components/ui/multi-select";
 
 export function LogViewerModal({
     isOpen,
@@ -16,6 +17,8 @@ export function LogViewerModal({
     pod,
     containers,
     initContainers = [],
+    selector,
+    pods = [],
 }: {
     isOpen: boolean;
     onClose: () => void;
@@ -24,6 +27,8 @@ export function LogViewerModal({
     pod: string;
     containers: string[];
     initContainers?: string[];
+    selector?: string;
+    pods?: Array<{ name: string, status: string }>;
 }) {
     const allContainers = [...initContainers, ...containers];
     const terminalRef = useRef<HTMLDivElement>(null);
@@ -35,6 +40,7 @@ export function LogViewerModal({
     const [showTimestamps, setShowTimestamps] = useState(true);
     const [showPrefix, setShowPrefix] = useState(allContainers.length > 1);
     const [selectedContainers, setSelectedContainers] = useState<string[]>(["__all__"]);
+    const [selectedPods, setSelectedPods] = useState<string[]>(pods.length > 0 ? ["__all__"] : [pod]);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     // Handle Resize Logic
@@ -124,10 +130,11 @@ export function LogViewerModal({
             }
 
             const containerParam = selectedContainers.join(",");
-            connectWebSocket(term, containerParam);
+            const podParam = selectedPods.includes("__all__") ? "__all__" : selectedPods.join(",");
+            connectWebSocket(term, podParam, containerParam);
         }, 100);
 
-        function connectWebSocket(term: Terminal, containerParam: string) {
+        function connectWebSocket(term: Terminal, podParam: string, containerParam: string) {
             // ... (rest of function) ...
             // Close existing socket if any
             if (wsRef.current) {
@@ -143,10 +150,13 @@ export function LogViewerModal({
                 wsHost = url.host;
             }
 
-            const wsUrl = `${protocol}//${wsHost}/api/v1/kube/logs?context=${context}&namespace=${namespace}&pod=${pod}&container=${containerParam}&timestamps=${showTimestamps}&prefix=${showPrefix}`;
+            const selectorParam = selector ? `&selector=${encodeURIComponent(selector)}` : "";
+            const wsUrl = `${protocol}//${wsHost}/api/v1/kube/logs?context=${context}&namespace=${namespace}&pod=${podParam}&container=${containerParam}&timestamps=${showTimestamps}&prefix=${showPrefix}${selectorParam}`;
 
             setStatus("connecting");
-            term.writeln(`\x1b[33mConnecting to logs for ${pod} [${containerParam === "__all__" ? "All Containers" : containerParam}]...\x1b[0m`);
+            const podDisplay = podParam === "__all__" ? "All Pods" : (selectedPods.length > 1 ? `${selectedPods.length} Pods` : podParam);
+            const containerDisplay = containerParam === "__all__" ? "All Containers" : (selectedContainers.length > 1 ? `${selectedContainers.length} Containers` : containerParam);
+            term.writeln(`\x1b[33mConnecting to logs for ${podDisplay} [${containerDisplay}]...\x1b[0m`);
 
             const ws = new WebSocket(wsUrl);
             wsRef.current = ws;
@@ -201,7 +211,7 @@ export function LogViewerModal({
             // Logic to dispose xterm is handled at start of effect or on modal close
         };
 
-    }, [isOpen, context, namespace, pod, selectedContainers, showTimestamps, showPrefix]); // Re-run when container changes
+    }, [isOpen, context, namespace, selectedContainers, selectedPods, pod, showTimestamps, showPrefix, selector]); // Re-run when container changes
 
     const toggleContainer = (c: string) => {
         if (c === "__all__") {
@@ -238,9 +248,19 @@ export function LogViewerModal({
         return selectedContainers.includes("__all__") || selectedContainers.includes(c);
     };
 
+    // Pod selection handlers
+    const handlePodSelection = (newSelection: string[]) => {
+        setSelectedPods(newSelection);
+
+        // Auto-enable prefix when multiple pods are selected
+        if (newSelection.includes("__all__") || newSelection.length > 1) {
+            setShowPrefix(true);
+        }
+    };
+
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="sm:max-w-4xl h-[80vh] bg-[#09090b] border-zinc-800 p-0 flex flex-col gap-0 overflow-hidden">
+            <DialogContent className="sm:max-w-6xl h-[90vh] bg-[#09090b] border-zinc-800 p-0 flex flex-col gap-0 overflow-hidden">
                 <DialogHeader className="p-4 border-b border-zinc-800 bg-zinc-900/50 flex flex-row items-center justify-between space-y-0 text-left">
                     <div className="flex flex-col gap-1">
                         <DialogTitle className="flex items-center gap-2 text-sm font-mono text-zinc-200">
@@ -256,6 +276,20 @@ export function LogViewerModal({
                     </div>
 
                     <div className="flex items-center gap-2">
+                        {/* Pod Selector - Only show if multiple pods available */}
+                        {pods.length > 0 && (
+                            <div className="w-48 overflow-hidden">
+                                <MultiSelect
+                                    options={pods.map(p => ({ value: p.name, label: p.name }))}
+                                    selected={selectedPods}
+                                    onChange={handlePodSelection}
+                                    placeholder="Select Pods"
+                                    showSearch={false}
+                                />
+                            </div>
+                        )}
+
+                        {/* Container Selector */}
                         <div className="relative">
                             <button
                                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}

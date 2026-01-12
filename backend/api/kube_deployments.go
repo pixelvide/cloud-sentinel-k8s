@@ -34,6 +34,7 @@ func GetDeployments(c *gin.Context) {
 		ReadyReplicas     int32  `json:"ready_replicas"`
 		AvailableReplicas int32  `json:"available_replicas"`
 		Age               string `json:"age"`
+		Selector          string `json:"selector"`
 	}
 
 	var deployments []DeploymentInfo
@@ -60,6 +61,7 @@ func GetDeployments(c *gin.Context) {
 				ReadyReplicas:     d.Status.ReadyReplicas,
 				AvailableReplicas: d.Status.AvailableReplicas,
 				Age:               d.CreationTimestamp.Time.Format(time.RFC3339),
+				Selector:          metav1.FormatLabelSelector(d.Spec.Selector),
 			})
 		}
 	}
