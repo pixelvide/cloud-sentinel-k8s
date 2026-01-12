@@ -9,6 +9,7 @@ import { RefreshCw, CheckCircle2, Search, Server } from "lucide-react";
 import { cn, formatAge } from "@/lib/utils";
 import { API_URL } from "@/lib/config";
 import { NamespaceBadge } from "@/components/NamespaceBadge";
+import { ResourceDetailsSheet } from "@/components/ResourceDetailsSheet";
 
 interface DaemonSet {
     name: string;
@@ -29,6 +30,7 @@ function DaemonSetsContent() {
     const [daemonsets, setDaemonSets] = useState<DaemonSet[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [selectedDaemonSet, setSelectedDaemonSet] = useState<DaemonSet | null>(null);
 
     useEffect(() => {
         if (selectedContext && selectedNamespace) {
@@ -117,7 +119,8 @@ function DaemonSetsContent() {
                                 {filteredDaemonSets.map((ds) => (
                                     <div
                                         key={`${ds.namespace}-${ds.name}`}
-                                        className="group flex flex-col md:flex-row md:items-center justify-between p-5 bg-card/60 backdrop-blur-sm border rounded-2xl shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300"
+                                        className="group flex flex-col md:flex-row md:items-center justify-between p-5 bg-card/60 backdrop-blur-sm border rounded-2xl shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300 cursor-pointer"
+                                        onClick={() => setSelectedDaemonSet(ds)}
                                     >
                                         <div className="flex items-center gap-4 min-w-0">
                                             <div className={cn(
@@ -141,7 +144,10 @@ function DaemonSetsContent() {
                                         </div>
 
                                         {/* Namespace */}
-                                        <div className="flex flex-col items-end min-w-[120px] mt-4 md:mt-0">
+                                        <div
+                                            className="flex flex-col items-end min-w-[120px] mt-4 md:mt-0"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
                                             <NamespaceBadge namespace={ds.namespace} />
                                         </div>
 
@@ -156,6 +162,15 @@ function DaemonSetsContent() {
                     </CardContent>
                 </Card>
             </div>
+
+            <ResourceDetailsSheet
+                isOpen={!!selectedDaemonSet}
+                onClose={() => setSelectedDaemonSet(null)}
+                context={selectedContext || ""}
+                namespace={selectedDaemonSet?.namespace || ""}
+                name={selectedDaemonSet?.name || ""}
+                kind="DaemonSet"
+            />
         </div>
     );
 }

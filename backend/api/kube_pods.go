@@ -37,6 +37,7 @@ func GetPods(c *gin.Context) {
 		Status     string   `json:"status"`
 		Namespace  string   `json:"namespace"`
 		Age        string   `json:"age"`
+		QoS        string   `json:"qos"`
 	}
 
 	var pods []PodInfo
@@ -71,6 +72,7 @@ func GetPods(c *gin.Context) {
 				Status:     string(p.Status.Phase),
 				Namespace:  p.Namespace,
 				Age:        p.CreationTimestamp.Time.Format(time.RFC3339),
+				QoS:        string(p.Status.QOSClass),
 			})
 		}
 	}

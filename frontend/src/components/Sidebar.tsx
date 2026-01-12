@@ -103,7 +103,7 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
                             variant={isActive("/") ? "secondary" : "ghost"}
                             className={cn(
                                 "w-full justify-start gap-3 h-11 px-4 transition-all duration-200",
-                                isActive("/") ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm" : "hover:bg-white/5"
+                                isActive("/") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
                             )}
                         >
                             <Home className={cn("h-4 w-4", isActive("/") ? "text-primary" : "opacity-60")} />
@@ -115,7 +115,7 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
                             variant={isActive("/namespaces") ? "secondary" : "ghost"}
                             className={cn(
                                 "w-full justify-start gap-3 h-11 px-4 transition-all duration-200",
-                                isActive("/namespaces") ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm" : "hover:bg-white/5"
+                                isActive("/namespaces") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
                             )}
                         >
                             <Layers className={cn("h-4 w-4", isActive("/namespaces") ? "text-primary" : "opacity-60")} />
@@ -127,7 +127,7 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
                             variant={isActive("/nodes") ? "secondary" : "ghost"}
                             className={cn(
                                 "w-full justify-start gap-3 h-11 px-4 transition-all duration-200",
-                                isActive("/nodes") ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm" : "hover:bg-white/5"
+                                isActive("/nodes") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
                             )}
                         >
                             <HardDrive className={cn("h-4 w-4", isActive("/nodes") ? "text-primary" : "opacity-60")} />
@@ -139,7 +139,7 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
                             variant={isActive("/events") ? "secondary" : "ghost"}
                             className={cn(
                                 "w-full justify-start gap-3 h-11 px-4 transition-all duration-200",
-                                isActive("/events") ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm" : "hover:bg-white/5"
+                                isActive("/events") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
                             )}
                         >
                             <AlertCircle className={cn("h-4 w-4", isActive("/events") ? "text-primary" : "opacity-60")} />
@@ -148,7 +148,7 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
                     </Link>
                     <Button
                         variant="ghost"
-                        className="w-full justify-between gap-3 h-11 px-4 mt-1 hover:bg-white/5"
+                        className="w-full justify-between gap-3 h-11 px-4 mt-1 hover:bg-white/10 hover:text-white"
                         onClick={() => setWorkloadsOpen(!workloadsOpen)}
                     >
                         <div className="flex items-center gap-3">
@@ -164,7 +164,7 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
                                     variant={isActive("/pods") ? "secondary" : "ghost"}
                                     className={cn(
                                         "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/pods") ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm" : "hover:bg-white/5"
+                                        isActive("/pods") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
                                     )}
                                 >
                                     <Box className={cn("h-4 w-4", isActive("/pods") ? "text-primary" : "opacity-60")} />
@@ -176,7 +176,7 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
                                     variant={isActive("/deployments") ? "secondary" : "ghost"}
                                     className={cn(
                                         "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/deployments") ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm" : "hover:bg-white/5"
+                                        isActive("/deployments") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
                                     )}
                                 >
                                     <Layers className={cn("h-4 w-4", isActive("/deployments") ? "text-primary" : "opacity-60")} />
@@ -188,7 +188,7 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
                                     variant={isActive("/jobs") ? "secondary" : "ghost"}
                                     className={cn(
                                         "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/jobs") ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm" : "hover:bg-white/5"
+                                        isActive("/jobs") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
                                     )}
                                 >
                                     <PlayCircle className={cn("h-4 w-4", isActive("/jobs") ? "text-primary" : "opacity-60")} />
@@ -200,7 +200,7 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
                                     variant={isActive("/cronjobs") ? "secondary" : "ghost"}
                                     className={cn(
                                         "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/cronjobs") ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm" : "hover:bg-white/5"
+                                        isActive("/cronjobs") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
                                     )}
                                 >
                                     <Clock className={cn("h-4 w-4", isActive("/cronjobs") ? "text-primary" : "opacity-60")} />
@@ -212,7 +212,7 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
                                     variant={isActive("/daemonsets") ? "secondary" : "ghost"}
                                     className={cn(
                                         "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/daemonsets") ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm" : "hover:bg-white/5"
+                                        isActive("/daemonsets") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
                                     )}
                                 >
                                     <Server className={cn("h-4 w-4", isActive("/daemonsets") ? "text-primary" : "opacity-60")} />
@@ -224,7 +224,7 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
                                     variant={isActive("/statefulsets") ? "secondary" : "ghost"}
                                     className={cn(
                                         "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/statefulsets") ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm" : "hover:bg-white/5"
+                                        isActive("/statefulsets") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
                                     )}
                                 >
                                     <Database className={cn("h-4 w-4", isActive("/statefulsets") ? "text-primary" : "opacity-60")} />
@@ -236,7 +236,7 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
                     )}
                     <Button
                         variant="ghost"
-                        className="w-full justify-between gap-3 h-11 px-4 mt-1 hover:bg-white/5"
+                        className="w-full justify-between gap-3 h-11 px-4 mt-1 hover:bg-white/10 hover:text-white"
                         onClick={() => setNetworkOpen(!networkOpen)}
                     >
                         <div className="flex items-center gap-3">
@@ -252,7 +252,7 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
                                     variant={isActive("/services") ? "secondary" : "ghost"}
                                     className={cn(
                                         "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/services") ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm" : "hover:bg-white/5"
+                                        isActive("/services") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
                                     )}
                                 >
                                     <Grid className={cn("h-4 w-4", isActive("/services") ? "text-primary" : "opacity-60")} />
@@ -264,7 +264,7 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
                                     variant={isActive("/ingresses") ? "secondary" : "ghost"}
                                     className={cn(
                                         "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/ingresses") ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm" : "hover:bg-white/5"
+                                        isActive("/ingresses") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
                                     )}
                                 >
                                     <Globe className={cn("h-4 w-4", isActive("/ingresses") ? "text-primary" : "opacity-60")} />
@@ -275,7 +275,7 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
                     )}
                     <Button
                         variant="ghost"
-                        className="w-full justify-between gap-3 h-11 px-4 mt-4 hover:bg-white/5"
+                        className="w-full justify-between gap-3 h-11 px-4 mt-4 hover:bg-white/10 hover:text-white"
                         onClick={() => setSettingsOpen(!settingsOpen)}
                     >
                         <div className="flex items-center gap-3">
@@ -291,7 +291,7 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
                                     variant={isActive("/settings/gitlab") ? "secondary" : "ghost"}
                                     className={cn(
                                         "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/settings/gitlab") ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm" : "hover:bg-white/5"
+                                        isActive("/settings/gitlab") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
                                     )}
                                 >
                                     <Settings className={cn("h-4 w-4", isActive("/settings/gitlab") ? "text-primary" : "opacity-60")} />
@@ -303,7 +303,7 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
                                     variant={isActive("/settings/clusters") ? "secondary" : "ghost"}
                                     className={cn(
                                         "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/settings/clusters") ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm" : "hover:bg-white/5"
+                                        isActive("/settings/clusters") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
                                     )}
                                 >
                                     <Cloud className={cn("h-4 w-4", isActive("/settings/clusters") ? "text-primary" : "opacity-60")} />

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { cn, formatAge } from "@/lib/utils";
 import { API_URL } from "@/lib/config";
 import { NamespaceBadge } from "@/components/NamespaceBadge";
+import { ResourceDetailsSheet } from "@/components/ResourceDetailsSheet";
 
 interface EventInfo {
     name: string;
@@ -30,6 +31,7 @@ function EventsContent() {
     const [events, setEvents] = useState<EventInfo[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [selectedEvent, setSelectedEvent] = useState<EventInfo | null>(null);
 
     const filteredEvents = events.filter(e =>
         e.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -141,11 +143,12 @@ function EventsContent() {
                                     <div
                                         key={e.name + idx}
                                         className={cn(
-                                            "p-4 rounded-xl border transition-colors",
+                                            "p-4 rounded-xl border transition-colors cursor-pointer",
                                             e.type === "Warning"
-                                                ? "bg-amber-500/5 border-amber-500/20"
-                                                : "bg-muted/30 border-muted/20"
+                                                ? "bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10"
+                                                : "bg-muted/30 border-muted/20 hover:bg-muted/50"
                                         )}
+                                        onClick={() => setSelectedEvent(e)}
                                     >
                                         <div className="flex items-start gap-3 justify-between">
                                             <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -178,7 +181,10 @@ function EventsContent() {
                                             </div>
 
                                             {/* Namespace */}
-                                            <div className="flex flex-col items-end min-w-[120px]">
+                                            <div
+                                                className="flex flex-col items-end min-w-[120px]"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
                                                 <NamespaceBadge namespace={e.namespace} />
                                             </div>
 
@@ -194,6 +200,15 @@ function EventsContent() {
                     </CardContent>
                 </Card>
             </div>
+
+            <ResourceDetailsSheet
+                isOpen={!!selectedEvent}
+                onClose={() => setSelectedEvent(null)}
+                context={selectedContext}
+                namespace={selectedEvent?.namespace || ""}
+                name={selectedEvent?.name || ""}
+                kind="Event"
+            />
         </div>
     );
 }

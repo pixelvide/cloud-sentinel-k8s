@@ -9,6 +9,7 @@ import { RefreshCw, CheckCircle2, Search, Database } from "lucide-react";
 import { cn, formatAge } from "@/lib/utils";
 import { API_URL } from "@/lib/config";
 import { NamespaceBadge } from "@/components/NamespaceBadge";
+import { ResourceDetailsSheet } from "@/components/ResourceDetailsSheet";
 
 interface StatefulSet {
     name: string;
@@ -28,6 +29,7 @@ function StatefulSetsContent() {
     const [statefulsets, setStatefulSets] = useState<StatefulSet[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [selectedStatefulSet, setSelectedStatefulSet] = useState<StatefulSet | null>(null);
 
     useEffect(() => {
         if (selectedContext && selectedNamespace) {
@@ -116,7 +118,8 @@ function StatefulSetsContent() {
                                 {filteredStatefulSets.map((ss) => (
                                     <div
                                         key={`${ss.namespace}-${ss.name}`}
-                                        className="group flex flex-col md:flex-row md:items-center justify-between p-5 bg-card/60 backdrop-blur-sm border rounded-2xl shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300"
+                                        className="group flex flex-col md:flex-row md:items-center justify-between p-5 bg-card/60 backdrop-blur-sm border rounded-2xl shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300 cursor-pointer"
+                                        onClick={() => setSelectedStatefulSet(ss)}
                                     >
                                         <div className="flex items-center gap-4 min-w-0">
                                             <div className={cn(
@@ -140,7 +143,10 @@ function StatefulSetsContent() {
                                         </div>
 
                                         {/* Namespace */}
-                                        <div className="flex flex-col items-end min-w-[120px] mt-4 md:mt-0">
+                                        <div
+                                            className="flex flex-col items-end min-w-[120px] mt-4 md:mt-0"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
                                             <NamespaceBadge namespace={ss.namespace} />
                                         </div>
 
@@ -155,6 +161,15 @@ function StatefulSetsContent() {
                     </CardContent>
                 </Card>
             </div>
+
+            <ResourceDetailsSheet
+                isOpen={!!selectedStatefulSet}
+                onClose={() => setSelectedStatefulSet(null)}
+                context={selectedContext || ""}
+                namespace={selectedStatefulSet?.namespace || ""}
+                name={selectedStatefulSet?.name || ""}
+                kind="StatefulSet"
+            />
         </div>
     );
 }

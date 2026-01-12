@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { cn, formatAge } from "@/lib/utils";
 import { API_URL } from "@/lib/config";
 import { NamespaceBadge } from "@/components/NamespaceBadge";
+import { ResourceDetailsSheet } from "@/components/ResourceDetailsSheet";
 
 interface DeploymentInfo {
     name: string;
@@ -27,6 +28,7 @@ function DeploymentsContent() {
     const [deployments, setDeployments] = useState<DeploymentInfo[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [selectedDeployment, setSelectedDeployment] = useState<DeploymentInfo | null>(null);
 
     const filteredDeployments = deployments.filter(d =>
         d.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -135,7 +137,8 @@ function DeploymentsContent() {
                                 {filteredDeployments.map(d => (
                                     <div
                                         key={d.name + d.namespace}
-                                        className="p-6 bg-muted/30 rounded-2xl border border-muted/20 hover:bg-muted/50 transition-colors"
+                                        className="p-6 bg-muted/30 rounded-2xl border border-muted/20 hover:bg-muted/50 transition-colors cursor-pointer"
+                                        onClick={() => setSelectedDeployment(d)}
                                     >
                                         <div className="flex flex-col lg:flex-row lg:items-center gap-4 justify-between">
                                             <div className="flex items-center gap-4 min-w-0">
@@ -160,7 +163,10 @@ function DeploymentsContent() {
                                             </div>
 
                                             {/* Namespace */}
-                                            <div className="flex flex-col items-end min-w-[120px]">
+                                            <div
+                                                className="flex flex-col items-end min-w-[120px]"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
                                                 <NamespaceBadge namespace={d.namespace} />
                                             </div>
 
@@ -176,6 +182,15 @@ function DeploymentsContent() {
                     </CardContent>
                 </Card>
             </div>
+
+            <ResourceDetailsSheet
+                isOpen={!!selectedDeployment}
+                onClose={() => setSelectedDeployment(null)}
+                context={selectedContext}
+                namespace={selectedDeployment?.namespace || ""}
+                name={selectedDeployment?.name || ""}
+                kind="Deployment"
+            />
         </div>
     );
 }

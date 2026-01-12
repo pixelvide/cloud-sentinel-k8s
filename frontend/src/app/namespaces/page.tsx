@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Layers, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ResourceDetailsSheet } from "@/components/ResourceDetailsSheet";
 
 import { API_URL } from "@/lib/config";
 
@@ -21,6 +22,7 @@ function NamespacesContent() {
     const [contexts, setContexts] = useState<ContextInfo[]>([]);
     const [namespaces, setNamespaces] = useState<string[]>([]);
     const [namespacesLoading, setNamespacesLoading] = useState(false);
+    const [viewNamespace, setViewNamespace] = useState<string | null>(null);
 
     // Load contexts on mount just for names
     useEffect(() => {
@@ -146,7 +148,8 @@ function NamespacesContent() {
                                 {namespaces.map(ns => (
                                     <div
                                         key={ns}
-                                        className="p-4 bg-muted/30 rounded-2xl border border-muted/20 hover:bg-muted/50 transition-colors cursor-default"
+                                        className="p-4 bg-muted/30 rounded-2xl border border-muted/20 hover:bg-muted/50 transition-colors cursor-pointer"
+                                        onClick={() => setViewNamespace(ns)}
                                     >
                                         <div className="flex items-center gap-3">
                                             <div className="p-2 bg-primary/10 rounded-lg">
@@ -164,6 +167,15 @@ function NamespacesContent() {
                     </CardContent>
                 </Card>
             </div>
+
+            <ResourceDetailsSheet
+                isOpen={!!viewNamespace}
+                onClose={() => setViewNamespace(null)}
+                context={selectedContext}
+                namespace=""
+                name={viewNamespace || ""}
+                kind="Namespace"
+            />
         </div>
     );
 }

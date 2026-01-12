@@ -9,6 +9,9 @@ import { Button } from "@/components/ui/button";
 import { cn, formatAge } from "@/lib/utils";
 import { API_URL } from "@/lib/config";
 import { NamespaceBadge } from "@/components/NamespaceBadge";
+import { ResourceDetailsSheet } from "@/components/ResourceDetailsSheet";
+import { LogViewerModal } from "@/components/LogViewerModal";
+import { FileText } from "lucide-react";
 
 interface PodInfo {
     name: string;
@@ -16,6 +19,7 @@ interface PodInfo {
     status: string;
     namespace: string;
     age: string;
+    qos: string;
 }
 
 function PodsContent() {
@@ -26,6 +30,8 @@ function PodsContent() {
     const [pods, setPods] = useState<PodInfo[]>([]);
     const [podsLoading, setPodsLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [selectedPod, setSelectedPod] = useState<PodInfo | null>(null);
+    const [logPod, setLogPod] = useState<PodInfo | null>(null);
 
     const filteredPods = pods.filter(pod =>
         pod.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -137,7 +143,8 @@ function PodsContent() {
                                 {filteredPods.map(pod => (
                                     <div
                                         key={pod.name}
-                                        className="p-6 bg-muted/30 rounded-2xl border border-muted/20 hover:bg-muted/50 transition-colors"
+                                        className="p-6 bg-muted/30 rounded-2xl border border-muted/20 hover:bg-muted/50 transition-colors cursor-pointer"
+                                        onClick={() => setSelectedPod(pod)}
                                     >
                                         <div className="flex flex-col lg:flex-row lg:items-center gap-4 justify-between">
                                             {/* Pod Name and Status */}
@@ -157,22 +164,6 @@ function PodsContent() {
 
                                             {/* Actions & Containers */}
                                             <div className="flex flex-col gap-3 items-start lg:items-end min-w-[200px]">
-                                                <div className="flex items-center gap-2">
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="h-8 rounded-lg gap-2 text-xs font-semibold"
-                                                        disabled={pod.status !== "Running" || pod.containers.length === 0}
-                                                        onClick={() => {
-                                                            const container = pod.containers.length > 0 ? pod.containers[0] : "";
-                                                            window.open(`/exec?context=${selectedContext}&namespace=${pod.namespace}&pod=${pod.name}&container=${container}`, "_blank");
-                                                        }}
-                                                    >
-                                                        <Box className="h-3.5 w-3.5" />
-                                                        Terminal
-                                                    </Button>
-                                                </div>
-
                                                 <div className="flex flex-col gap-1 items-end">
                                                     <div className="flex flex-wrap gap-2 justify-end">
                                                         {pod.containers.map(c => (
@@ -185,8 +176,45 @@ function PodsContent() {
                                             </div>
 
                                             {/* Namespace */}
-                                            <div className="flex flex-col items-end min-w-[120px]">
+                                            <div
+                                                className="flex flex-col items-end min-w-[120px]"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
                                                 <NamespaceBadge namespace={pod.namespace} />
+                                            </div>
+
+                                            {/* QoS - NEW */}
+                                            <div className="flex flex-col items-end min-w-[80px]">
+                                                <span className="text-xs font-mono text-muted-foreground uppercase">{pod.qos}</span>
+                                            </div>
+
+                                            {/* Action Buttons */}
+                                            <div
+                                                className="flex flex-row items-center gap-2 min-w-[200px] justify-end"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-8 rounded-lg gap-2 text-xs font-semibold"
+                                                    disabled={pod.status !== "Running" || pod.containers.length === 0}
+                                                    onClick={() => {
+                                                        const container = pod.containers.length > 0 ? pod.containers[0] : "";
+                                                        window.open(`/exec?context=${selectedContext}&namespace=${pod.namespace}&pod=${pod.name}&container=${container}`, "_blank");
+                                                    }}
+                                                >
+                                                    <Box className="h-3.5 w-3.5" />
+                                                    Terminal
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-8 rounded-lg gap-2 text-xs font-semibold"
+                                                    onClick={() => setLogPod(pod)}
+                                                >
+                                                    <FileText className="h-3.5 w-3.5" />
+                                                    Logs
+                                                </Button>
                                             </div>
 
                                             {/* Age */}
@@ -201,6 +229,26 @@ function PodsContent() {
                     </CardContent>
                 </Card>
             </div>
+
+            <ResourceDetailsSheet
+                isOpen={!!selectedPod}
+                onClose={() => setSelectedPod(null)}
+                context={selectedContext}
+                namespace={selectedPod?.namespace || ""}
+                name={selectedPod?.name || ""}
+                kind="Pod"
+            />
+
+            {logPod && (
+                <LogViewerModal
+                    isOpen={!!logPod}
+                    onClose={() => setLogPod(null)}
+                    context={selectedContext}
+                    namespace={logPod.namespace}
+                    pod={logPod.name}
+                    container={logPod.containers[0] || ""} // Default to first container for now
+                />
+            )}
         </div >
     );
 }

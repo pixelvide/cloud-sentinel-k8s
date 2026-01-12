@@ -100,10 +100,13 @@ func main() {
 			kubeGroup.GET("/daemonsets", api.GetDaemonSets)
 			kubeGroup.GET("/statefulsets", api.GetStatefulSets)
 			kubeGroup.GET("/events", api.GetEvents)
+			kubeGroup.GET("/scopes", api.GetResourceScopes)
+			kubeGroup.GET("/resource", api.GetResourceDetails) // <--- New endpoint
 			kubeGroup.GET("/dashboard", api.GetDashboardSummary)
 
 			// WS Handler
 			kubeGroup.GET("/exec", api.HandleExec)
+			kubeGroup.GET("/logs", api.HandleLogs)
 		}
 	}
 

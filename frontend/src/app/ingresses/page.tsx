@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { cn, formatAge } from "@/lib/utils";
 import { API_URL } from "@/lib/config";
 import { NamespaceBadge } from "@/components/NamespaceBadge";
+import { ResourceDetailsSheet } from "@/components/ResourceDetailsSheet";
 
 interface IngressInfo {
     name: string;
@@ -26,6 +27,7 @@ function IngressesContent() {
     const [ingresses, setIngresses] = useState<IngressInfo[]>([]);
     const [ingLoading, setIngLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [selectedIngress, setSelectedIngress] = useState<IngressInfo | null>(null);
 
     const filteredIngresses = ingresses.filter(ing =>
         ing.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -136,7 +138,8 @@ function IngressesContent() {
                                 {filteredIngresses.map(ing => (
                                     <div
                                         key={ing.name}
-                                        className="p-6 bg-muted/30 rounded-2xl border border-muted/20 hover:bg-muted/50 transition-colors"
+                                        className="p-6 bg-muted/30 rounded-2xl border border-muted/20 hover:bg-muted/50 transition-colors cursor-pointer"
+                                        onClick={() => setSelectedIngress(ing)}
                                     >
                                         <div className="flex flex-col lg:flex-row lg:items-center gap-4 justify-between">
                                             <div className="min-w-0 flex-1">
@@ -149,6 +152,7 @@ function IngressesContent() {
                                                             target="_blank"
                                                             rel="noreferrer"
                                                             className="text-xs text-blue-500 hover:underline flex items-center gap-1"
+                                                            onClick={(e) => e.stopPropagation()}
                                                         >
                                                             <LinkIcon className="h-3 w-3" />
                                                             {host}
@@ -176,7 +180,10 @@ function IngressesContent() {
                                             </div>
 
                                             {/* Namespace */}
-                                            <div className="flex flex-col items-end min-w-[120px]">
+                                            <div
+                                                className="flex flex-col items-end min-w-[120px]"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
                                                 <NamespaceBadge namespace={ing.namespace} />
                                             </div>
 
@@ -192,6 +199,15 @@ function IngressesContent() {
                     </CardContent>
                 </Card>
             </div>
+
+            <ResourceDetailsSheet
+                isOpen={!!selectedIngress}
+                onClose={() => setSelectedIngress(null)}
+                context={selectedContext}
+                namespace={selectedIngress?.namespace || ""}
+                name={selectedIngress?.name || ""}
+                kind="Ingress"
+            />
         </div >
 
     );

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { cn, formatAge } from "@/lib/utils";
 import { API_URL } from "@/lib/config";
 import { NamespaceBadge } from "@/components/NamespaceBadge";
+import { ResourceDetailsSheet } from "@/components/ResourceDetailsSheet";
 
 interface CronJobInfo {
     name: string;
@@ -28,6 +29,7 @@ function CronJobsContent() {
     const [cronjobs, setCronjobs] = useState<CronJobInfo[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [selectedCronJob, setSelectedCronJob] = useState<CronJobInfo | null>(null);
 
     const filteredCronJobs = cronjobs.filter(cj =>
         cj.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -136,7 +138,8 @@ function CronJobsContent() {
                                 {filteredCronJobs.map(cj => (
                                     <div
                                         key={cj.name + cj.namespace}
-                                        className="p-6 bg-muted/30 rounded-2xl border border-muted/20 hover:bg-muted/50 transition-colors"
+                                        className="p-6 bg-muted/30 rounded-2xl border border-muted/20 hover:bg-muted/50 transition-colors cursor-pointer"
+                                        onClick={() => setSelectedCronJob(cj)}
                                     >
                                         <div className="flex flex-col lg:flex-row lg:items-center gap-4 justify-between">
                                             <div className="flex items-center gap-4 min-w-0">
@@ -171,7 +174,10 @@ function CronJobsContent() {
                                             </div>
 
                                             {/* Namespace */}
-                                            <div className="flex flex-col items-end min-w-[120px]">
+                                            <div
+                                                className="flex flex-col items-end min-w-[120px]"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
                                                 <NamespaceBadge namespace={cj.namespace} />
                                             </div>
 
@@ -187,6 +193,15 @@ function CronJobsContent() {
                     </CardContent>
                 </Card>
             </div>
+
+            <ResourceDetailsSheet
+                isOpen={!!selectedCronJob}
+                onClose={() => setSelectedCronJob(null)}
+                context={selectedContext}
+                namespace={selectedCronJob?.namespace || ""}
+                name={selectedCronJob?.name || ""}
+                kind="CronJob"
+            />
         </div>
     );
 }

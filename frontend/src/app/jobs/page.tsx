@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { cn, formatAge } from "@/lib/utils";
 import { API_URL } from "@/lib/config";
 import { NamespaceBadge } from "@/components/NamespaceBadge";
+import { ResourceDetailsSheet } from "@/components/ResourceDetailsSheet";
 
 interface JobInfo {
     name: string;
@@ -28,6 +29,7 @@ function JobsContent() {
     const [jobs, setJobs] = useState<JobInfo[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [selectedJob, setSelectedJob] = useState<JobInfo | null>(null);
 
     const filteredJobs = jobs.filter(j =>
         j.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -145,7 +147,8 @@ function JobsContent() {
                                     return (
                                         <div
                                             key={j.name + j.namespace}
-                                            className="p-6 bg-muted/30 rounded-2xl border border-muted/20 hover:bg-muted/50 transition-colors"
+                                            className="p-6 bg-muted/30 rounded-2xl border border-muted/20 hover:bg-muted/50 transition-colors cursor-pointer"
+                                            onClick={() => setSelectedJob(j)}
                                         >
                                             <div className="flex flex-col lg:flex-row lg:items-center gap-4 justify-between">
                                                 <div className="flex items-center gap-4 min-w-0">
@@ -179,7 +182,10 @@ function JobsContent() {
                                                 </div>
 
                                                 {/* Namespace */}
-                                                <div className="flex flex-col items-end min-w-[120px]">
+                                                <div
+                                                    className="flex flex-col items-end min-w-[120px]"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
                                                     <NamespaceBadge namespace={j.namespace} />
                                                 </div>
 
@@ -196,6 +202,15 @@ function JobsContent() {
                     </CardContent>
                 </Card>
             </div>
+
+            <ResourceDetailsSheet
+                isOpen={!!selectedJob}
+                onClose={() => setSelectedJob(null)}
+                context={selectedContext}
+                namespace={selectedJob?.namespace || ""}
+                name={selectedJob?.name || ""}
+                kind="Job"
+            />
         </div >
     );
 }

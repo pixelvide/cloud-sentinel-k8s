@@ -7,6 +7,7 @@ import { HardDrive, RefreshCw, Cpu, MemoryStick, CheckCircle2, XCircle, Search }
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn, formatAge } from "@/lib/utils";
+import { ResourceDetailsSheet } from "@/components/ResourceDetailsSheet";
 
 import { API_URL } from "@/lib/config";
 
@@ -37,6 +38,7 @@ function NodesContent() {
     const [nodes, setNodes] = useState<NodeInfo[]>([]);
     const [nodesLoading, setNodesLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [selectedNode, setSelectedNode] = useState<NodeInfo | null>(null);
 
     const filteredNodes = nodes.filter(node =>
         node.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -174,7 +176,8 @@ function NodesContent() {
                                 {filteredNodes.map(node => (
                                     <div
                                         key={node.name}
-                                        className="p-6 bg-muted/30 rounded-2xl border border-muted/20 hover:bg-muted/50 transition-colors"
+                                        className="p-6 bg-muted/30 rounded-2xl border border-muted/20 hover:bg-muted/50 transition-colors cursor-pointer"
+                                        onClick={() => setSelectedNode(node)}
                                     >
                                         <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                                             {/* Node Name and Status */}
@@ -240,6 +243,15 @@ function NodesContent() {
                     </CardContent>
                 </Card>
             </div>
+
+            <ResourceDetailsSheet
+                isOpen={!!selectedNode}
+                onClose={() => setSelectedNode(null)}
+                context={selectedContext}
+                namespace=""
+                name={selectedNode?.name || ""}
+                kind="Node"
+            />
         </div>
     );
 }
