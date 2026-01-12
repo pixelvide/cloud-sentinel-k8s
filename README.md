@@ -44,6 +44,7 @@ A modern, read-optimized Kubernetes dashboard built with Next.js and Go.
     OIDC_CLIENT_SECRET=<your-client-secret>
     # OIDC_REDIRECT_URL is automatically derived from FRONTEND_URL + /api/v1/auth/callback
     FRONTEND_URL=http://localhost:3000       # URL where frontend is accessible (default: http://localhost:3000)
+    FRONTEND_PORT=3000                       # Port to expose frontend on (default: 3000)
     ```
 
 3.  **Run with Docker Compose**:
