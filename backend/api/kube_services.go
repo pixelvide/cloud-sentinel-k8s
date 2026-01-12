@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"cloud-sentinel-k8s/models"
 
@@ -69,7 +70,7 @@ func GetServices(c *gin.Context) {
 				ClusterIP:   s.Spec.ClusterIP,
 				ExternalIPs: s.Spec.ExternalIPs,
 				Ports:       ports,
-				Age:         s.CreationTimestamp.String(),
+				Age:         s.CreationTimestamp.Time.Format(time.RFC3339),
 				Namespace:   s.Namespace,
 			})
 		}

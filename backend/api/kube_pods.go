@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"cloud-sentinel-k8s/models"
 
@@ -69,7 +70,7 @@ func GetPods(c *gin.Context) {
 				Containers: containers,
 				Status:     string(p.Status.Phase),
 				Namespace:  p.Namespace,
-				Age:        p.CreationTimestamp.String(),
+				Age:        p.CreationTimestamp.Time.Format(time.RFC3339),
 			})
 		}
 	}

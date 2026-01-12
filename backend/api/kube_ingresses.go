@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"cloud-sentinel-k8s/models"
 
@@ -79,7 +80,7 @@ func GetIngresses(c *gin.Context) {
 				Hosts:     hosts,
 				IPs:       ips,
 				Namespace: ing.Namespace,
-				Age:       ing.CreationTimestamp.String(),
+				Age:       ing.CreationTimestamp.Time.Format(time.RFC3339),
 			})
 		}
 	}

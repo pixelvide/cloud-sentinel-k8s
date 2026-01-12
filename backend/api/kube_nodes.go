@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"time"
 
 	"cloud-sentinel-k8s/models"
 
@@ -82,7 +83,7 @@ func GetNodes(c *gin.Context) {
 			CPUAllocatable:    node.Status.Allocatable.Cpu().String(),
 			MemoryAllocatable: node.Status.Allocatable.Memory().String(),
 			Labels:            node.Labels,
-			Age:               node.CreationTimestamp.String(),
+			Age:               node.CreationTimestamp.Time.Format(time.RFC3339),
 		})
 	}
 	c.JSON(http.StatusOK, gin.H{"nodes": nodes})

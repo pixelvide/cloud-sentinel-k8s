@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"cloud-sentinel-k8s/models"
 
@@ -67,7 +68,7 @@ func GetDeployments(c *gin.Context) {
 				Replicas:          replicas,
 				ReadyReplicas:     d.Status.ReadyReplicas,
 				AvailableReplicas: d.Status.AvailableReplicas,
-				Age:               d.CreationTimestamp.String(),
+				Age:               d.CreationTimestamp.Time.Format(time.RFC3339),
 			})
 		}
 	}

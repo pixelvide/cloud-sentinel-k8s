@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"cloud-sentinel-k8s/models"
 
@@ -69,7 +70,7 @@ func GetStatefulSets(c *gin.Context) {
 				ReadyReplicas:   ss.Status.ReadyReplicas,
 				CurrentReplicas: ss.Status.CurrentReplicas,
 				UpdatedReplicas: ss.Status.UpdatedReplicas,
-				Age:             ss.CreationTimestamp.String(),
+				Age:             ss.CreationTimestamp.Time.Format(time.RFC3339),
 			})
 		}
 	}

@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"cloud-sentinel-k8s/models"
 
@@ -68,7 +69,7 @@ func GetJobs(c *gin.Context) {
 				Succeeded:   j.Status.Succeeded,
 				Failed:      j.Status.Failed,
 				Active:      j.Status.Active,
-				Age:         j.CreationTimestamp.String(),
+				Age:         j.CreationTimestamp.Time.Format(time.RFC3339),
 			})
 		}
 	}

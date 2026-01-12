@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"cloud-sentinel-k8s/models"
 
@@ -63,7 +64,7 @@ func GetCronJobs(c *gin.Context) {
 			}
 			lastSchedule := ""
 			if cj.Status.LastScheduleTime != nil {
-				lastSchedule = cj.Status.LastScheduleTime.String()
+				lastSchedule = cj.Status.LastScheduleTime.Time.Format(time.RFC3339)
 			}
 			cronjobs = append(cronjobs, CronJobInfo{
 				Name:         cj.Name,
@@ -72,7 +73,7 @@ func GetCronJobs(c *gin.Context) {
 				Suspend:      suspend,
 				Active:       len(cj.Status.Active),
 				LastSchedule: lastSchedule,
-				Age:          cj.CreationTimestamp.String(),
+				Age:          cj.CreationTimestamp.Time.Format(time.RFC3339),
 			})
 		}
 	}

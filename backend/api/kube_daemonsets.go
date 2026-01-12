@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"cloud-sentinel-k8s/models"
 
@@ -67,7 +68,7 @@ func GetDaemonSets(c *gin.Context) {
 				Ready:            ds.Status.NumberReady,
 				UpToDate:         ds.Status.UpdatedNumberScheduled,
 				Available:        ds.Status.NumberAvailable,
-				Age:              ds.CreationTimestamp.String(),
+				Age:              ds.CreationTimestamp.Time.Format(time.RFC3339),
 			})
 		}
 	}
