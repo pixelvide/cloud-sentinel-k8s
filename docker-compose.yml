@@ -16,6 +16,10 @@ services:
       - DB_PORT=${DB_PORT:-5432}
       - DB_SSLMODE=${DB_SSLMODE:-require}
       - DB_TIMEZONE=${DB_TIMEZONE:-UTC}
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
 
   frontend:
     build:

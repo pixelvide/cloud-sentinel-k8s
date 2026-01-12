@@ -32,12 +32,13 @@ func GetPods(c *gin.Context) {
 	namespaces := strings.Split(ns, ",")
 
 	type PodInfo struct {
-		Name       string   `json:"name"`
-		Containers []string `json:"containers"`
-		Status     string   `json:"status"`
-		Namespace  string   `json:"namespace"`
-		Age        string   `json:"age"`
-		QoS        string   `json:"qos"`
+		Name           string   `json:"name"`
+		Containers     []string `json:"containers"`
+		InitContainers []string `json:"init_containers"`
+		Status         string   `json:"status"`
+		Namespace      string   `json:"namespace"`
+		Age            string   `json:"age"`
+		QoS            string   `json:"qos"`
 	}
 
 	var pods []PodInfo
@@ -50,10 +51,6 @@ func GetPods(c *gin.Context) {
 
 		list, err := clientset.CoreV1().Pods(singleNs).List(c.Request.Context(), metav1.ListOptions{})
 		if err != nil {
-			// If one namespace fails, we verify if we should just continue or return error.
-			// For now, let's log internally or continue.
-			// But sticking to simple logic: if single namespace requested and fails, return error.
-			// If multiple, maybe partial? Let's just return error for now for simplicity/safety.
 			if len(namespaces) == 1 {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
@@ -63,16 +60,22 @@ func GetPods(c *gin.Context) {
 
 		for _, p := range list.Items {
 			var containers []string
+			var initContainers []string
+
+			for _, cn := range p.Spec.InitContainers {
+				initContainers = append(initContainers, cn.Name)
+			}
 			for _, cn := range p.Spec.Containers {
 				containers = append(containers, cn.Name)
 			}
 			pods = append(pods, PodInfo{
-				Name:       p.Name,
-				Containers: containers,
-				Status:     string(p.Status.Phase),
-				Namespace:  p.Namespace,
-				Age:        p.CreationTimestamp.Time.Format(time.RFC3339),
-				QoS:        string(p.Status.QOSClass),
+				Name:           p.Name,
+				Containers:     containers,
+				InitContainers: initContainers,
+				Status:         string(p.Status.Phase),
+				Namespace:      p.Namespace,
+				Age:            p.CreationTimestamp.Time.Format(time.RFC3339),
+				QoS:            string(p.Status.QOSClass),
 			})
 		}
 	}

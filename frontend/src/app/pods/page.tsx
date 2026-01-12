@@ -20,6 +20,7 @@ interface PodInfo {
     namespace: string;
     age: string;
     qos: string;
+    init_containers?: string[];
 }
 
 function PodsContent() {
@@ -166,6 +167,11 @@ function PodsContent() {
                                             <div className="flex flex-col gap-3 items-start lg:items-end min-w-[200px]">
                                                 <div className="flex flex-col gap-1 items-end">
                                                     <div className="flex flex-wrap gap-2 justify-end">
+                                                        {pod.init_containers?.map(c => (
+                                                            <span key={c} className="text-xs bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-md px-2 py-1 font-mono">
+                                                                {c} (init)
+                                                            </span>
+                                                        ))}
                                                         {pod.containers.map(c => (
                                                             <span key={c} className="text-xs bg-muted border rounded-md px-2 py-1 font-mono">
                                                                 {c}
@@ -238,7 +244,6 @@ function PodsContent() {
                 name={selectedPod?.name || ""}
                 kind="Pod"
             />
-
             {logPod && (
                 <LogViewerModal
                     isOpen={!!logPod}
@@ -246,7 +251,8 @@ function PodsContent() {
                     context={selectedContext}
                     namespace={logPod.namespace}
                     pod={logPod.name}
-                    container={logPod.containers[0] || ""} // Default to first container for now
+                    containers={logPod.containers}
+                    initContainers={logPod.init_containers || []}
                 />
             )}
         </div >

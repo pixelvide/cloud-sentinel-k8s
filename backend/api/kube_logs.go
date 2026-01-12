@@ -5,23 +5,28 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
+	"sync"
+	"time"
 
 	"cloud-sentinel-k8s/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 // HandleLogs streams logs from a pod via WebSocket
 func HandleLogs(c *gin.Context) {
 	ns := c.Query("namespace")
-	pod := c.Query("pod")
-	container := c.Query("container")
+	podName := c.Query("pod")
+	containerName := c.Query("container")
 	ctxName := c.Query("context")
 	timestampsStr := c.Query("timestamps")
 
-	if ns == "" || pod == "" {
+	if ns == "" || podName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "namespace and pod required"})
 		return
 	}
@@ -46,23 +51,112 @@ func HandleLogs(c *gin.Context) {
 		return
 	}
 
-	showTimestamps := true
-	if timestampsStr == "false" {
-		showTimestamps = false
+	prefixStr := c.Query("prefix")
+	showPrefix := prefixStr == "true"
+
+	showTimestamps := timestampsStr != "false"
+
+	// Parse requested containers
+	var targetContainers []string
+	if containerName == "__all_containers__" {
+		pod, err := clientset.CoreV1().Pods(ns).Get(c.Request.Context(), podName, metav1.GetOptions{})
+		if err != nil {
+			ws.WriteMessage(websocket.TextMessage, []byte("Error getting pod: "+err.Error()))
+			return
+		}
+		for _, c := range pod.Spec.InitContainers {
+			targetContainers = append(targetContainers, c.Name)
+		}
+		for _, c := range pod.Spec.Containers {
+			targetContainers = append(targetContainers, c.Name)
+		}
+	} else if strings.Contains(containerName, ",") {
+		targetContainers = strings.Split(containerName, ",")
+	} else {
+		// Single container requested
+		targetContainers = []string{containerName}
+	}
+
+	// Unified streaming logic for both single and multi-container requests
+	// Default showPrefix to true if we are streaming multiple sources
+	if prefixStr == "" && (len(targetContainers) > 1 || containerName == "__all_containers__") {
+		showPrefix = true
+	}
+	streamContainers(c, ws, clientset, ns, podName, targetContainers, showTimestamps, showPrefix)
+}
+
+const (
+	pingPeriod = 15 * time.Second
+	writeWait  = 10 * time.Second
+)
+
+func streamContainers(c *gin.Context, ws *websocket.Conn, clientset *kubernetes.Clientset, ns, podName string, containers []string, showTimestamps bool, showPrefix bool) {
+	var wg sync.WaitGroup
+	logChan := make(chan string)
+
+	// Start a goroutine for each container
+	for _, cName := range containers {
+		cName = strings.TrimSpace(cName)
+		if cName == "" {
+			continue
+		}
+		wg.Add(1)
+		go func(container string) {
+			defer wg.Done()
+			streamLogsInternal(c, clientset, ns, podName, container, showTimestamps, showPrefix, logChan)
+		}(cName)
+	}
+
+	// Closer routine
+	go func() {
+		wg.Wait()
+		close(logChan)
+	}()
+
+	writeLoop(ws, logChan)
+}
+
+func writeLoop(ws *websocket.Conn, messages <-chan string) {
+	ticker := time.NewTicker(pingPeriod)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case msg, ok := <-messages:
+			if !ok {
+				return
+			}
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
+			if err := ws.WriteMessage(websocket.TextMessage, []byte(msg)); err != nil {
+				return
+			}
+		case <-ticker.C:
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
+			if err := ws.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return
+			}
+		}
+	}
+}
+
+// streamLogsInternal is unique for "all" mode as it writes to a channel instead of WS directly
+func streamLogsInternal(c *gin.Context, clientset *kubernetes.Clientset, ns, podName, containerName string, showTimestamps bool, showPrefix bool, outChan chan<- string) {
+	prefix := ""
+	if showPrefix {
+		prefix = "[" + containerName + "] "
 	}
 
 	opts := &v1.PodLogOptions{
-		Container:  container,
+		Container:  containerName,
 		Follow:     true,
-		Previous:   false,
 		Timestamps: showTimestamps,
 		TailLines:  func() *int64 { i := int64(100); return &i }(),
 	}
 
-	req := clientset.CoreV1().Pods(ns).GetLogs(pod, opts)
+	req := clientset.CoreV1().Pods(ns).GetLogs(podName, opts)
 	stream, err := req.Stream(c.Request.Context())
 	if err != nil {
-		ws.WriteMessage(websocket.TextMessage, []byte("Error opening stream: "+err.Error()))
+		outChan <- prefix + "Error opening stream: " + err.Error() + "\n"
 		return
 	}
 	defer stream.Close()
@@ -70,18 +164,14 @@ func HandleLogs(c *gin.Context) {
 	reader := bufio.NewReader(stream)
 	for {
 		line, err := reader.ReadBytes('\n')
+		if len(line) > 0 {
+			outChan <- prefix + string(line)
+		}
 		if err != nil {
 			if err != io.EOF {
-				ws.WriteMessage(websocket.TextMessage, []byte("Stream error: "+err.Error()))
+				outChan <- prefix + "Stream ended with error: " + err.Error() + "\n"
 			}
 			break
-		}
-		if len(line) > 0 {
-			err = ws.WriteMessage(websocket.TextMessage, line)
-			if err != nil {
-				// Client disconnected?
-				break
-			}
 		}
 	}
 }
