@@ -5,8 +5,6 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    ports:
-      - "${PORT:-8080}:8080"
     environment:
       - GIN_MODE=${GIN_MODE:-release}
       - DB_HOST=${DB_HOST}
@@ -16,8 +14,10 @@ services:
       - OIDC_ISSUER=${OIDC_ISSUER}
       - OIDC_CLIENT_ID=${OIDC_CLIENT_ID}
       - OIDC_CLIENT_SECRET=${OIDC_CLIENT_SECRET}
-      - OIDC_REDIRECT_URL=${OIDC_REDIRECT_URL}
-      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_SSLMODE=${DB_SSLMODE:-require}
+      - DB_TIMEZONE=${DB_TIMEZONE:-UTC}
 
   frontend:
     build:

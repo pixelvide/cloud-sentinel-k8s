@@ -25,7 +25,7 @@ func InitDB() {
 	}
 	dbTimeZone := os.Getenv("DB_TIMEZONE")
 	if dbTimeZone == "" {
-		dbTimeZone = "Asia/Kolkata"
+		dbTimeZone = "UTC"
 	}
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=%s",

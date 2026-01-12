@@ -64,6 +64,7 @@ func ReconfigureAllAgentsOnStartup() {
 			log.Printf("[Startup] Login failed for %s: %s", agentConfig.GitlabConfig.Host, string(output))
 			continue
 		}
+		log.Printf("[Startup] GLAB Login successful for %s", agentConfig.GitlabConfig.Host)
 
 		// 2. Update Kubeconfig
 		protocol := "https://"
@@ -79,10 +80,12 @@ func ReconfigureAllAgentsOnStartup() {
 			"GITLAB_HOST="+gitlabHost,
 		)
 
-		if output, err := agentCmd.CombinedOutput(); err != nil {
+		output, err := agentCmd.CombinedOutput()
+		if err != nil {
 			log.Printf("[Startup] Failed to update kubeconfig for agent %s: %s", agentConfig.AgentID, string(output))
 			continue
 		}
+		log.Printf("[Startup] Update-kubeconfig success for agent %s. Output: %s", agentConfig.AgentID, string(output))
 
 		// Ensure the final kubeconfig has permissive permissions
 		os.Chmod(kubeConfigPath, 0666)

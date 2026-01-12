@@ -50,10 +50,15 @@ func InitOIDC() {
 		}
 		verifier = provider.Verifier(oidcConfig)
 
+		frontendURL := os.Getenv("FRONTEND_URL")
+		if frontendURL == "" {
+			frontendURL = "http://localhost:3000"
+		}
+
 		oauth2Config = oauth2.Config{
 			ClientID:     os.Getenv("OIDC_CLIENT_ID"),
 			ClientSecret: os.Getenv("OIDC_CLIENT_SECRET"),
-			RedirectURL:  os.Getenv("OIDC_REDIRECT_URL"),
+			RedirectURL:  frontendURL + "/api/v1/auth/callback",
 			Endpoint:     provider.Endpoint(),
 			Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
 		}
