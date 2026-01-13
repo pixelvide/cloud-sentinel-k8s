@@ -41,7 +41,7 @@ function PriorityClassesContent() {
         setLoading(true);
         setResources([]);
         try {
-            const res = await fetch(`${API_URL}/kube/priorityclasses?context=${selectedContext}`, { credentials: "include" });
+            const res = await fetch(`${API_URL}/kube/priority-classes?context=${selectedContext}`, { credentials: "include" });
             if (res.status === 401) {
                 window.location.href = "/login";
                 return;

@@ -43,7 +43,7 @@ function LimitRangesContent() {
         setLoading(true);
         setResources([]);
         try {
-            const res = await fetch(`${API_URL}/kube/limitranges?context=${selectedContext}&namespace=${selectedNamespace}`, { credentials: "include" });
+            const res = await fetch(`${API_URL}/kube/limit-ranges?context=${selectedContext}&namespace=${selectedNamespace}`, { credentials: "include" });
             if (res.status === 401) {
                 window.location.href = "/login";
                 return;

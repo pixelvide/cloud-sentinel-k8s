@@ -47,7 +47,7 @@ function HPAContent() {
         setLoading(true);
         setResources([]);
         try {
-            const res = await fetch(`${API_URL}/kube/hpa?context=${selectedContext}&namespace=${selectedNamespace}`, { credentials: "include" });
+            const res = await fetch(`${API_URL}/kube/hpas?context=${selectedContext}&namespace=${selectedNamespace}`, { credentials: "include" });
             if (res.status === 401) {
                 window.location.href = "/login";
                 return;

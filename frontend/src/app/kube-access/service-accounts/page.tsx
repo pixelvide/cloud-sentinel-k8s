@@ -43,7 +43,7 @@ function SAContent() {
         setLoading(true);
         setSas([]);
         try {
-            const res = await fetch(`${API_URL}/kube/serviceaccounts?context=${selectedContext}&namespace=${selectedNamespace}`, { credentials: "include" });
+            const res = await fetch(`${API_URL}/kube/service-accounts?context=${selectedContext}&namespace=${selectedNamespace}`, { credentials: "include" });
             if (res.status === 401) {
                 window.location.href = "/login";
                 return;

@@ -42,7 +42,7 @@ function NetworkPoliciesContent() {
         setLoading(true);
         setPolicies([]);
         try {
-            const res = await fetch(`${API_URL}/kube/networkpolicies?context=${selectedContext}&namespace=${selectedNamespace}`, { credentials: "include" });
+            const res = await fetch(`${API_URL}/kube/network-policies?context=${selectedContext}&namespace=${selectedNamespace}`, { credentials: "include" });
             if (res.status === 401) {
                 window.location.href = "/login";
                 return;

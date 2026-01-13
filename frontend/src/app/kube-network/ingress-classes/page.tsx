@@ -40,7 +40,7 @@ function IngressClassesContent() {
         setLoading(true);
         setClasses([]);
         try {
-            const res = await fetch(`${API_URL}/kube/ingressclasses?context=${selectedContext}`, { credentials: "include" });
+            const res = await fetch(`${API_URL}/kube/ingress-classes?context=${selectedContext}`, { credentials: "include" });
             if (res.status === 401) {
                 window.location.href = "/login";
                 return;

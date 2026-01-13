@@ -40,7 +40,7 @@ function ClusterRoleBindingsContent() {
         setLoading(true);
         setBindings([]);
         try {
-            const res = await fetch(`${API_URL}/kube/clusterrolebindings?context=${selectedContext}`, { credentials: "include" });
+            const res = await fetch(`${API_URL}/kube/cluster-role-bindings?context=${selectedContext}`, { credentials: "include" });
             if (res.status === 401) {
                 window.location.href = "/login";
                 return;

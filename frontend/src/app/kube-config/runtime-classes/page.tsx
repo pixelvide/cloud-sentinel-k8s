@@ -41,7 +41,7 @@ function RuntimeClassesContent() {
         setLoading(true);
         setResources([]);
         try {
-            const res = await fetch(`${API_URL}/kube/runtimeclasses?context=${selectedContext}`, { credentials: "include" });
+            const res = await fetch(`${API_URL}/kube/runtime-classes?context=${selectedContext}`, { credentials: "include" });
             if (res.status === 401) {
                 window.location.href = "/login";
                 return;

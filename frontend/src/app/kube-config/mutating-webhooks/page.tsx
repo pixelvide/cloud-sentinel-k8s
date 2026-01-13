@@ -41,7 +41,7 @@ function MutatingWebhooksContent() {
         setLoading(true);
         setResources([]);
         try {
-            const res = await fetch(`${API_URL}/kube/mutatingwebhooks?context=${selectedContext}`, { credentials: "include" });
+            const res = await fetch(`${API_URL}/kube/mutating-webhooks?context=${selectedContext}`, { credentials: "include" });
             if (res.status === 401) {
                 window.location.href = "/login";
                 return;

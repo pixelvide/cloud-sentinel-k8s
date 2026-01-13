@@ -55,7 +55,7 @@ function ReplicaSetsContent() {
         setLoading(true);
         setReplicaSets([]);
         try {
-            const res = await fetch(`${API_URL}/kube/replicasets?context=${selectedContext}&namespace=${selectedNamespace}`, { credentials: "include" });
+            const res = await fetch(`${API_URL}/kube/replica-sets?context=${selectedContext}&namespace=${selectedNamespace}`, { credentials: "include" });
             if (res.status === 401) {
                 window.location.href = "/login";
                 return;

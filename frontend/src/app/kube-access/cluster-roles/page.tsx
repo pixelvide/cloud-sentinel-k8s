@@ -39,7 +39,7 @@ function ClusterRolesContent() {
         setLoading(true);
         setRoles([]);
         try {
-            const res = await fetch(`${API_URL}/kube/clusterroles?context=${selectedContext}`, { credentials: "include" });
+            const res = await fetch(`${API_URL}/kube/cluster-roles?context=${selectedContext}`, { credentials: "include" });
             if (res.status === 401) {
                 window.location.href = "/login";
                 return;

@@ -59,7 +59,7 @@ function DaemonSetsContent() {
         setLoading(true);
         setDaemonSets([]);
         try {
-            const res = await fetch(`${API_URL}/kube/daemonsets?context=${selectedContext}&namespace=${selectedNamespace}`, { credentials: "include" });
+            const res = await fetch(`${API_URL}/kube/daemon-sets?context=${selectedContext}&namespace=${selectedNamespace}`, { credentials: "include" });
             if (res.status === 401) {
                 window.location.href = "/login";
                 return;

@@ -58,7 +58,7 @@ function StatefulSetsContent() {
         setLoading(true);
         setStatefulSets([]);
         try {
-            const res = await fetch(`${API_URL}/kube/statefulsets?context=${selectedContext}&namespace=${selectedNamespace}`, { credentials: "include" });
+            const res = await fetch(`${API_URL}/kube/stateful-sets?context=${selectedContext}&namespace=${selectedNamespace}`, { credentials: "include" });
             if (res.status === 401) {
                 window.location.href = "/login";
                 return;

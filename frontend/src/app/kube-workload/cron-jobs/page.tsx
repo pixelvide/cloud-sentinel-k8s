@@ -46,7 +46,7 @@ function CronJobsContent() {
         setLoading(true);
         setCronjobs([]);
         try {
-            const res = await fetch(`${API_URL}/kube/cronjobs?context=${selectedContext}&namespace=${selectedNamespace}`, { credentials: "include" });
+            const res = await fetch(`${API_URL}/kube/cron-jobs?context=${selectedContext}&namespace=${selectedNamespace}`, { credentials: "include" });
             if (res.status === 401) {
                 window.location.href = "/login";
                 return;

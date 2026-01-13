@@ -55,7 +55,7 @@ function ReplicationControllersContent() {
         setLoading(true);
         setRcs([]);
         try {
-            const res = await fetch(`${API_URL}/kube/replicationcontrollers?context=${selectedContext}&namespace=${selectedNamespace}`, { credentials: "include" });
+            const res = await fetch(`${API_URL}/kube/replication-controllers?context=${selectedContext}&namespace=${selectedNamespace}`, { credentials: "include" });
             if (res.status === 401) {
                 window.location.href = "/login";
                 return;
