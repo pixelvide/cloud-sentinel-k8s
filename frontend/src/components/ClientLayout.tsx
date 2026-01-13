@@ -69,6 +69,11 @@ const PAGE_CONFIG: Record<string, { title: string; description: string; icon: an
         description: "Manage stateful applications",
         icon: Database
     },
+    "/replicasets": {
+        title: "ReplicaSets",
+        description: "Manage replica set workloads",
+        icon: Boxes
+    },
 };
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {

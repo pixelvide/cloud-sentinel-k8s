@@ -95,6 +95,7 @@ func main() {
 			kubeGroup.GET("/services", api.GetServices)
 			kubeGroup.GET("/ingresses", api.GetIngresses)
 			kubeGroup.GET("/deployments", api.GetDeployments)
+			kubeGroup.GET("/replicasets", api.GetReplicaSets)
 			kubeGroup.GET("/jobs", api.GetJobs)
 			kubeGroup.GET("/cronjobs", api.GetCronJobs)
 			kubeGroup.GET("/daemonsets", api.GetDaemonSets)

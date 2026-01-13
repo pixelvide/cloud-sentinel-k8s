@@ -183,6 +183,18 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
                                     <span className="font-medium text-sm">Deployments</span>
                                 </Button>
                             </Link>
+                            <Link href={getLinkHref("/replicasets")} className="block" onClick={onClose}>
+                                <Button
+                                    variant={isActive("/replicasets") ? "secondary" : "ghost"}
+                                    className={cn(
+                                        "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
+                                        isActive("/replicasets") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
+                                    )}
+                                >
+                                    <Layers className={cn("h-4 w-4", isActive("/replicasets") ? "text-primary" : "opacity-60")} />
+                                    <span className="font-medium text-sm">ReplicaSets</span>
+                                </Button>
+                            </Link>
                             <Link href={getLinkHref("/jobs")} className="block" onClick={onClose}>
                                 <Button
                                     variant={isActive("/jobs") ? "secondary" : "ghost"}
