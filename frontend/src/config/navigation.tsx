@@ -22,6 +22,8 @@ import {
     Network,
     Shield,
     Share2,
+    Link2,
+    UserCheck,
     AlertCircle,
     Settings,
     Cloud,
@@ -33,7 +35,7 @@ export interface NavigationItem {
     title: string;
     description: string;
     icon: any;
-    category?: 'Workloads' | 'Config' | 'Network' | 'Settings';
+    category?: 'Workloads' | 'Config' | 'Network' | 'Storage' | 'Access Control' | 'Settings';
     searchPlaceholder?: string;
     isClusterWide?: boolean;
     showHeader?: boolean;
@@ -296,6 +298,84 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
         icon: Share2,
         category: 'Network',
         searchPlaceholder: "Search port forwards...",
+        showHeader: true
+    },
+    // Storage
+    {
+        path: "/pvcs",
+        title: "Persistent Volume Claims",
+        description: "Manage storage requests",
+        icon: Database,
+        category: 'Storage',
+        searchPlaceholder: "Search PVCs...",
+        showHeader: true
+    },
+    {
+        path: "/pvs",
+        title: "Persistent Volumes",
+        description: "Manage cluster storage volumes",
+        icon: HardDrive,
+        category: 'Storage',
+        searchPlaceholder: "Search PVs...",
+        isClusterWide: true,
+        showHeader: true
+    },
+    {
+        path: "/storageclasses",
+        title: "Storage Classes",
+        description: "Manage storage provisioning",
+        icon: Layers,
+        category: 'Storage',
+        searchPlaceholder: "Search storage classes...",
+        isClusterWide: true,
+        showHeader: true
+    },
+    // Access Control
+    {
+        path: "/serviceaccounts",
+        title: "Service Accounts",
+        description: "Manage identity for processes",
+        icon: UserCheck,
+        category: 'Access Control',
+        searchPlaceholder: "Search service accounts...",
+        showHeader: true
+    },
+    {
+        path: "/clusterroles",
+        title: "Cluster Roles",
+        description: "Manage cluster-wide permissions",
+        icon: ShieldCheck,
+        category: 'Access Control',
+        searchPlaceholder: "Search cluster roles...",
+        isClusterWide: true,
+        showHeader: true
+    },
+    {
+        path: "/roles",
+        title: "Roles",
+        description: "Manage namespace permissions",
+        icon: Lock,
+        category: 'Access Control',
+        searchPlaceholder: "Search roles...",
+        showHeader: true
+    },
+    {
+        path: "/clusterrolebindings",
+        title: "Cluster Role Bindings",
+        description: "Manage cluster-wide role assignments",
+        icon: Link2,
+        category: 'Access Control',
+        searchPlaceholder: "Search cluster role bindings...",
+        isClusterWide: true,
+        showHeader: true
+    },
+    {
+        path: "/rolebindings",
+        title: "Role Bindings",
+        description: "Manage namespace role assignments",
+        icon: Link2,
+        category: 'Access Control',
+        searchPlaceholder: "Search role bindings...",
         showHeader: true
     },
     // Top-level Events

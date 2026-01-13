@@ -24,6 +24,8 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
     const [networkOpen, setNetworkOpen] = useState(false);
     const [workloadsOpen, setWorkloadsOpen] = useState(false);
     const [configOpen, setConfigOpen] = useState(false);
+    const [storageOpen, setStorageOpen] = useState(false);
+    const [accessOpen, setAccessOpen] = useState(false);
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -101,7 +103,7 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
 
                 <nav className="flex-1 px-3 space-y-1.5 overflow-y-auto">
                     {/* Top Level Items (No Category) */}
-                    {NAVIGATION_CONFIG.filter(item => !item.category && item.path !== "/events").map((item) => {
+                    {NAVIGATION_CONFIG.filter(item => !item.category && item.path !== "/events" && item.path !== "/namespaces").map((item) => {
                         const Icon = item.icon;
                         return (
                             <Link key={item.path} href={getLinkHref(item.path)} className="block" onClick={onClose}>
@@ -230,6 +232,62 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
                         </div>
                     )}
 
+                    {/* Category: Storage */}
+                    <Button
+                        variant="ghost"
+                        className="w-full justify-between gap-3 h-11 px-4 mt-1 hover:bg-white/10 hover:text-white"
+                        onClick={() => setStorageOpen(!storageOpen)}
+                    >
+                        <div className="flex items-center gap-3">
+                            {(() => {
+                                const Icon = NAVIGATION_CONFIG.find(i => i.path === "/pvcs")?.icon;
+                                return Icon ? <Icon className="h-4 w-4 opacity-60" /> : null;
+                            })()}
+                            <span className="font-medium text-sm">Storage</span>
+                        </div>
+                        <ChevronDown className={cn("h-4 w-4 opacity-40 transition-transform", storageOpen && "rotate-180")} />
+                    </Button>
+                    {storageOpen && (
+                        <div className="ml-4 space-y-1">
+                            {NAVIGATION_CONFIG.filter(item => item.category === 'Storage').map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <Link key={item.path} href={getLinkHref(item.path)} className="block" onClick={onClose}>
+                                        <Button
+                                            variant={isActive(item.path) ? "secondary" : "ghost"}
+                                            className={cn(
+                                                "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
+                                                isActive(item.path) ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
+                                            )}
+                                        >
+                                            <Icon className={cn("h-4 w-4", isActive(item.path) ? "text-primary" : "opacity-60")} />
+                                            <span className="font-medium text-sm">{item.title}</span>
+                                        </Button>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {/* Namespaces (Moved) */}
+                    {NAVIGATION_CONFIG.filter(item => item.path === "/namespaces").map((item) => {
+                        const Icon = item.icon;
+                        return (
+                            <Link key={item.path} href={getLinkHref(item.path)} className="block" onClick={onClose}>
+                                <Button
+                                    variant={isActive(item.path) ? "secondary" : "ghost"}
+                                    className={cn(
+                                        "w-full justify-start gap-3 h-11 px-4 mt-1 transition-all duration-200",
+                                        isActive(item.path) ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
+                                    )}
+                                >
+                                    <Icon className={cn("h-4 w-4", isActive(item.path) ? "text-primary" : "opacity-60")} />
+                                    <span className="font-medium text-sm">{item.title}</span>
+                                </Button>
+                            </Link>
+                        );
+                    })}
+
                     {/* Events */}
                     {NAVIGATION_CONFIG.filter(item => item.path === "/events").map((item) => {
                         const Icon = item.icon;
@@ -248,6 +306,43 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
                             </Link>
                         );
                     })}
+
+                    {/* Category: Access Control */}
+                    <Button
+                        variant="ghost"
+                        className="w-full justify-between gap-3 h-11 px-4 mt-1 hover:bg-white/10 hover:text-white"
+                        onClick={() => setAccessOpen(!accessOpen)}
+                    >
+                        <div className="flex items-center gap-3">
+                            {(() => {
+                                const Icon = NAVIGATION_CONFIG.find(i => i.path === "/serviceaccounts")?.icon;
+                                return Icon ? <Icon className="h-4 w-4 opacity-60" /> : null;
+                            })()}
+                            <span className="font-medium text-sm">Access Control</span>
+                        </div>
+                        <ChevronDown className={cn("h-4 w-4 opacity-40 transition-transform", accessOpen && "rotate-180")} />
+                    </Button>
+                    {accessOpen && (
+                        <div className="ml-4 space-y-1">
+                            {NAVIGATION_CONFIG.filter(item => item.category === 'Access Control').map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <Link key={item.path} href={getLinkHref(item.path)} className="block" onClick={onClose}>
+                                        <Button
+                                            variant={isActive(item.path) ? "secondary" : "ghost"}
+                                            className={cn(
+                                                "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
+                                                isActive(item.path) ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
+                                            )}
+                                        >
+                                            <Icon className={cn("h-4 w-4", isActive(item.path) ? "text-primary" : "opacity-60")} />
+                                            <span className="font-medium text-sm">{item.title}</span>
+                                        </Button>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    )}
 
                     {/* Category: Settings */}
                     <Button
