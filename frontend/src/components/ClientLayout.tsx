@@ -3,127 +3,17 @@
 import { Sidebar } from "@/components/Sidebar";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Menu, LayoutDashboard, Box, Grid, Globe, HardDrive, Layers, PlayCircle, Clock, Boxes, AlertCircle, RefreshCw, Server, Database, History, Cloud, FileCode, Lock, Scale, Zap, Activity } from "lucide-react";
+import { Menu, LayoutDashboard, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClusterContextSelector } from "@/components/ClusterContextSelector";
 import { GlobalSearch } from "@/components/GlobalSearch";
+import { NAVIGATION_CONFIG } from "@/config/navigation";
 
-// Page Configuration
-const PAGE_CONFIG: Record<string, { title: string; description: string; icon: any; searchPlaceholder?: string }> = {
-    "/": {
-        title: "Dashboard",
-        description: "Cluster overview and health status",
-        icon: LayoutDashboard
-    },
-    "/pods": {
-        title: "Pods",
-        description: "Manage workload instances",
-        icon: Box,
-        searchPlaceholder: "Search pods..."
-    },
-    "/deployments": {
-        title: "Deployments",
-        description: "Manage application deployments",
-        icon: Boxes,
-        searchPlaceholder: "Search deployments..."
-    },
-    "/jobs": {
-        title: "Jobs",
-        description: "Manage batch jobs",
-        icon: PlayCircle,
-        searchPlaceholder: "Search jobs..."
-    },
-    "/cronjobs": {
-        title: "CronJobs",
-        description: "Manage scheduled jobs",
-        icon: Clock,
-        searchPlaceholder: "Search cronjobs..."
-    },
-    "/services": {
-        title: "Services",
-        description: "Manage networking endpoints",
-        icon: Grid,
-        searchPlaceholder: "Search services..."
-    },
-    "/ingresses": {
-        title: "Ingresses",
-        description: "Manage external access",
-        icon: Globe,
-        searchPlaceholder: "Search ingresses..."
-    },
-    "/nodes": {
-        title: "Nodes",
-        description: "Cluster nodes and capacity",
-        icon: HardDrive,
-        searchPlaceholder: "Search nodes..."
-    },
-    "/namespaces": {
-        title: "Namespaces",
-        description: "Manage cluster namespaces",
-        icon: Layers,
-        searchPlaceholder: "Search namespaces..."
-    },
-    "/events": {
-        title: "Events",
-        description: "Cluster events and alerts",
-        icon: AlertCircle,
-        searchPlaceholder: "Search events..."
-    },
-    "/daemonsets": {
-        title: "DaemonSets",
-        description: "Manage daemon set workloads",
-        icon: Server,
-        searchPlaceholder: "Search daemonsets..."
-    },
-    "/statefulsets": {
-        title: "StatefulSets",
-        description: "Manage stateful applications",
-        icon: Database,
-        searchPlaceholder: "Search statefulsets..."
-    },
-    "/replicasets": {
-        title: "ReplicaSets",
-        description: "Manage replica set workloads",
-        icon: Boxes,
-        searchPlaceholder: "Search replicasets..."
-    },
-    "/replicationcontrollers": {
-        title: "Replication Controllers",
-        description: "Legacy workload management",
-        icon: Boxes,
-        searchPlaceholder: "Search replication controllers..."
-    },
-    "/configmaps": {
-        title: "Config Maps",
-        description: "Manage configuration data",
-        icon: FileCode,
-        searchPlaceholder: "Search config maps..."
-    },
-    "/secrets": {
-        title: "Secrets",
-        description: "Manage sensitive information",
-        icon: Lock,
-        searchPlaceholder: "Search secrets..."
-    },
-    "/resourcequotas": {
-        title: "Resource Quotas",
-        description: "Manage resource limits",
-        icon: Scale,
-        searchPlaceholder: "Search resource quotas..."
-    },
-    "/limitranges": {
-        title: "Limit Ranges",
-        description: "Manage container resource limits",
-        icon: Zap,
-        searchPlaceholder: "Search limit ranges..."
-    },
-    "/hpa": {
-        title: "HPA",
-        description: "Horizontal Pod Autoscalers",
-        icon: Activity,
-        searchPlaceholder: "Search HPA..."
-    },
-};
+// Derive Page Configuration from Navigation Config
+const PAGE_CONFIG = NAVIGATION_CONFIG.reduce((acc, item) => {
+    acc[item.path] = item;
+    return acc;
+}, {} as Record<string, typeof NAVIGATION_CONFIG[0]>);
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -197,11 +87,14 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     </header>
                 )}
 
-                {/* Main Header with Global Context Selector (Visible on Context Pages) */}
-                {isContextPage && currentPage && (
+                {/* Main Header with Global Context Selector (Visible if showHeader is true) */}
+                {currentPage && currentPage.showHeader !== false && (
                     <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0 px-4 py-3 md:px-8 md:py-4 border-b bg-background/50 backdrop-blur-sm z-20">
                         <div className="flex items-center gap-3 shrink-0">
-                            <currentPage.icon className="h-5 w-5 text-primary mt-1" />
+                            {(() => {
+                                const Icon = currentPage.icon;
+                                return <Icon className="h-5 w-5 text-primary mt-1" />;
+                            })()}
                             <div className="flex flex-col">
                                 <h1 className="text-lg font-semibold tracking-tight leading-none">
                                     {currentPage.title}

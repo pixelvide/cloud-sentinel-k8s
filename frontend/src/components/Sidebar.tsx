@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
-import { Home, Settings, LogOut, LayoutDashboard, X, Cloud, ChevronDown, Layers, HardDrive, Box, Grid, Globe, Network, PlayCircle, Clock, Boxes, AlertCircle, Server, Database, History, FileCode, Lock, Scale, Zap, Activity } from "lucide-react";
+import { X, LayoutDashboard, ChevronDown, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { NAVIGATION_CONFIG, NavigationItem } from "@/config/navigation";
 
 interface UserProfile {
     id: number;
@@ -99,334 +100,189 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
                 </div>
 
                 <nav className="flex-1 px-3 space-y-1.5 overflow-y-auto">
-                    <Link href={getLinkHref("/")} className="block" onClick={onClose}>
-                        <Button
-                            variant={isActive("/") ? "secondary" : "ghost"}
-                            className={cn(
-                                "w-full justify-start gap-3 h-11 px-4 transition-all duration-200",
-                                isActive("/") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
-                            )}
-                        >
-                            <Home className={cn("h-4 w-4", isActive("/") ? "text-primary" : "opacity-60")} />
-                            <span className="font-medium text-sm">Dashboard</span>
-                        </Button>
-                    </Link>
-                    <Link href={getLinkHref("/namespaces")} className="block" onClick={onClose}>
-                        <Button
-                            variant={isActive("/namespaces") ? "secondary" : "ghost"}
-                            className={cn(
-                                "w-full justify-start gap-3 h-11 px-4 transition-all duration-200",
-                                isActive("/namespaces") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
-                            )}
-                        >
-                            <Layers className={cn("h-4 w-4", isActive("/namespaces") ? "text-primary" : "opacity-60")} />
-                            <span className="font-medium text-sm">Namespaces</span>
-                        </Button>
-                    </Link>
-                    <Link href={getLinkHref("/nodes")} className="block" onClick={onClose}>
-                        <Button
-                            variant={isActive("/nodes") ? "secondary" : "ghost"}
-                            className={cn(
-                                "w-full justify-start gap-3 h-11 px-4 transition-all duration-200",
-                                isActive("/nodes") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
-                            )}
-                        >
-                            <HardDrive className={cn("h-4 w-4", isActive("/nodes") ? "text-primary" : "opacity-60")} />
-                            <span className="font-medium text-sm">Nodes</span>
-                        </Button>
-                    </Link>
+                    {/* Top Level Items (No Category) */}
+                    {NAVIGATION_CONFIG.filter(item => !item.category && item.path !== "/events").map((item) => {
+                        const Icon = item.icon;
+                        return (
+                            <Link key={item.path} href={getLinkHref(item.path)} className="block" onClick={onClose}>
+                                <Button
+                                    variant={isActive(item.path) ? "secondary" : "ghost"}
+                                    className={cn(
+                                        "w-full justify-start gap-3 h-11 px-4 transition-all duration-200",
+                                        isActive(item.path) ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
+                                    )}
+                                >
+                                    <Icon className={cn("h-4 w-4", isActive(item.path) ? "text-primary" : "opacity-60")} />
+                                    <span className="font-medium text-sm">{item.title}</span>
+                                </Button>
+                            </Link>
+                        );
+                    })}
+
+                    {/* Category: Workloads */}
                     <Button
                         variant="ghost"
                         className="w-full justify-between gap-3 h-11 px-4 mt-1 hover:bg-white/10 hover:text-white"
                         onClick={() => setWorkloadsOpen(!workloadsOpen)}
                     >
                         <div className="flex items-center gap-3">
-                            <Boxes className="h-4 w-4 opacity-60" />
+                            {(() => {
+                                const Icon = NAVIGATION_CONFIG.find(i => i.path === "/pods")?.icon;
+                                return Icon ? <Icon className="h-4 w-4 opacity-60" /> : null;
+                            })()}
                             <span className="font-medium text-sm">Workloads</span>
                         </div>
                         <ChevronDown className={cn("h-4 w-4 opacity-40 transition-transform", workloadsOpen && "rotate-180")} />
                     </Button>
                     {workloadsOpen && (
                         <div className="ml-4 space-y-1">
-                            <Link href={getLinkHref("/pods")} className="block" onClick={onClose}>
-                                <Button
-                                    variant={isActive("/pods") ? "secondary" : "ghost"}
-                                    className={cn(
-                                        "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/pods") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
-                                    )}
-                                >
-                                    <Box className={cn("h-4 w-4", isActive("/pods") ? "text-primary" : "opacity-60")} />
-                                    <span className="font-medium text-sm">Pods</span>
-                                </Button>
-                            </Link>
-                            <Link href={getLinkHref("/deployments")} className="block" onClick={onClose}>
-                                <Button
-                                    variant={isActive("/deployments") ? "secondary" : "ghost"}
-                                    className={cn(
-                                        "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/deployments") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
-                                    )}
-                                >
-                                    <Layers className={cn("h-4 w-4", isActive("/deployments") ? "text-primary" : "opacity-60")} />
-                                    <span className="font-medium text-sm">Deployments</span>
-                                </Button>
-                            </Link>
-
-                            <Link href={getLinkHref("/daemonsets")} className="block" onClick={onClose}>
-                                <Button
-                                    variant={isActive("/daemonsets") ? "secondary" : "ghost"}
-                                    className={cn(
-                                        "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/daemonsets") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
-                                    )}
-                                >
-                                    <Server className={cn("h-4 w-4", isActive("/daemonsets") ? "text-primary" : "opacity-60")} />
-                                    <span className="font-medium text-sm">DaemonSets</span>
-                                </Button>
-                            </Link>
-                            <Link href={getLinkHref("/statefulsets")} className="block" onClick={onClose}>
-                                <Button
-                                    variant={isActive("/statefulsets") ? "secondary" : "ghost"}
-                                    className={cn(
-                                        "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/statefulsets") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
-                                    )}
-                                >
-                                    <Database className={cn("h-4 w-4", isActive("/statefulsets") ? "text-primary" : "opacity-60")} />
-                                    <span className="font-medium text-sm">StatefulSets</span>
-                                </Button>
-                            </Link>
-                            <Link href={getLinkHref("/replicasets")} className="block" onClick={onClose}>
-                                <Button
-                                    variant={isActive("/replicasets") ? "secondary" : "ghost"}
-                                    className={cn(
-                                        "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/replicasets") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
-                                    )}
-                                >
-                                    <Layers className={cn("h-4 w-4", isActive("/replicasets") ? "text-primary" : "opacity-60")} />
-                                    <span className="font-medium text-sm">ReplicaSets</span>
-                                </Button>
-                            </Link>
-                            <Link href={getLinkHref("/replicationcontrollers")} className="block" onClick={onClose}>
-                                <Button
-                                    variant={isActive("/replicationcontrollers") ? "secondary" : "ghost"}
-                                    className={cn(
-                                        "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/replicationcontrollers") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
-                                    )}
-                                >
-                                    <Boxes className={cn("h-4 w-4", isActive("/replicationcontrollers") ? "text-primary" : "opacity-60")} />
-                                    <span className="font-medium text-sm">Replication Controllers</span>
-                                </Button>
-                            </Link>
-                            <Link href={getLinkHref("/jobs")} className="block" onClick={onClose}>
-                                <Button
-                                    variant={isActive("/jobs") ? "secondary" : "ghost"}
-                                    className={cn(
-                                        "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/jobs") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
-                                    )}
-                                >
-                                    <PlayCircle className={cn("h-4 w-4", isActive("/jobs") ? "text-primary" : "opacity-60")} />
-                                    <span className="font-medium text-sm">Jobs</span>
-                                </Button>
-                            </Link>
-                            <Link href={getLinkHref("/cronjobs")} className="block" onClick={onClose}>
-                                <Button
-                                    variant={isActive("/cronjobs") ? "secondary" : "ghost"}
-                                    className={cn(
-                                        "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/cronjobs") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
-                                    )}
-                                >
-                                    <Clock className={cn("h-4 w-4", isActive("/cronjobs") ? "text-primary" : "opacity-60")} />
-                                    <span className="font-medium text-sm">CronJobs</span>
-                                </Button>
-                            </Link>
+                            {NAVIGATION_CONFIG.filter(item => item.category === 'Workloads').map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <Link key={item.path} href={getLinkHref(item.path)} className="block" onClick={onClose}>
+                                        <Button
+                                            variant={isActive(item.path) ? "secondary" : "ghost"}
+                                            className={cn(
+                                                "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
+                                                isActive(item.path) ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
+                                            )}
+                                        >
+                                            <Icon className={cn("h-4 w-4", isActive(item.path) ? "text-primary" : "opacity-60")} />
+                                            <span className="font-medium text-sm">{item.title}</span>
+                                        </Button>
+                                    </Link>
+                                );
+                            })}
                         </div>
-
                     )}
 
-                    {/* Config Menu */}
+                    {/* Category: Config */}
                     <Button
                         variant="ghost"
                         className="w-full justify-between gap-3 h-11 px-4 mt-1 hover:bg-white/10 hover:text-white"
                         onClick={() => setConfigOpen(!configOpen)}
                     >
                         <div className="flex items-center gap-3">
-                            <FileCode className="h-4 w-4 opacity-60" />
+                            {(() => {
+                                const Icon = NAVIGATION_CONFIG.find(i => i.path === "/configmaps")?.icon;
+                                return Icon ? <Icon className="h-4 w-4 opacity-60" /> : null;
+                            })()}
                             <span className="font-medium text-sm">Config</span>
                         </div>
                         <ChevronDown className={cn("h-4 w-4 opacity-40 transition-transform", configOpen && "rotate-180")} />
                     </Button>
                     {configOpen && (
                         <div className="ml-4 space-y-1">
-                            <Link href={getLinkHref("/configmaps")} className="block" onClick={onClose}>
-                                <Button
-                                    variant={isActive("/configmaps") ? "secondary" : "ghost"}
-                                    className={cn(
-                                        "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/configmaps") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
-                                    )}
-                                >
-                                    <FileCode className={cn("h-4 w-4", isActive("/configmaps") ? "text-primary" : "opacity-60")} />
-                                    <span className="font-medium text-sm">Config Maps</span>
-                                </Button>
-                            </Link>
-                            <Link href={getLinkHref("/secrets")} className="block" onClick={onClose}>
-                                <Button
-                                    variant={isActive("/secrets") ? "secondary" : "ghost"}
-                                    className={cn(
-                                        "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/secrets") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
-                                    )}
-                                >
-                                    <Lock className={cn("h-4 w-4", isActive("/secrets") ? "text-primary" : "opacity-60")} />
-                                    <span className="font-medium text-sm">Secrets</span>
-                                </Button>
-                            </Link>
-                            <Link href={getLinkHref("/resourcequotas")} className="block" onClick={onClose}>
-                                <Button
-                                    variant={isActive("/resourcequotas") ? "secondary" : "ghost"}
-                                    className={cn(
-                                        "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/resourcequotas") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
-                                    )}
-                                >
-                                    <Scale className={cn("h-4 w-4", isActive("/resourcequotas") ? "text-primary" : "opacity-60")} />
-                                    <span className="font-medium text-sm">Resource Quotas</span>
-                                </Button>
-                            </Link>
-                            <Link href={getLinkHref("/limitranges")} className="block" onClick={onClose}>
-                                <Button
-                                    variant={isActive("/limitranges") ? "secondary" : "ghost"}
-                                    className={cn(
-                                        "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/limitranges") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
-                                    )}
-                                >
-                                    <Zap className={cn("h-4 w-4", isActive("/limitranges") ? "text-primary" : "opacity-60")} />
-                                    <span className="font-medium text-sm">Limit Ranges</span>
-                                </Button>
-                            </Link>
-                            <Link href={getLinkHref("/hpa")} className="block" onClick={onClose}>
-                                <Button
-                                    variant={isActive("/hpa") ? "secondary" : "ghost"}
-                                    className={cn(
-                                        "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/hpa") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
-                                    )}
-                                >
-                                    <Activity className={cn("h-4 w-4", isActive("/hpa") ? "text-primary" : "opacity-60")} />
-                                    <span className="font-medium text-sm">HPA</span>
-                                </Button>
-                            </Link>
+                            {NAVIGATION_CONFIG.filter(item => item.category === 'Config').map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <Link key={item.path} href={getLinkHref(item.path)} className="block" onClick={onClose}>
+                                        <Button
+                                            variant={isActive(item.path) ? "secondary" : "ghost"}
+                                            className={cn(
+                                                "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
+                                                isActive(item.path) ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
+                                            )}
+                                        >
+                                            <Icon className={cn("h-4 w-4", isActive(item.path) ? "text-primary" : "opacity-60")} />
+                                            <span className="font-medium text-sm">{item.title}</span>
+                                        </Button>
+                                    </Link>
+                                );
+                            })}
                         </div>
                     )}
 
+                    {/* Category: Network */}
                     <Button
                         variant="ghost"
                         className="w-full justify-between gap-3 h-11 px-4 mt-1 hover:bg-white/10 hover:text-white"
                         onClick={() => setNetworkOpen(!networkOpen)}
                     >
                         <div className="flex items-center gap-3">
-                            <Network className="h-4 w-4 opacity-60" />
+                            {(() => {
+                                const Icon = NAVIGATION_CONFIG.find(i => i.path === "/services")?.icon;
+                                return Icon ? <Icon className="h-4 w-4 opacity-60" /> : null;
+                            })()}
                             <span className="font-medium text-sm">Network</span>
                         </div>
                         <ChevronDown className={cn("h-4 w-4 opacity-40 transition-transform", networkOpen && "rotate-180")} />
                     </Button>
                     {networkOpen && (
                         <div className="ml-4 space-y-1">
-                            <Link href={getLinkHref("/services")} className="block" onClick={onClose}>
-                                <Button
-                                    variant={isActive("/services") ? "secondary" : "ghost"}
-                                    className={cn(
-                                        "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/services") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
-                                    )}
-                                >
-                                    <Grid className={cn("h-4 w-4", isActive("/services") ? "text-primary" : "opacity-60")} />
-                                    <span className="font-medium text-sm">Services</span>
-                                </Button>
-                            </Link>
-                            <Link href={getLinkHref("/ingresses")} className="block" onClick={onClose}>
-                                <Button
-                                    variant={isActive("/ingresses") ? "secondary" : "ghost"}
-                                    className={cn(
-                                        "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/ingresses") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
-                                    )}
-                                >
-                                    <Globe className={cn("h-4 w-4", isActive("/ingresses") ? "text-primary" : "opacity-60")} />
-                                    <span className="font-medium text-sm">Ingresses</span>
-                                </Button>
-                            </Link>
+                            {NAVIGATION_CONFIG.filter(item => item.category === 'Network').map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <Link key={item.path} href={getLinkHref(item.path)} className="block" onClick={onClose}>
+                                        <Button
+                                            variant={isActive(item.path) ? "secondary" : "ghost"}
+                                            className={cn(
+                                                "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
+                                                isActive(item.path) ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
+                                            )}
+                                        >
+                                            <Icon className={cn("h-4 w-4", isActive(item.path) ? "text-primary" : "opacity-60")} />
+                                            <span className="font-medium text-sm">{item.title}</span>
+                                        </Button>
+                                    </Link>
+                                );
+                            })}
                         </div>
                     )}
-                    <Link href={getLinkHref("/events")} className="block" onClick={onClose}>
-                        <Button
-                            variant={isActive("/events") ? "secondary" : "ghost"}
-                            className={cn(
-                                "w-full justify-start gap-3 h-11 px-4 mt-1 transition-all duration-200",
-                                isActive("/events") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
-                            )}
-                        >
-                            <AlertCircle className={cn("h-4 w-4", isActive("/events") ? "text-primary" : "opacity-60")} />
-                            <span className="font-medium text-sm">Events</span>
-                        </Button>
-                    </Link>
+
+                    {/* Events */}
+                    {NAVIGATION_CONFIG.filter(item => item.path === "/events").map((item) => {
+                        const Icon = item.icon;
+                        return (
+                            <Link key={item.path} href={getLinkHref(item.path)} className="block" onClick={onClose}>
+                                <Button
+                                    variant={isActive(item.path) ? "secondary" : "ghost"}
+                                    className={cn(
+                                        "w-full justify-start gap-3 h-11 px-4 mt-1 transition-all duration-200",
+                                        isActive(item.path) ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
+                                    )}
+                                >
+                                    <Icon className={cn("h-4 w-4", isActive(item.path) ? "text-primary" : "opacity-60")} />
+                                    <span className="font-medium text-sm">{item.title}</span>
+                                </Button>
+                            </Link>
+                        );
+                    })}
+
+                    {/* Category: Settings */}
                     <Button
                         variant="ghost"
                         className="w-full justify-between gap-3 h-11 px-4 mt-4 hover:bg-white/10 hover:text-white"
                         onClick={() => setSettingsOpen(!settingsOpen)}
                     >
                         <div className="flex items-center gap-3">
-                            <Settings className="h-4 w-4 opacity-60" />
+                            {(() => {
+                                const Icon = NAVIGATION_CONFIG.find(i => i.path === "/settings/gitlab")?.icon;
+                                return Icon ? <Icon className="h-4 w-4 opacity-60" /> : null;
+                            })()}
                             <span className="font-medium text-sm">Settings</span>
                         </div>
                         <ChevronDown className={cn("h-4 w-4 opacity-40 transition-transform", settingsOpen && "rotate-180")} />
                     </Button>
                     {settingsOpen && (
                         <div className="ml-4 space-y-1">
-                            <Link href="/settings/gitlab" className="block" onClick={onClose}>
-                                <Button
-                                    variant={isActive("/settings/gitlab") ? "secondary" : "ghost"}
-                                    className={cn(
-                                        "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/settings/gitlab") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
-                                    )}
-                                >
-                                    <Settings className={cn("h-4 w-4", isActive("/settings/gitlab") ? "text-primary" : "opacity-60")} />
-                                    <span className="font-medium text-sm">GitLab Settings</span>
-                                </Button>
-                            </Link>
-                            <Link href="/settings/clusters" className="block" onClick={onClose}>
-                                <Button
-                                    variant={isActive("/settings/clusters") ? "secondary" : "ghost"}
-                                    className={cn(
-                                        "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/settings/clusters") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
-                                    )}
-                                >
-                                    <Cloud className={cn("h-4 w-4", isActive("/settings/clusters") ? "text-primary" : "opacity-60")} />
-                                    <span className="font-medium text-sm">Cluster Settings</span>
-                                </Button>
-                            </Link>
-
-                            <Link href="/settings/audit-logs" className="block" onClick={onClose}>
-                                <Button
-                                    variant={isActive("/settings/audit-logs") ? "secondary" : "ghost"}
-                                    className={cn(
-                                        "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
-                                        isActive("/settings/audit-logs") ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
-                                    )}
-                                >
-                                    <History className={cn("h-4 w-4", isActive("/settings/audit-logs") ? "text-primary" : "opacity-60")} />
-                                    <span className="font-medium text-sm">Audit Logs</span>
-                                </Button>
-                            </Link>
+                            {NAVIGATION_CONFIG.filter(item => item.category === 'Settings').map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <Link key={item.path} href={item.path} className="block" onClick={onClose}>
+                                        <Button
+                                            variant={isActive(item.path) ? "secondary" : "ghost"}
+                                            className={cn(
+                                                "w-full justify-start gap-3 h-10 px-4 transition-all duration-200",
+                                                isActive(item.path) ? "bg-sidebar-accent text-white shadow-sm" : "hover:bg-white/10 hover:text-white"
+                                            )}
+                                        >
+                                            <Icon className={cn("h-4 w-4", isActive(item.path) ? "text-primary" : "opacity-60")} />
+                                            <span className="font-medium text-sm">{item.title}</span>
+                                        </Button>
+                                    </Link>
+                                );
+                            })}
                         </div>
                     )}
                 </nav>
