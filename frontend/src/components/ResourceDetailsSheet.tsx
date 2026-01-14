@@ -21,7 +21,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { KubeProperties } from "@/components/KubeProperties";
 import { Button } from "@/components/ui/button";
-import { Terminal as TerminalIcon, FileText, Ban, Trash2, CheckCircle2 } from "lucide-react";
+import { Terminal as TerminalIcon, FileText, Ban, Trash2, CheckCircle2, Edit } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { LogViewerModal } from "@/components/LogViewerModal";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
@@ -77,6 +78,8 @@ export function ResourceDetailsSheet({
         onConfirm: () => { },
     });
     const [error, setError] = useState("");
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [editManifest, setEditManifest] = useState("");
 
     const [scopes, setScopes] = useState<Record<string, string>>({});
     const [logResource, setLogResource] = useState<{
@@ -284,6 +287,20 @@ export function ResourceDetailsSheet({
                             <Button
                                 variant="outline"
                                 size="sm"
+                                className="h-8 rounded-lg gap-2 text-xs font-semibold bg-background shadow-sm border-border text-foreground hover:bg-accent"
+                                disabled={actioning || !details}
+                                onClick={() => {
+                                    setEditManifest(details?.manifest || "");
+                                    setIsEditDialogOpen(true);
+                                }}
+                            >
+                                <Edit className="h-3.5 w-3.5 text-muted-foreground" />
+                                Edit
+                            </Button>
+
+                            <Button
+                                variant="outline"
+                                size="sm"
                                 className="h-8 rounded-lg gap-2 text-xs font-semibold bg-background shadow-sm border-border text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
                                 disabled={actioning || !details}
                                 onClick={() => {
@@ -431,6 +448,57 @@ export function ResourceDetailsSheet({
                 confirmVariant={confirmConfig.confirmVariant}
                 loading={actioning}
             />
+
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 gap-0 border-border bg-background">
+                    <DialogHeader className="p-6 border-b border-border shrink-0">
+                        <DialogTitle className="text-xl font-bold font-mono flex items-center gap-2">
+                            <Edit className="h-5 w-5" />
+                            Edit {kind}: {name}
+                        </DialogTitle>
+                        <DialogDescription className="font-mono text-xs">
+                            Modify the YAML manifest below.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex-1 min-h-0 p-0 overflow-hidden bg-muted/30">
+                        <Textarea
+                            value={editManifest}
+                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditManifest(e.target.value)}
+                            className="w-full h-full p-6 font-mono text-sm bg-transparent border-none focus-visible:ring-0 resize-none overflow-auto"
+                            spellCheck={false}
+                        />
+                    </div>
+                    <DialogFooter className="p-4 border-t border-border bg-background/50 backdrop-blur-sm shrink-0">
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsEditDialogOpen(false)}
+                            disabled={actioning}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={async () => {
+                                setActioning(true);
+                                try {
+                                    await api.put(`/kube/resource?context=${context}&namespace=${namespace}&name=${name}&kind=${kind}`, {
+                                        manifest: editManifest
+                                    });
+                                    toast.success(`${kind} ${name} updated successfully`);
+                                    setIsEditDialogOpen(false);
+                                    fetchDetails();
+                                } catch (err: any) {
+                                    toast.error(err.message || "Update failed");
+                                } finally {
+                                    setActioning(false);
+                                }
+                            }}
+                            disabled={actioning}
+                        >
+                            {actioning ? "Saving..." : "Save Changes"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </Sheet >
     );
 }

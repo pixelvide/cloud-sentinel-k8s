@@ -8,48 +8,60 @@ import (
 	"cloud-sentinel-k8s/models"
 
 	"github.com/gin-gonic/gin"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/restmapper"
 	"sigs.k8s.io/yaml"
 )
 
-// SupportedResources defines the kinds supported and their scope (Cluster vs Namespace)
-var SupportedResources = map[string]string{
-	"Pod":                            "Namespace",
-	"Deployment":                     "Namespace",
-	"ReplicaSet":                     "Namespace",
-	"StatefulSet":                    "Namespace",
-	"DaemonSet":                      "Namespace",
-	"Job":                            "Namespace",
-	"CronJob":                        "Namespace",
-	"ReplicationController":          "Namespace",
-	"Service":                        "Namespace",
-	"Endpoints":                      "Namespace",
-	"Ingress":                        "Namespace",
-	"NetworkPolicy":                  "Namespace",
-	"ConfigMap":                      "Namespace",
-	"Secret":                         "Namespace",
-	"ResourceQuota":                  "Namespace",
-	"LimitRange":                     "Namespace",
-	"HorizontalPodAutoscaler":        "Namespace",
-	"PodDisruptionBudget":            "Namespace",
-	"Lease":                          "Namespace",
-	"ServiceAccount":                 "Namespace",
-	"Role":                           "Namespace",
-	"RoleBinding":                    "Namespace",
-	"Node":                           "Cluster",
-	"Namespace":                      "Cluster",
-	"PersistentVolume":               "Cluster",
-	"PersistentVolumeClaim":          "Namespace",
-	"StorageClass":                   "Cluster",
-	"ClusterRole":                    "Cluster",
-	"ClusterRoleBinding":             "Cluster",
-	"PriorityClass":                  "Cluster",
-	"RuntimeClass":                   "Cluster",
-	"IngressClass":                   "Cluster",
-	"MutatingWebhookConfiguration":   "Cluster",
-	"ValidatingWebhookConfiguration": "Cluster",
-	"Event":                          "Namespace",
+type ResourceInfo struct {
+	Group    string `json:"group"`
+	Version  string `json:"version"`
+	Resource string `json:"resource"`
+	Scope    string `json:"scope"`
+	Kind     string `json:"kind"`
+}
+
+// SupportedResources defines the kinds supported and their GVR info
+var SupportedResources = map[string]ResourceInfo{
+	"Pod":                            {Group: "", Version: "v1", Resource: "pods", Scope: "Namespace", Kind: "Pod"},
+	"Deployment":                     {Group: "apps", Version: "v1", Resource: "deployments", Scope: "Namespace", Kind: "Deployment"},
+	"ReplicaSet":                     {Group: "apps", Version: "v1", Resource: "replicasets", Scope: "Namespace", Kind: "ReplicaSet"},
+	"StatefulSet":                    {Group: "apps", Version: "v1", Resource: "statefulsets", Scope: "Namespace", Kind: "StatefulSet"},
+	"DaemonSet":                      {Group: "apps", Version: "v1", Resource: "daemonsets", Scope: "Namespace", Kind: "DaemonSet"},
+	"Job":                            {Group: "batch", Version: "v1", Resource: "jobs", Scope: "Namespace", Kind: "Job"},
+	"CronJob":                        {Group: "batch", Version: "v1", Resource: "cronjobs", Scope: "Namespace", Kind: "CronJob"},
+	"ReplicationController":          {Group: "", Version: "v1", Resource: "replicationcontrollers", Scope: "Namespace", Kind: "ReplicationController"},
+	"Service":                        {Group: "", Version: "v1", Resource: "services", Scope: "Namespace", Kind: "Service"},
+	"Endpoints":                      {Group: "", Version: "v1", Resource: "endpoints", Scope: "Namespace", Kind: "Endpoints"},
+	"Ingress":                        {Group: "networking.k8s.io", Version: "v1", Resource: "ingresses", Scope: "Namespace", Kind: "Ingress"},
+	"NetworkPolicy":                  {Group: "networking.k8s.io", Version: "v1", Resource: "networkpolicies", Scope: "Namespace", Kind: "NetworkPolicy"},
+	"ConfigMap":                      {Group: "", Version: "v1", Resource: "configmaps", Scope: "Namespace", Kind: "ConfigMap"},
+	"Secret":                         {Group: "", Version: "v1", Resource: "secrets", Scope: "Namespace", Kind: "Secret"},
+	"ResourceQuota":                  {Group: "", Version: "v1", Resource: "resourcequotas", Scope: "Namespace", Kind: "ResourceQuota"},
+	"LimitRange":                     {Group: "", Version: "v1", Resource: "limitranges", Scope: "Namespace", Kind: "LimitRange"},
+	"HorizontalPodAutoscaler":        {Group: "autoscaling", Version: "v2", Resource: "horizontalpodautoscalers", Scope: "Namespace", Kind: "HorizontalPodAutoscaler"},
+	"PodDisruptionBudget":            {Group: "policy", Version: "v1", Resource: "poddisruptionbudgets", Scope: "Namespace", Kind: "PodDisruptionBudget"},
+	"Lease":                          {Group: "coordination.k8s.io", Version: "v1", Resource: "leases", Scope: "Namespace", Kind: "Lease"},
+	"ServiceAccount":                 {Group: "", Version: "v1", Resource: "serviceaccounts", Scope: "Namespace", Kind: "ServiceAccount"},
+	"Role":                           {Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "roles", Scope: "Namespace", Kind: "Role"},
+	"RoleBinding":                    {Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "rolebindings", Scope: "Namespace", Kind: "RoleBinding"},
+	"Node":                           {Group: "", Version: "v1", Resource: "nodes", Scope: "Cluster", Kind: "Node"},
+	"Namespace":                      {Group: "", Version: "v1", Resource: "namespaces", Scope: "Cluster", Kind: "Namespace"},
+	"PersistentVolume":               {Group: "", Version: "v1", Resource: "persistentvolumes", Scope: "Cluster", Kind: "PersistentVolume"},
+	"PersistentVolumeClaim":          {Group: "", Version: "v1", Resource: "persistentvolumeclaims", Scope: "Namespace", Kind: "PersistentVolumeClaim"},
+	"StorageClass":                   {Group: "storage.k8s.io", Version: "v1", Resource: "storageclasses", Scope: "Cluster", Kind: "StorageClass"},
+	"ClusterRole":                    {Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "clusterroles", Scope: "Cluster", Kind: "ClusterRole"},
+	"ClusterRoleBinding":             {Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "clusterrolebindings", Scope: "Cluster", Kind: "ClusterRoleBinding"},
+	"PriorityClass":                  {Group: "scheduling.k8s.io", Version: "v1", Resource: "priorityclasses", Scope: "Cluster", Kind: "PriorityClass"},
+	"RuntimeClass":                   {Group: "node.k8s.io", Version: "v1", Resource: "runtimeclasses", Scope: "Cluster", Kind: "RuntimeClass"},
+	"IngressClass":                   {Group: "networking.k8s.io", Version: "v1", Resource: "ingressclasses", Scope: "Cluster", Kind: "IngressClass"},
+	"MutatingWebhookConfiguration":   {Group: "admissionregistration.k8s.io", Version: "v1", Resource: "mutatingwebhookconfigurations", Scope: "Cluster", Kind: "MutatingWebhookConfiguration"},
+	"ValidatingWebhookConfiguration": {Group: "admissionregistration.k8s.io", Version: "v1", Resource: "validatingwebhookconfigurations", Scope: "Cluster", Kind: "ValidatingWebhookConfiguration"},
+	"Event":                          {Group: "", Version: "v1", Resource: "events", Scope: "Namespace", Kind: "Event"},
 }
 
 // GetResourceScopes returns the list of supported resources and their scopes
@@ -70,115 +82,45 @@ func GetResourceDetails(c *gin.Context) {
 		return
 	}
 
-	scope, ok := SupportedResources[kind]
+	info, ok := SupportedResources[kind]
 	if !ok {
 		c.JSON(400, gin.H{"error": "Unsupported kind: " + kind})
 		return
 	}
 
 	// For namespaced resources, namespace is required
-	if scope == "Namespace" && ns == "" && kind != "Namespace" {
+	if info.Scope == "Namespace" && ns == "" && kind != "Namespace" {
 		c.JSON(400, gin.H{"error": "namespace is required for " + kind})
 		return
 	}
 
-	clientset, _, err := GetClientInfo(user.StorageNamespace, ctxName)
+	clientset, config, err := GetClientInfo(user.StorageNamespace, ctxName)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Failed to load config: " + err.Error()})
 		return
 	}
 
-	// 1. Fetch the resource manifest
-	var resourceObj interface{}
-	var resourceErr error
-
-	switch kind {
-	// Workloads
-	case "Pod":
-		resourceObj, resourceErr = clientset.CoreV1().Pods(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "Deployment":
-		resourceObj, resourceErr = clientset.AppsV1().Deployments(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "ReplicaSet":
-		resourceObj, resourceErr = clientset.AppsV1().ReplicaSets(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "StatefulSet":
-		resourceObj, resourceErr = clientset.AppsV1().StatefulSets(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "DaemonSet":
-		resourceObj, resourceErr = clientset.AppsV1().DaemonSets(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "Job":
-		resourceObj, resourceErr = clientset.BatchV1().Jobs(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "CronJob":
-		resourceObj, resourceErr = clientset.BatchV1().CronJobs(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "ReplicationController":
-		resourceObj, resourceErr = clientset.CoreV1().ReplicationControllers(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-
-	// Network
-	case "Service":
-		resourceObj, resourceErr = clientset.CoreV1().Services(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "Endpoints":
-		resourceObj, resourceErr = clientset.CoreV1().Endpoints(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "Ingress":
-		resourceObj, resourceErr = clientset.NetworkingV1().Ingresses(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "NetworkPolicy":
-		resourceObj, resourceErr = clientset.NetworkingV1().NetworkPolicies(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "IngressClass":
-		resourceObj, resourceErr = clientset.NetworkingV1().IngressClasses().Get(c.Request.Context(), name, metav1.GetOptions{})
-
-	// Config
-	case "ConfigMap":
-		resourceObj, resourceErr = clientset.CoreV1().ConfigMaps(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "Secret":
-		resourceObj, resourceErr = clientset.CoreV1().Secrets(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "ResourceQuota":
-		resourceObj, resourceErr = clientset.CoreV1().ResourceQuotas(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "LimitRange":
-		resourceObj, resourceErr = clientset.CoreV1().LimitRanges(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "HorizontalPodAutoscaler":
-		resourceObj, resourceErr = clientset.AutoscalingV2().HorizontalPodAutoscalers(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "PodDisruptionBudget":
-		resourceObj, resourceErr = clientset.PolicyV1().PodDisruptionBudgets(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "Lease":
-		resourceObj, resourceErr = clientset.CoordinationV1().Leases(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "PriorityClass":
-		resourceObj, resourceErr = clientset.SchedulingV1().PriorityClasses().Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "RuntimeClass":
-		resourceObj, resourceErr = clientset.NodeV1().RuntimeClasses().Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "MutatingWebhookConfiguration":
-		resourceObj, resourceErr = clientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "ValidatingWebhookConfiguration":
-		resourceObj, resourceErr = clientset.AdmissionregistrationV1().ValidatingWebhookConfigurations().Get(c.Request.Context(), name, metav1.GetOptions{})
-
-	// Storage
-	case "PersistentVolume":
-		resourceObj, resourceErr = clientset.CoreV1().PersistentVolumes().Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "PersistentVolumeClaim":
-		resourceObj, resourceErr = clientset.CoreV1().PersistentVolumeClaims(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "StorageClass":
-		resourceObj, resourceErr = clientset.StorageV1().StorageClasses().Get(c.Request.Context(), name, metav1.GetOptions{})
-
-	// Access
-	case "ServiceAccount":
-		resourceObj, resourceErr = clientset.CoreV1().ServiceAccounts(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "ClusterRole":
-		resourceObj, resourceErr = clientset.RbacV1().ClusterRoles().Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "Role":
-		resourceObj, resourceErr = clientset.RbacV1().Roles(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "ClusterRoleBinding":
-		resourceObj, resourceErr = clientset.RbacV1().ClusterRoleBindings().Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "RoleBinding":
-		resourceObj, resourceErr = clientset.RbacV1().RoleBindings(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-
-	// Cluster Infrastructure
-	case "Node":
-		resourceObj, resourceErr = clientset.CoreV1().Nodes().Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "Namespace":
-		resourceObj, resourceErr = clientset.CoreV1().Namespaces().Get(c.Request.Context(), name, metav1.GetOptions{})
-	case "Event":
-		resourceObj, resourceErr = clientset.CoreV1().Events(ns).Get(c.Request.Context(), name, metav1.GetOptions{})
-
-	default:
-		c.JSON(400, gin.H{"error": "Unsupported kind: " + kind})
+	dynamicClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to create dynamic client: " + err.Error()})
 		return
 	}
+
+	gvr := schema.GroupVersionResource{
+		Group:    info.Group,
+		Version:  info.Version,
+		Resource: info.Resource,
+	}
+
+	var dr dynamic.ResourceInterface
+	if info.Scope == "Namespace" {
+		dr = dynamicClient.Resource(gvr).Namespace(ns)
+	} else {
+		dr = dynamicClient.Resource(gvr)
+	}
+
+	// 1. Fetch the resource manifest
+	resourceObj, resourceErr := dr.Get(c.Request.Context(), name, metav1.GetOptions{})
 
 	if resourceErr != nil {
 		c.JSON(500, gin.H{"error": "Failed to fetch resource: " + resourceErr.Error()})
@@ -186,29 +128,15 @@ func GetResourceDetails(c *gin.Context) {
 	}
 
 	// Convert to YAML
-	// Note: The objects returned by typed clients might miss TypeMeta (Kind/APIVersion) when marshaled.
-	// We might need to manually set them or accept they are missing in the view.
-	// Or utilize scheme.Scheme to populate.
-	// For visualization, missing Kind/APIVersion in the YAML block is a known quirk of client-go typed gets.
-	// We can manually patch it for the common ones or use dynamic client.
-	// Let's try to set it via reflection or type assertion if critical, or use SetGroupVersionKind if it's a runtime.Object (it is).
-	// Simple approach: marshal as is.
-
-	// Attempt to set GVK if missing (common client-go issue)
-	if obj, ok := resourceObj.(schema.ObjectKind); ok {
-		if obj.GroupVersionKind().Empty() {
-			// We can't easily deduce generic GVK without scheme,
-			// but we know it from our switch context.
-			// Manual fix for common types to make YAML look correct:
-			switch kind {
-			case "Pod":
-				// Need to cast to the concrete struct to set TypeMeta
-				// struct does not embed metav1.Object direct? It embeds TypeMeta.
-				// Actually corev1.Pod embeds metav1.TypeMeta
-				// We use a helper or just let it be.
-				// Let's rely on JSON marshaling adding it if present, or just frontend knowing what it is.
-			}
-		}
+	// Note: Fetching via dynamic client returns *unstructured.Unstructured,
+	// which by default includes TypeMeta (Kind/APIVersion).
+	if resourceObj.GroupVersionKind().Empty() {
+		// Set it if missing for some reason
+		resourceObj.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   info.Group,
+			Version: info.Version,
+			Kind:    info.Kind,
+		})
 	}
 
 	yamlBytes, err := yaml.Marshal(resourceObj)
@@ -221,7 +149,7 @@ func GetResourceDetails(c *gin.Context) {
 	fieldSelector := "involvedObject.name=" + name + ",involvedObject.kind=" + kind
 
 	eventsNs := ns
-	if scope == "Cluster" {
+	if info.Scope == "Cluster" {
 		// Cluster scoped resource events usually have an empty namespace in involvedObject.
 		// Searching in "" (all namespaces) with fieldSelector will find them correctly.
 		eventsNs = ""
@@ -285,101 +213,43 @@ func DeleteResource(c *gin.Context) {
 		return
 	}
 
-	scope, ok := SupportedResources[kind]
+	info, ok := SupportedResources[kind]
 	if !ok {
 		c.JSON(400, gin.H{"error": "Unsupported kind: " + kind})
 		return
 	}
 
-	if scope == "Namespace" && ns == "" && kind != "Namespace" {
+	if info.Scope == "Namespace" && ns == "" && kind != "Namespace" {
 		c.JSON(400, gin.H{"error": "namespace is required for " + kind})
 		return
 	}
 
-	clientset, _, err := GetClientInfo(user.StorageNamespace, ctxName)
+	_, config, err := GetClientInfo(user.StorageNamespace, ctxName)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Failed to load config: " + err.Error()})
 		return
 	}
 
-	var deleteErr error
-	deleteOptions := metav1.DeleteOptions{}
-
-	switch kind {
-	case "Pod":
-		deleteErr = clientset.CoreV1().Pods(ns).Delete(c.Request.Context(), name, deleteOptions)
-	case "Deployment":
-		deleteErr = clientset.AppsV1().Deployments(ns).Delete(c.Request.Context(), name, deleteOptions)
-	case "ReplicaSet":
-		deleteErr = clientset.AppsV1().ReplicaSets(ns).Delete(c.Request.Context(), name, deleteOptions)
-	case "StatefulSet":
-		deleteErr = clientset.AppsV1().StatefulSets(ns).Delete(c.Request.Context(), name, deleteOptions)
-	case "DaemonSet":
-		deleteErr = clientset.AppsV1().DaemonSets(ns).Delete(c.Request.Context(), name, deleteOptions)
-	case "Job":
-		deleteErr = clientset.BatchV1().Jobs(ns).Delete(c.Request.Context(), name, deleteOptions)
-	case "CronJob":
-		deleteErr = clientset.BatchV1().CronJobs(ns).Delete(c.Request.Context(), name, deleteOptions)
-	case "ReplicationController":
-		deleteErr = clientset.CoreV1().ReplicationControllers(ns).Delete(c.Request.Context(), name, deleteOptions)
-	case "Service":
-		deleteErr = clientset.CoreV1().Services(ns).Delete(c.Request.Context(), name, deleteOptions)
-	case "Endpoints":
-		deleteErr = clientset.CoreV1().Endpoints(ns).Delete(c.Request.Context(), name, deleteOptions)
-	case "Ingress":
-		deleteErr = clientset.NetworkingV1().Ingresses(ns).Delete(c.Request.Context(), name, deleteOptions)
-	case "NetworkPolicy":
-		deleteErr = clientset.NetworkingV1().NetworkPolicies(ns).Delete(c.Request.Context(), name, deleteOptions)
-	case "IngressClass":
-		deleteErr = clientset.NetworkingV1().IngressClasses().Delete(c.Request.Context(), name, deleteOptions)
-	case "ConfigMap":
-		deleteErr = clientset.CoreV1().ConfigMaps(ns).Delete(c.Request.Context(), name, deleteOptions)
-	case "Secret":
-		deleteErr = clientset.CoreV1().Secrets(ns).Delete(c.Request.Context(), name, deleteOptions)
-	case "ResourceQuota":
-		deleteErr = clientset.CoreV1().ResourceQuotas(ns).Delete(c.Request.Context(), name, deleteOptions)
-	case "LimitRange":
-		deleteErr = clientset.CoreV1().LimitRanges(ns).Delete(c.Request.Context(), name, deleteOptions)
-	case "HorizontalPodAutoscaler":
-		deleteErr = clientset.AutoscalingV2().HorizontalPodAutoscalers(ns).Delete(c.Request.Context(), name, deleteOptions)
-	case "PodDisruptionBudget":
-		deleteErr = clientset.PolicyV1().PodDisruptionBudgets(ns).Delete(c.Request.Context(), name, deleteOptions)
-	case "Lease":
-		deleteErr = clientset.CoordinationV1().Leases(ns).Delete(c.Request.Context(), name, deleteOptions)
-	case "PriorityClass":
-		deleteErr = clientset.SchedulingV1().PriorityClasses().Delete(c.Request.Context(), name, deleteOptions)
-	case "RuntimeClass":
-		deleteErr = clientset.NodeV1().RuntimeClasses().Delete(c.Request.Context(), name, deleteOptions)
-	case "MutatingWebhookConfiguration":
-		deleteErr = clientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Delete(c.Request.Context(), name, deleteOptions)
-	case "ValidatingWebhookConfiguration":
-		deleteErr = clientset.AdmissionregistrationV1().ValidatingWebhookConfigurations().Delete(c.Request.Context(), name, deleteOptions)
-	case "PersistentVolume":
-		deleteErr = clientset.CoreV1().PersistentVolumes().Delete(c.Request.Context(), name, deleteOptions)
-	case "PersistentVolumeClaim":
-		deleteErr = clientset.CoreV1().PersistentVolumeClaims(ns).Delete(c.Request.Context(), name, deleteOptions)
-	case "StorageClass":
-		deleteErr = clientset.StorageV1().StorageClasses().Delete(c.Request.Context(), name, deleteOptions)
-	case "ServiceAccount":
-		deleteErr = clientset.CoreV1().ServiceAccounts(ns).Delete(c.Request.Context(), name, deleteOptions)
-	case "ClusterRole":
-		deleteErr = clientset.RbacV1().ClusterRoles().Delete(c.Request.Context(), name, deleteOptions)
-	case "Role":
-		deleteErr = clientset.RbacV1().Roles(ns).Delete(c.Request.Context(), name, deleteOptions)
-	case "ClusterRoleBinding":
-		deleteErr = clientset.RbacV1().ClusterRoleBindings().Delete(c.Request.Context(), name, deleteOptions)
-	case "RoleBinding":
-		deleteErr = clientset.RbacV1().RoleBindings(ns).Delete(c.Request.Context(), name, deleteOptions)
-	case "Node":
-		deleteErr = clientset.CoreV1().Nodes().Delete(c.Request.Context(), name, deleteOptions)
-	case "Namespace":
-		deleteErr = clientset.CoreV1().Namespaces().Delete(c.Request.Context(), name, deleteOptions)
-	case "Event":
-		deleteErr = clientset.CoreV1().Events(ns).Delete(c.Request.Context(), name, deleteOptions)
-	default:
-		c.JSON(400, gin.H{"error": "Unsupported kind for deletion: " + kind})
+	dynamicClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to create dynamic client: " + err.Error()})
 		return
 	}
+
+	gvr := schema.GroupVersionResource{
+		Group:    info.Group,
+		Version:  info.Version,
+		Resource: info.Resource,
+	}
+
+	var dr dynamic.ResourceInterface
+	if info.Scope == "Namespace" {
+		dr = dynamicClient.Resource(gvr).Namespace(ns)
+	} else {
+		dr = dynamicClient.Resource(gvr)
+	}
+
+	deleteErr := dr.Delete(c.Request.Context(), name, metav1.DeleteOptions{})
 
 	if deleteErr != nil {
 		c.JSON(500, gin.H{"error": "Failed to delete resource: " + deleteErr.Error()})
@@ -395,4 +265,114 @@ func DeleteResource(c *gin.Context) {
 	})
 
 	c.JSON(200, gin.H{"message": "Resource deleted successfully"})
+}
+
+// UpdateResource updates a generic Kubernetes resource from a YAML manifest
+func UpdateResource(c *gin.Context) {
+	user := c.MustGet("user").(*models.User)
+	ctxName := c.Query("context")
+	ns := c.Query("namespace")
+	name := c.Query("name")
+	kind := c.Query("kind")
+
+	var body struct {
+		Manifest string `json:"manifest"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(400, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	clientset, config, err := GetClientInfo(user.StorageNamespace, ctxName)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to load config: " + err.Error()})
+		return
+	}
+
+	// 1. Parse the received YAML into an Unstructured object
+	obj := &unstructured.Unstructured{}
+	// sigs.k8s.io/yaml handles JSON under the hood too if user sends JSON
+	if err := yaml.Unmarshal([]byte(body.Manifest), &obj); err != nil {
+		c.JSON(400, gin.H{"error": "Failed to parse YAML: " + err.Error()})
+		return
+	}
+
+	// Basic validation to ensure they aren't trying to change the name/kind/namespace of the resource via edit
+	// (editing usually applies to the same resource identify)
+	if obj.GetName() != name && name != "" {
+		c.JSON(400, gin.H{"error": "Resource name in manifest does not match URL parameter"})
+		return
+	}
+
+	// 2. Create a Dynamic Client
+	dynamicClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to create dynamic client: " + err.Error()})
+		return
+	}
+
+	// 3. Get the REST Mapping to find the GVR (GroupVersionResource)
+	gr, err := restmapper.GetAPIGroupResources(clientset.Discovery())
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to get API group resources: " + err.Error()})
+		return
+	}
+	mapper := restmapper.NewDiscoveryRESTMapper(gr)
+
+	gvk := obj.GroupVersionKind()
+	if gvk.Empty() {
+		// Set it from SupportedResources if missing in YAML
+		info, ok := SupportedResources[kind]
+		if ok {
+			obj.SetGroupVersionKind(schema.GroupVersionKind{
+				Group:   info.Group,
+				Version: info.Version,
+				Kind:    info.Kind,
+			})
+			gvk = obj.GroupVersionKind()
+		} else {
+			c.JSON(400, gin.H{"error": "apiVersion and kind are required in manifest or unknown kind"})
+			return
+		}
+	}
+
+	mapping, err := mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to find REST mapping for " + gvk.String() + ": " + err.Error()})
+		return
+	}
+
+	// 4. Perform the Update
+	var dr dynamic.ResourceInterface
+	if mapping.Scope.Name() == meta.RESTScopeNameNamespace {
+		resourceNs := obj.GetNamespace()
+		if resourceNs == "" {
+			resourceNs = ns // Fallback to URL param if not in YAML
+		}
+		dr = dynamicClient.Resource(mapping.Resource).Namespace(resourceNs)
+	} else {
+		dr = dynamicClient.Resource(mapping.Resource)
+	}
+
+	// Update requires resourceVersion. We assume the user didn't strip it.
+	// If stripping is common, we'd need to fetch first and apply strategic merge or patch.
+	// For simple "edit YAML" UI, we usually expect them to keep resourceVersion for optimistic locking.
+	updatedObj, err := dr.Update(c.Request.Context(), obj, metav1.UpdateOptions{})
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to update resource: " + err.Error()})
+		return
+	}
+
+	// Create audit log for update
+	RecordAuditLog(c, "UPDATE_KUBE_RESOURCE", gin.H{
+		"context":   ctxName,
+		"namespace": ns,
+		"name":      name,
+		"kind":      kind,
+	})
+
+	c.JSON(200, gin.H{
+		"message":  "Resource updated successfully",
+		"resource": updatedObj,
+	})
 }

@@ -136,7 +136,8 @@ func main() {
 			kubeGroup.GET("/role-bindings", api.GetRoleBindings)
 
 			kubeGroup.GET("/scopes", api.GetResourceScopes)
-			kubeGroup.GET("/resource", api.GetResourceDetails) // <--- New endpoint
+			kubeGroup.GET("/resource", api.GetResourceDetails)
+			kubeGroup.PUT("/resource", api.UpdateResource)
 			kubeGroup.DELETE("/resource", api.DeleteResource)
 			kubeGroup.GET("/dashboard", api.GetDashboardSummary)
 
