@@ -128,20 +128,20 @@ export function KubeProperties({ resource }: KubePropertiesProps) {
                 ? "bg-red-50 text-red-700 border-red-200"
                 : "bg-amber-50 text-amber-700 border-amber-200";
         }
-        return "bg-zinc-50 text-zinc-700 border-zinc-200";
+        return "bg-muted text-muted-foreground border-border";
     };
 
     return (
         <div className="space-y-4">
-            <h3 className="text-sm font-bold text-zinc-900 uppercase tracking-wider flex items-center gap-2">
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
                 Properties
             </h3>
-            <div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-4 shadow-sm font-sans">
+            <div className="rounded-xl border border-border bg-card p-4 space-y-4 shadow-sm font-sans">
                 <div className="space-y-3">
                     {properties.map((prop) => (
                         prop.value && (
                             <div key={prop.label} className="grid grid-cols-3 gap-2 items-start">
-                                <span className="text-zinc-500 text-xs font-semibold uppercase tracking-tight">{prop.label}</span>
+                                <span className="text-muted-foreground text-xs font-semibold uppercase tracking-tight">{prop.label}</span>
                                 {prop.label === "Status" ? (
                                     <div className="col-span-2">
                                         <Badge
@@ -154,14 +154,14 @@ export function KubeProperties({ resource }: KubePropertiesProps) {
                                                         ? "bg-amber-50 text-amber-700 border-amber-200"
                                                         : prop.value === "Failed" || prop.value === "NotReady"
                                                             ? "bg-red-50 text-red-700 border-red-200"
-                                                            : "bg-zinc-50 text-zinc-700 border-zinc-200"
+                                                            : "bg-muted text-muted-foreground border-border"
                                             )}
                                         >
                                             {prop.value}
                                         </Badge>
                                     </div>
                                 ) : (
-                                    <span className="text-zinc-950 col-span-2 break-all font-bold text-xs">{prop.value}</span>
+                                    <span className="text-foreground col-span-2 break-all font-bold text-xs">{prop.value}</span>
                                 )}
                             </div>
                         )
@@ -169,25 +169,25 @@ export function KubeProperties({ resource }: KubePropertiesProps) {
                 </div>
 
                 {labelCount > 0 && (
-                    <div className="pt-3 border-t border-zinc-100">
+                    <div className="pt-3 border-t border-border/50">
                         <button
                             onClick={() => setShowLabels(!showLabels)}
                             className="flex items-center justify-between w-full text-left group"
                         >
                             <div className="flex items-center gap-2">
-                                <Tags className="h-3.5 w-3.5 text-zinc-400" />
-                                <span className="text-zinc-500 text-xs font-semibold uppercase tracking-tight">Labels</span>
-                                <Badge variant="secondary" className="bg-zinc-100 text-zinc-600 border-none text-[10px] font-bold px-1.5 h-4">
+                                <Tags className="h-3.5 w-3.5 text-muted-foreground/60" />
+                                <span className="text-muted-foreground text-xs font-semibold uppercase tracking-tight">Labels</span>
+                                <Badge variant="secondary" className="bg-muted text-muted-foreground border-none text-[10px] font-bold px-1.5 h-4">
                                     {labelCount}
                                 </Badge>
                             </div>
-                            {showLabels ? <ChevronDown className="h-3.5 w-3.5 text-zinc-400" /> : <ChevronRight className="h-3.5 w-3.5 text-zinc-400" />}
+                            {showLabels ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/60" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />}
                         </button>
 
                         {showLabels && (
                             <div className="mt-3 flex flex-wrap gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                                 {Object.entries(labels).map(([k, v]) => (
-                                    <Badge key={k} variant="outline" className="text-[10px] font-bold border-zinc-200 bg-zinc-50 text-zinc-700 py-0.5 px-2 h-auto whitespace-normal break-all">
+                                    <Badge key={k} variant="outline" className="text-[10px] font-bold border-border bg-muted/50 text-foreground/80 py-0.5 px-2 h-auto whitespace-normal break-all">
                                         {k}: {String(v)}
                                     </Badge>
                                 ))}
@@ -197,25 +197,25 @@ export function KubeProperties({ resource }: KubePropertiesProps) {
                 )}
 
                 {annotationCount > 0 && (
-                    <div className="pt-3 border-t border-zinc-100">
+                    <div className="pt-3 border-t border-border/50">
                         <button
                             onClick={() => setShowAnnotations(!showAnnotations)}
                             className="flex items-center justify-between w-full text-left group"
                         >
                             <div className="flex items-center gap-2">
-                                <StickyNote className="h-3.5 w-3.5 text-zinc-400" />
-                                <span className="text-zinc-500 text-xs font-semibold uppercase tracking-tight">Annotations</span>
-                                <Badge variant="secondary" className="bg-zinc-100 text-zinc-600 border-none text-[10px] font-bold px-1.5 h-4">
+                                <StickyNote className="h-3.5 w-3.5 text-muted-foreground/60" />
+                                <span className="text-muted-foreground text-xs font-semibold uppercase tracking-tight">Annotations</span>
+                                <Badge variant="secondary" className="bg-muted text-muted-foreground border-none text-[10px] font-bold px-1.5 h-4">
                                     {annotationCount}
                                 </Badge>
                             </div>
-                            {showAnnotations ? <ChevronDown className="h-3.5 w-3.5 text-zinc-400" /> : <ChevronRight className="h-3.5 w-3.5 text-zinc-400" />}
+                            {showAnnotations ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/60" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />}
                         </button>
 
                         {showAnnotations && (
                             <div className="mt-3 flex flex-wrap gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                                 {Object.entries(annotations).map(([k, v]) => (
-                                    <Badge key={k} variant="outline" className="text-[10px] font-bold border-zinc-200 bg-zinc-50 text-zinc-700 py-0.5 px-2 max-w-full h-auto whitespace-normal break-all">
+                                    <Badge key={k} variant="outline" className="text-[10px] font-bold border-border bg-muted/50 text-foreground/80 py-0.5 px-2 max-w-full h-auto whitespace-normal break-all">
                                         {k}: {String(v)}
                                     </Badge>
                                 ))}
@@ -225,19 +225,19 @@ export function KubeProperties({ resource }: KubePropertiesProps) {
                 )}
 
                 {taints.length > 0 && (
-                    <div className="pt-3 border-t border-zinc-100">
+                    <div className="pt-3 border-t border-border/50">
                         <button
                             onClick={() => setShowTaints(!showTaints)}
                             className="flex items-center justify-between w-full text-left group"
                         >
                             <div className="flex items-center gap-2">
-                                <Tags className="h-3.5 w-3.5 text-zinc-400 rotate-90" />
-                                <span className="text-zinc-500 text-xs font-semibold uppercase tracking-tight">Taints</span>
-                                <Badge variant="secondary" className="bg-zinc-100 text-zinc-600 border-none text-[10px] font-bold px-1.5 h-4">
+                                <Tags className="h-3.5 w-3.5 text-muted-foreground/60 rotate-90" />
+                                <span className="text-muted-foreground text-xs font-semibold uppercase tracking-tight">Taints</span>
+                                <Badge variant="secondary" className="bg-muted text-muted-foreground border-none text-[10px] font-bold px-1.5 h-4">
                                     {taints.length}
                                 </Badge>
                             </div>
-                            {showTaints ? <ChevronDown className="h-3.5 w-3.5 text-zinc-400" /> : <ChevronRight className="h-3.5 w-3.5 text-zinc-400" />}
+                            {showTaints ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/60" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />}
                         </button>
 
                         {showTaints && (
@@ -253,29 +253,29 @@ export function KubeProperties({ resource }: KubePropertiesProps) {
                 )}
 
                 {conditions.length > 0 && (
-                    <div className="pt-3 border-t border-zinc-100">
+                    <div className="pt-3 border-t border-border/50">
                         <button
                             onClick={() => setShowConditions(!showConditions)}
                             className="flex items-center justify-between w-full text-left group"
                         >
                             <div className="flex items-center gap-2">
                                 <div className="h-3.5 w-3.5 flex items-center justify-center">
-                                    <div className="h-1.5 w-1.5 rounded-full bg-zinc-400" />
+                                    <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
                                 </div>
-                                <span className="text-zinc-500 text-xs font-semibold uppercase tracking-tight">Conditions</span>
-                                <Badge variant="secondary" className="bg-zinc-100 text-zinc-600 border-none text-[10px] font-bold px-1.5 h-4">
+                                <span className="text-muted-foreground text-xs font-semibold uppercase tracking-tight">Conditions</span>
+                                <Badge variant="secondary" className="bg-muted text-muted-foreground border-none text-[10px] font-bold px-1.5 h-4">
                                     {conditions.length}
                                 </Badge>
                             </div>
-                            {showConditions ? <ChevronDown className="h-3.5 w-3.5 text-zinc-400" /> : <ChevronRight className="h-3.5 w-3.5 text-zinc-400" />}
+                            {showConditions ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/60" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />}
                         </button>
 
                         {showConditions && (
                             <div className="mt-3 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
                                 {conditions.map((condition: any, idx: number) => (
-                                    <div key={idx} className="flex flex-col gap-1 p-2 rounded-lg border border-zinc-100 bg-zinc-50/50">
+                                    <div key={idx} className="flex flex-col gap-1 p-2 rounded-lg border border-border/50 bg-muted/30">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-[10px] font-bold text-zinc-900">{condition.type}</span>
+                                            <span className="text-[10px] font-bold text-foreground">{condition.type}</span>
                                             <Badge
                                                 variant="outline"
                                                 className={cn(
@@ -287,13 +287,13 @@ export function KubeProperties({ resource }: KubePropertiesProps) {
                                             </Badge>
                                         </div>
                                         {condition.reason && (
-                                            <span className="text-[9px] text-zinc-500 font-medium">Reason: {condition.reason}</span>
+                                            <span className="text-[9px] text-muted-foreground font-medium">Reason: {condition.reason}</span>
                                         )}
                                         {condition.message && (
-                                            <span className="text-[9px] text-zinc-600 leading-tight">{condition.message}</span>
+                                            <span className="text-[9px] text-foreground/80 leading-tight">{condition.message}</span>
                                         )}
                                         {condition.lastTransitionTime && (
-                                            <span className="text-[9px] text-zinc-400 font-medium mt-0.5">
+                                            <span className="text-[9px] text-muted-foreground/60 font-medium mt-0.5">
                                                 Last Transition: {new Date(condition.lastTransitionTime).toLocaleString()} ({formatAge(condition.lastTransitionTime)} ago)
                                             </span>
                                         )}
@@ -305,25 +305,25 @@ export function KubeProperties({ resource }: KubePropertiesProps) {
                 )}
 
                 {tolerations.length > 0 && (
-                    <div className="pt-3 border-t border-zinc-100">
+                    <div className="pt-3 border-t border-border/50">
                         <button
                             onClick={() => setShowTolerations(!showTolerations)}
                             className="flex items-center justify-between w-full text-left group"
                         >
                             <div className="flex items-center gap-2">
-                                <Anchor className="h-3.5 w-3.5 text-zinc-400" />
-                                <span className="text-zinc-500 text-xs font-semibold uppercase tracking-tight">Tolerations</span>
-                                <Badge variant="secondary" className="bg-zinc-100 text-zinc-600 border-none text-[10px] font-bold px-1.5 h-4">
+                                <Anchor className="h-3.5 w-3.5 text-muted-foreground/60" />
+                                <span className="text-muted-foreground text-xs font-semibold uppercase tracking-tight">Tolerations</span>
+                                <Badge variant="secondary" className="bg-muted text-muted-foreground border-none text-[10px] font-bold px-1.5 h-4">
                                     {tolerations.length}
                                 </Badge>
                             </div>
-                            {showTolerations ? <ChevronDown className="h-3.5 w-3.5 text-zinc-400" /> : <ChevronRight className="h-3.5 w-3.5 text-zinc-400" />}
+                            {showTolerations ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/60" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />}
                         </button>
 
                         {showTolerations && (
                             <div className="mt-3 flex flex-wrap gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                                 {tolerations.map((t: any, idx: number) => (
-                                    <Badge key={idx} variant="outline" className="text-[10px] font-bold border-zinc-200 bg-zinc-50 text-zinc-700 py-0.5 px-2 h-auto whitespace-normal break-all">
+                                    <Badge key={idx} variant="outline" className="text-[10px] font-bold border-border bg-muted/50 text-foreground/80 py-0.5 px-2 h-auto whitespace-normal break-all">
                                         {t.key}{t.operator === "Exists" ? " (Exists)" : t.value ? `=${t.value}` : ""}{t.effect ? `:${t.effect}` : ""}
                                     </Badge>
                                 ))}
@@ -333,25 +333,25 @@ export function KubeProperties({ resource }: KubePropertiesProps) {
                 )}
 
                 {Object.keys(nodeSelector).length > 0 && (
-                    <div className="pt-3 border-t border-zinc-100">
+                    <div className="pt-3 border-t border-border/50">
                         <button
                             onClick={() => setShowNodeSelector(!showNodeSelector)}
                             className="flex items-center justify-between w-full text-left group"
                         >
                             <div className="flex items-center gap-2">
-                                <MapPin className="h-3.5 w-3.5 text-zinc-400" />
-                                <span className="text-zinc-500 text-xs font-semibold uppercase tracking-tight">Node Selector</span>
-                                <Badge variant="secondary" className="bg-zinc-100 text-zinc-600 border-none text-[10px] font-bold px-1.5 h-4">
+                                <MapPin className="h-3.5 w-3.5 text-muted-foreground/60" />
+                                <span className="text-muted-foreground text-xs font-semibold uppercase tracking-tight">Node Selector</span>
+                                <Badge variant="secondary" className="bg-muted text-muted-foreground border-none text-[10px] font-bold px-1.5 h-4">
                                     {Object.keys(nodeSelector).length}
                                 </Badge>
                             </div>
-                            {showNodeSelector ? <ChevronDown className="h-3.5 w-3.5 text-zinc-400" /> : <ChevronRight className="h-3.5 w-3.5 text-zinc-400" />}
+                            {showNodeSelector ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/60" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />}
                         </button>
 
                         {showNodeSelector && (
                             <div className="mt-3 flex flex-wrap gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                                 {Object.entries(nodeSelector).map(([k, v]) => (
-                                    <Badge key={k} variant="outline" className="text-[10px] font-bold border-zinc-200 bg-zinc-50 text-zinc-700 py-0.5 px-2 h-auto whitespace-normal break-all">
+                                    <Badge key={k} variant="outline" className="text-[10px] font-bold border-border bg-muted/50 text-foreground/80 py-0.5 px-2 h-auto whitespace-normal break-all">
                                         {k}: {String(v)}
                                     </Badge>
                                 ))}
@@ -361,24 +361,24 @@ export function KubeProperties({ resource }: KubePropertiesProps) {
                 )}
 
                 {affinity.nodeAffinity && (
-                    <div className="pt-3 border-t border-zinc-100">
+                    <div className="pt-3 border-t border-border/50">
                         <button
                             onClick={() => setShowNodeAffinity(!showNodeAffinity)}
                             className="flex items-center justify-between w-full text-left group"
                         >
                             <div className="flex items-center gap-2">
-                                <Share2 className="h-3.5 w-3.5 text-zinc-400" />
-                                <span className="text-zinc-500 text-xs font-semibold uppercase tracking-tight">Node Affinity</span>
-                                <Badge variant="secondary" className="bg-zinc-100 text-zinc-600 border-none text-[10px] font-bold px-1.5 h-4">
+                                <Share2 className="h-3.5 w-3.5 text-muted-foreground/60" />
+                                <span className="text-muted-foreground text-xs font-semibold uppercase tracking-tight">Node Affinity</span>
+                                <Badge variant="secondary" className="bg-muted text-muted-foreground border-none text-[10px] font-bold px-1.5 h-4">
                                     {nodeAffinityCount}
                                 </Badge>
                             </div>
-                            {showNodeAffinity ? <ChevronDown className="h-3.5 w-3.5 text-zinc-400" /> : <ChevronRight className="h-3.5 w-3.5 text-zinc-400" />}
+                            {showNodeAffinity ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/60" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />}
                         </button>
 
                         {showNodeAffinity && (
                             <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                                <div className="p-2 rounded-lg border border-zinc-100 bg-zinc-50/50 text-[10px] text-zinc-600 whitespace-pre-wrap font-mono overflow-auto max-h-40">
+                                <div className="p-2 rounded-lg border border-border/50 bg-muted/30 text-[10px] text-foreground/80 whitespace-pre-wrap font-mono overflow-auto max-h-40">
                                     {toYaml(affinity.nodeAffinity).trim()}
                                 </div>
                             </div>
@@ -387,24 +387,24 @@ export function KubeProperties({ resource }: KubePropertiesProps) {
                 )}
 
                 {affinity.podAffinity && (
-                    <div className="pt-3 border-t border-zinc-100">
+                    <div className="pt-3 border-t border-border/50">
                         <button
                             onClick={() => setShowPodAffinity(!showPodAffinity)}
                             className="flex items-center justify-between w-full text-left group"
                         >
                             <div className="flex items-center gap-2">
-                                <Share2 className="h-3.5 w-3.5 text-zinc-400" />
-                                <span className="text-zinc-500 text-xs font-semibold uppercase tracking-tight">Pod Affinity</span>
-                                <Badge variant="secondary" className="bg-zinc-100 text-zinc-600 border-none text-[10px] font-bold px-1.5 h-4">
+                                <Share2 className="h-3.5 w-3.5 text-muted-foreground/60" />
+                                <span className="text-muted-foreground text-xs font-semibold uppercase tracking-tight">Pod Affinity</span>
+                                <Badge variant="secondary" className="bg-muted text-muted-foreground border-none text-[10px] font-bold px-1.5 h-4">
                                     {podAffinityCount}
                                 </Badge>
                             </div>
-                            {showPodAffinity ? <ChevronDown className="h-3.5 w-3.5 text-zinc-400" /> : <ChevronRight className="h-3.5 w-3.5 text-zinc-400" />}
+                            {showPodAffinity ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/60" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />}
                         </button>
 
                         {showPodAffinity && (
                             <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                                <div className="p-2 rounded-lg border border-zinc-100 bg-zinc-50/50 text-[10px] text-zinc-600 whitespace-pre-wrap font-mono overflow-auto max-h-40">
+                                <div className="p-2 rounded-lg border border-border/50 bg-muted/30 text-[10px] text-foreground/80 whitespace-pre-wrap font-mono overflow-auto max-h-40">
                                     {toYaml(affinity.podAffinity).trim()}
                                 </div>
                             </div>
@@ -413,24 +413,24 @@ export function KubeProperties({ resource }: KubePropertiesProps) {
                 )}
 
                 {affinity.podAntiAffinity && (
-                    <div className="pt-3 border-t border-zinc-100">
+                    <div className="pt-3 border-t border-border/50">
                         <button
                             onClick={() => setShowPodAntiAffinity(!showPodAntiAffinity)}
                             className="flex items-center justify-between w-full text-left group"
                         >
                             <div className="flex items-center gap-2">
-                                <Share2 className="h-3.5 w-3.5 text-zinc-400" />
-                                <span className="text-zinc-500 text-xs font-semibold uppercase tracking-tight">Pod Anti-Affinity</span>
-                                <Badge variant="secondary" className="bg-zinc-100 text-zinc-600 border-none text-[10px] font-bold px-1.5 h-4">
+                                <Share2 className="h-3.5 w-3.5 text-muted-foreground/60" />
+                                <span className="text-muted-foreground text-xs font-semibold uppercase tracking-tight">Pod Anti-Affinity</span>
+                                <Badge variant="secondary" className="bg-muted text-muted-foreground border-none text-[10px] font-bold px-1.5 h-4">
                                     {podAntiAffinityCount}
                                 </Badge>
                             </div>
-                            {showPodAntiAffinity ? <ChevronDown className="h-3.5 w-3.5 text-zinc-400" /> : <ChevronRight className="h-3.5 w-3.5 text-zinc-400" />}
+                            {showPodAntiAffinity ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/60" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />}
                         </button>
 
                         {showPodAntiAffinity && (
                             <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                                <div className="p-2 rounded-lg border border-zinc-100 bg-zinc-50/50 text-[10px] text-zinc-600 whitespace-pre-wrap font-mono overflow-auto max-h-40">
+                                <div className="p-2 rounded-lg border border-border/50 bg-muted/30 text-[10px] text-foreground/80 whitespace-pre-wrap font-mono overflow-auto max-h-40">
                                     {toYaml(affinity.podAntiAffinity).trim()}
                                 </div>
                             </div>

@@ -8,9 +8,7 @@ import { Button } from "@/components/ui/button";
 import { cn, formatAge } from "@/lib/utils";
 import { NamespaceBadge } from "@/components/NamespaceBadge";
 import { ResourceDetailsSheet } from "@/components/ResourceDetailsSheet";
-import { LogViewerModal } from "@/components/LogViewerModal";
 import { api } from "@/lib/api";
-import { FileText } from "lucide-react";
 
 interface PodInfo {
     name: string;
@@ -31,7 +29,6 @@ function PodsContent() {
     const [podsLoading, setPodsLoading] = useState(false);
     const searchQuery = searchParams.get("q") || "";
     const [selectedPod, setSelectedPod] = useState<PodInfo | null>(null);
-    const [logPod, setLogPod] = useState<PodInfo | null>(null);
 
     const filteredPods = pods.filter(pod =>
         pod.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -193,15 +190,6 @@ function PodsContent() {
                                                     <Box className="h-3.5 w-3.5" />
                                                     Terminal
                                                 </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="h-8 rounded-lg gap-2 text-xs font-semibold"
-                                                    onClick={() => setLogPod(pod)}
-                                                >
-                                                    <FileText className="h-3.5 w-3.5" />
-                                                    Logs
-                                                </Button>
                                             </div>
 
                                             {/* Age */}
@@ -225,22 +213,7 @@ function PodsContent() {
                 name={selectedPod?.name || ""}
                 kind="Pod"
             />
-            {
-                logPod && (
-                    <LogViewerModal
-                        isOpen={!!logPod}
-                        onClose={() => setLogPod(null)}
-                        context={selectedContext}
-                        namespace={logPod.namespace}
-                        containers={logPod.containers}
-                        initContainers={logPod.init_containers || []}
-                        pods={[{ name: logPod.name, status: logPod.status }]}
-                        showPodSelector={false}
-                        title={logPod.name}
-                    />
-                )
-            }
-        </div >
+        </div>
     );
 }
 

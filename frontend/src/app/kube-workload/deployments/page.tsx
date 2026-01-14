@@ -3,12 +3,11 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Layers, RefreshCw, CheckCircle2, XCircle, FileText, Send } from "lucide-react";
+import { Layers, RefreshCw, CheckCircle2, XCircle, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn, formatAge } from "@/lib/utils";
 import { NamespaceBadge } from "@/components/NamespaceBadge";
 import { ResourceDetailsSheet } from "@/components/ResourceDetailsSheet";
-import { LogViewerModal } from "@/components/LogViewerModal";
 import { api } from "@/lib/api";
 
 interface DeploymentInfo {
@@ -38,14 +37,6 @@ function DeploymentsContent() {
     const [loading, setLoading] = useState(false);
     const searchQuery = searchParams.get("q") || "";
     const [selectedDeployment, setSelectedDeployment] = useState<DeploymentInfo | null>(null);
-    const [logResource, setLogResource] = useState<{
-        name: string,
-        namespace: string,
-        selector: string,
-        pods: Array<{ name: string, status: string }>,
-        containers: string[],
-        initContainers: string[]
-    } | null>(null);
 
     const filteredDeployments = deployments.filter(d =>
         d.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -173,40 +164,6 @@ function DeploymentsContent() {
                                             <div className="flex flex-col items-end min-w-[80px]">
                                                 <span className="text-xs text-muted-foreground">{formatAge(d.age)}</span>
                                             </div>
-
-                                            {/* Action Buttons */}
-                                            <div
-                                                className="flex flex-row items-center gap-2 min-w-[100px] justify-end"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="h-8 rounded-lg gap-2 text-xs font-semibold"
-                                                    onClick={async (e) => {
-                                                        e.stopPropagation();
-                                                        if (d.selector) {
-                                                            try {
-                                                                const data = await api.get<any>(`/kube/pods?context=${selectedContext}&namespace=${d.namespace}&selector=${encodeURIComponent(d.selector)}`);
-                                                                const pods = data.pods || [];
-                                                                setLogResource({
-                                                                    name: d.name,
-                                                                    namespace: d.namespace,
-                                                                    selector: d.selector,
-                                                                    pods: pods.map((p: any) => ({ name: p.name, status: p.status })),
-                                                                    containers: (pods.length > 0 && pods[0].containers) ? pods[0].containers : ["__all__"],
-                                                                    initContainers: (pods.length > 0 && pods[0].init_containers) ? pods[0].init_containers : []
-                                                                });
-                                                            } catch (error) {
-                                                                console.error("Failed to fetch pods:", error);
-                                                            }
-                                                        }
-                                                    }}
-                                                >
-                                                    <FileText className="h-3.5 w-3.5" />
-                                                    Logs
-                                                </Button>
-                                            </div>
                                         </div>
                                     </div>
                                 ))}
@@ -224,23 +181,7 @@ function DeploymentsContent() {
                 name={selectedDeployment?.name || ""}
                 kind="Deployment"
             />
-            {
-                logResource && (
-                    <LogViewerModal
-                        isOpen={!!logResource}
-                        onClose={() => setLogResource(null)}
-                        context={selectedContext}
-                        namespace={logResource.namespace}
-                        selector={logResource.selector}
-                        containers={logResource.containers}
-                        initContainers={logResource.initContainers}
-                        pods={logResource.pods}
-                        showPodSelector={true}
-                        title={logResource.name}
-                    />
-                )
-            }
-        </div >
+        </div>
     );
 }
 

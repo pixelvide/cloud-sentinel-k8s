@@ -4,10 +4,9 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, CheckCircle2, Database, FileText } from "lucide-react";
+import { RefreshCw, CheckCircle2, Database } from "lucide-react";
 import { cn, formatAge } from "@/lib/utils";
 import { NamespaceBadge } from "@/components/NamespaceBadge";
-import { LogViewerModal } from "@/components/LogViewerModal";
 import { ResourceDetailsSheet } from "@/components/ResourceDetailsSheet";
 import { api } from "@/lib/api";
 
@@ -39,14 +38,6 @@ function StatefulSetsContent() {
     const [loading, setLoading] = useState(false);
     const searchQuery = searchParams.get("q") || "";
     const [selectedStatefulSet, setSelectedStatefulSet] = useState<StatefulSet | null>(null);
-    const [logResource, setLogResource] = useState<{
-        name: string,
-        namespace: string,
-        selector: string,
-        pods: Array<{ name: string, status: string }>,
-        containers: string[],
-        initContainers: string[]
-    } | null>(null);
 
     useEffect(() => {
         if (selectedContext && selectedNamespace) {
@@ -153,40 +144,6 @@ function StatefulSetsContent() {
                                         <div className="flex flex-col items-end min-w-[80px]">
                                             <span className="text-xs text-muted-foreground">{formatAge(ss.age)}</span>
                                         </div>
-
-                                        {/* Action Buttons */}
-                                        <div
-                                            className="flex flex-row items-center gap-2 min-w-[100px] justify-end"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="h-8 rounded-lg gap-2 text-xs font-semibold"
-                                                onClick={async (e) => {
-                                                    e.stopPropagation();
-                                                    if (ss.selector) {
-                                                        try {
-                                                            const data = await api.get<any>(`/kube/pods?context=${selectedContext}&namespace=${ss.namespace}&selector=${encodeURIComponent(ss.selector)}`);
-                                                            const pods = data.pods || [];
-                                                            setLogResource({
-                                                                name: ss.name,
-                                                                namespace: ss.namespace,
-                                                                selector: ss.selector,
-                                                                pods: pods.map((p: any) => ({ name: p.name, status: p.status })),
-                                                                containers: (pods.length > 0 && pods[0].containers) ? pods[0].containers : ["__all__"],
-                                                                initContainers: (pods.length > 0 && pods[0].init_containers) ? pods[0].init_containers : []
-                                                            });
-                                                        } catch (error) {
-                                                            console.error("Failed to fetch pods:", error);
-                                                        }
-                                                    }
-                                                }}
-                                            >
-                                                <FileText className="h-3.5 w-3.5" />
-                                                Logs
-                                            </Button>
-                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -203,23 +160,7 @@ function StatefulSetsContent() {
                 name={selectedStatefulSet?.name || ""}
                 kind="StatefulSet"
             />
-            {
-                logResource && (
-                    <LogViewerModal
-                        isOpen={!!logResource}
-                        onClose={() => setLogResource(null)}
-                        context={selectedContext || ""}
-                        namespace={logResource.namespace}
-                        selector={logResource.selector}
-                        containers={logResource.containers}
-                        initContainers={logResource.initContainers}
-                        pods={logResource.pods}
-                        showPodSelector={true}
-                        title={logResource.name}
-                    />
-                )
-            }
-        </div >
+        </div>
     );
 }
 

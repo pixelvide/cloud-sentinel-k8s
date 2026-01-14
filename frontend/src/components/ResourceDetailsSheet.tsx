@@ -98,12 +98,12 @@ export function ResourceDetailsSheet({
 
     return (
         <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <SheetContent className="w-full sm:max-w-2xl overflow-y-auto bg-zinc-50 border-l border-zinc-200 p-0 flex flex-col h-full">
-                <SheetHeader className="p-6 border-b border-zinc-200 shrink-0 bg-white">
-                    <SheetTitle className="text-xl font-bold font-mono text-zinc-900">
+            <SheetContent className="w-full sm:max-w-2xl overflow-y-auto bg-background border-l border-border p-0 flex flex-col h-full">
+                <SheetHeader className="p-6 border-b border-border shrink-0 bg-background/50 backdrop-blur-sm">
+                    <SheetTitle className="text-xl font-bold font-mono text-foreground">
                         {kind}: {name}
                     </SheetTitle>
-                    <SheetDescription className="text-zinc-500 font-mono text-xs">
+                    <SheetDescription className="text-muted-foreground font-mono text-xs">
                         {namespace} @ {context}
                     </SheetDescription>
 
@@ -113,7 +113,7 @@ export function ResourceDetailsSheet({
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="h-8 rounded-lg gap-2 text-xs font-semibold bg-white shadow-sm border-zinc-200 text-zinc-700 hover:bg-zinc-50"
+                                    className="h-8 rounded-lg gap-2 text-xs font-semibold bg-background shadow-sm border-border text-foreground hover:bg-accent"
                                     disabled={details.raw?.status?.phase !== "Running"}
                                     onClick={() => {
                                         const pod = details.raw;
@@ -121,7 +121,7 @@ export function ResourceDetailsSheet({
                                         window.open(`/exec?context=${context}&namespace=${namespace}&pod=${name}&container=${container}`, "_blank");
                                     }}
                                 >
-                                    <TerminalIcon className="h-3.5 w-3.5 text-zinc-500" />
+                                    <TerminalIcon className="h-3.5 w-3.5 text-muted-foreground" />
                                     Terminal
                                 </Button>
                             )}
@@ -130,7 +130,7 @@ export function ResourceDetailsSheet({
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="h-8 rounded-lg gap-2 text-xs font-semibold bg-white shadow-sm border-zinc-200 text-zinc-700 hover:bg-zinc-50"
+                                    className="h-8 rounded-lg gap-2 text-xs font-semibold bg-background shadow-sm border-border text-foreground hover:bg-accent"
                                     onClick={async () => {
                                         const resource = details.raw;
                                         if (kind === "Pod") {
@@ -163,7 +163,7 @@ export function ResourceDetailsSheet({
                                         }
                                     }}
                                 >
-                                    <FileText className="h-3.5 w-3.5 text-zinc-500" />
+                                    <FileText className="h-3.5 w-3.5 text-muted-foreground" />
                                     Logs
                                 </Button>
                             )}
@@ -173,13 +173,13 @@ export function ResourceDetailsSheet({
 
                 <div className="flex-1 overflow-y-auto">
                     {loading && (
-                        <div className="p-6 text-zinc-500 font-mono text-sm animate-pulse">
+                        <div className="p-6 text-muted-foreground font-mono text-sm animate-pulse">
                             Loading details...
                         </div>
                     )}
 
                     {error && (
-                        <div className="p-6 text-red-400 font-mono text-sm">
+                        <div className="p-6 text-destructive font-mono text-sm">
                             Error: {error}
                         </div>
                     )}
@@ -191,13 +191,13 @@ export function ResourceDetailsSheet({
 
                             {/* Events Section */}
                             <div className="space-y-3">
-                                <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">
+                                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                                     Recent Events
                                 </h3>
                                 {details.events?.length > 0 ? (
-                                    <div className="rounded-md border border-zinc-200 bg-white overflow-hidden shadow-sm">
+                                    <div className="rounded-md border border-border bg-card overflow-hidden shadow-sm">
                                         <table className="w-full text-xs text-left font-mono">
-                                            <thead className="bg-zinc-50 text-zinc-500 border-b border-zinc-200">
+                                            <thead className="bg-muted text-muted-foreground border-b border-border">
                                                 <tr>
                                                     <th className="p-2 font-medium">Type</th>
                                                     <th className="p-2 font-medium">Reason</th>
@@ -205,27 +205,27 @@ export function ResourceDetailsSheet({
                                                     <th className="p-2 font-medium">Message</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-white/5">
+                                            <tbody className="divide-y divide-border">
                                                 {details.events.map((e, i) => (
-                                                    <tr key={i} className="hover:bg-white/5 transition-colors">
+                                                    <tr key={i} className="hover:bg-muted/50 transition-colors">
                                                         <td className="p-2">
                                                             <Badge
                                                                 variant="outline"
                                                                 className={
                                                                     e.type === "Warning"
-                                                                        ? "text-red-600 border-red-200 bg-red-50"
-                                                                        : "text-zinc-600 border-zinc-200 bg-zinc-50"
+                                                                        ? "text-destructive border-destructive/20 bg-destructive/10"
+                                                                        : "text-muted-foreground border-border bg-muted/30"
                                                                 }
                                                             >
                                                                 {e.type}
                                                             </Badge>
                                                         </td>
-                                                        <td className="p-2 text-zinc-600">{e.reason}</td>
-                                                        <td className="p-2 text-zinc-400 whitespace-nowrap text-[10px]">
+                                                        <td className="p-2 text-foreground/80">{e.reason}</td>
+                                                        <td className="p-2 text-muted-foreground whitespace-nowrap text-[10px]">
                                                             {/* TODO: Format age better if needed, backend sends RFC3339 */}
                                                             {new Date(e.last_seen).toLocaleTimeString()}
                                                         </td>
-                                                        <td className="p-2 text-zinc-500 break-words max-w-[200px]">
+                                                        <td className="p-2 text-muted-foreground break-words max-w-[200px]">
                                                             {e.message} ({e.count})
                                                         </td>
                                                     </tr>
@@ -234,7 +234,7 @@ export function ResourceDetailsSheet({
                                         </table>
                                     </div>
                                 ) : (
-                                    <div className="text-zinc-400 text-sm italic py-4">
+                                    <div className="text-muted-foreground text-sm italic py-4">
                                         No events found.
                                     </div>
                                 )}
@@ -242,10 +242,10 @@ export function ResourceDetailsSheet({
 
                             {/* Manifest Section */}
                             <div className="space-y-3">
-                                <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">
+                                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                                     YAML Manifest
                                 </h3>
-                                <div className="relative rounded-md border border-zinc-200 bg-white p-4 text-xs font-mono text-zinc-800 overflow-auto max-h-[600px] shadow-sm">
+                                <div className="relative rounded-md border border-border bg-card p-4 text-xs font-mono text-card-foreground overflow-auto max-h-[600px] shadow-sm">
                                     <pre className="whitespace-pre-wrap break-all">{details.manifest}</pre>
                                 </div>
                             </div>
