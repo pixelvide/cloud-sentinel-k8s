@@ -271,3 +271,128 @@ func GetResourceDetails(c *gin.Context) {
 		"raw":      resourceObj,
 	})
 }
+
+// DeleteResource deletes a generic Kubernetes resource
+func DeleteResource(c *gin.Context) {
+	user := c.MustGet("user").(*models.User)
+	ns := c.Query("namespace")
+	ctxName := c.Query("context")
+	name := c.Query("name")
+	kind := c.Query("kind")
+
+	if name == "" || kind == "" {
+		c.JSON(400, gin.H{"error": "name and kind are required"})
+		return
+	}
+
+	scope, ok := SupportedResources[kind]
+	if !ok {
+		c.JSON(400, gin.H{"error": "Unsupported kind: " + kind})
+		return
+	}
+
+	if scope == "Namespace" && ns == "" && kind != "Namespace" {
+		c.JSON(400, gin.H{"error": "namespace is required for " + kind})
+		return
+	}
+
+	clientset, _, err := GetClientInfo(user.StorageNamespace, ctxName)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to load config: " + err.Error()})
+		return
+	}
+
+	var deleteErr error
+	deleteOptions := metav1.DeleteOptions{}
+
+	switch kind {
+	case "Pod":
+		deleteErr = clientset.CoreV1().Pods(ns).Delete(c.Request.Context(), name, deleteOptions)
+	case "Deployment":
+		deleteErr = clientset.AppsV1().Deployments(ns).Delete(c.Request.Context(), name, deleteOptions)
+	case "ReplicaSet":
+		deleteErr = clientset.AppsV1().ReplicaSets(ns).Delete(c.Request.Context(), name, deleteOptions)
+	case "StatefulSet":
+		deleteErr = clientset.AppsV1().StatefulSets(ns).Delete(c.Request.Context(), name, deleteOptions)
+	case "DaemonSet":
+		deleteErr = clientset.AppsV1().DaemonSets(ns).Delete(c.Request.Context(), name, deleteOptions)
+	case "Job":
+		deleteErr = clientset.BatchV1().Jobs(ns).Delete(c.Request.Context(), name, deleteOptions)
+	case "CronJob":
+		deleteErr = clientset.BatchV1().CronJobs(ns).Delete(c.Request.Context(), name, deleteOptions)
+	case "ReplicationController":
+		deleteErr = clientset.CoreV1().ReplicationControllers(ns).Delete(c.Request.Context(), name, deleteOptions)
+	case "Service":
+		deleteErr = clientset.CoreV1().Services(ns).Delete(c.Request.Context(), name, deleteOptions)
+	case "Endpoints":
+		deleteErr = clientset.CoreV1().Endpoints(ns).Delete(c.Request.Context(), name, deleteOptions)
+	case "Ingress":
+		deleteErr = clientset.NetworkingV1().Ingresses(ns).Delete(c.Request.Context(), name, deleteOptions)
+	case "NetworkPolicy":
+		deleteErr = clientset.NetworkingV1().NetworkPolicies(ns).Delete(c.Request.Context(), name, deleteOptions)
+	case "IngressClass":
+		deleteErr = clientset.NetworkingV1().IngressClasses().Delete(c.Request.Context(), name, deleteOptions)
+	case "ConfigMap":
+		deleteErr = clientset.CoreV1().ConfigMaps(ns).Delete(c.Request.Context(), name, deleteOptions)
+	case "Secret":
+		deleteErr = clientset.CoreV1().Secrets(ns).Delete(c.Request.Context(), name, deleteOptions)
+	case "ResourceQuota":
+		deleteErr = clientset.CoreV1().ResourceQuotas(ns).Delete(c.Request.Context(), name, deleteOptions)
+	case "LimitRange":
+		deleteErr = clientset.CoreV1().LimitRanges(ns).Delete(c.Request.Context(), name, deleteOptions)
+	case "HorizontalPodAutoscaler":
+		deleteErr = clientset.AutoscalingV2().HorizontalPodAutoscalers(ns).Delete(c.Request.Context(), name, deleteOptions)
+	case "PodDisruptionBudget":
+		deleteErr = clientset.PolicyV1().PodDisruptionBudgets(ns).Delete(c.Request.Context(), name, deleteOptions)
+	case "Lease":
+		deleteErr = clientset.CoordinationV1().Leases(ns).Delete(c.Request.Context(), name, deleteOptions)
+	case "PriorityClass":
+		deleteErr = clientset.SchedulingV1().PriorityClasses().Delete(c.Request.Context(), name, deleteOptions)
+	case "RuntimeClass":
+		deleteErr = clientset.NodeV1().RuntimeClasses().Delete(c.Request.Context(), name, deleteOptions)
+	case "MutatingWebhookConfiguration":
+		deleteErr = clientset.AdmissionregistrationV1().MutatingWebhookConfigurations().Delete(c.Request.Context(), name, deleteOptions)
+	case "ValidatingWebhookConfiguration":
+		deleteErr = clientset.AdmissionregistrationV1().ValidatingWebhookConfigurations().Delete(c.Request.Context(), name, deleteOptions)
+	case "PersistentVolume":
+		deleteErr = clientset.CoreV1().PersistentVolumes().Delete(c.Request.Context(), name, deleteOptions)
+	case "PersistentVolumeClaim":
+		deleteErr = clientset.CoreV1().PersistentVolumeClaims(ns).Delete(c.Request.Context(), name, deleteOptions)
+	case "StorageClass":
+		deleteErr = clientset.StorageV1().StorageClasses().Delete(c.Request.Context(), name, deleteOptions)
+	case "ServiceAccount":
+		deleteErr = clientset.CoreV1().ServiceAccounts(ns).Delete(c.Request.Context(), name, deleteOptions)
+	case "ClusterRole":
+		deleteErr = clientset.RbacV1().ClusterRoles().Delete(c.Request.Context(), name, deleteOptions)
+	case "Role":
+		deleteErr = clientset.RbacV1().Roles(ns).Delete(c.Request.Context(), name, deleteOptions)
+	case "ClusterRoleBinding":
+		deleteErr = clientset.RbacV1().ClusterRoleBindings().Delete(c.Request.Context(), name, deleteOptions)
+	case "RoleBinding":
+		deleteErr = clientset.RbacV1().RoleBindings(ns).Delete(c.Request.Context(), name, deleteOptions)
+	case "Node":
+		deleteErr = clientset.CoreV1().Nodes().Delete(c.Request.Context(), name, deleteOptions)
+	case "Namespace":
+		deleteErr = clientset.CoreV1().Namespaces().Delete(c.Request.Context(), name, deleteOptions)
+	case "Event":
+		deleteErr = clientset.CoreV1().Events(ns).Delete(c.Request.Context(), name, deleteOptions)
+	default:
+		c.JSON(400, gin.H{"error": "Unsupported kind for deletion: " + kind})
+		return
+	}
+
+	if deleteErr != nil {
+		c.JSON(500, gin.H{"error": "Failed to delete resource: " + deleteErr.Error()})
+		return
+	}
+
+	// Create audit log for deletion
+	RecordAuditLog(c, "DELETE_KUBE_RESOURCE", gin.H{
+		"context":   ctxName,
+		"namespace": ns,
+		"name":      name,
+		"kind":      kind,
+	})
+
+	c.JSON(200, gin.H{"message": "Resource deleted successfully"})
+}

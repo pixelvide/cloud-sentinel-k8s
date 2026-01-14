@@ -137,6 +137,7 @@ func main() {
 
 			kubeGroup.GET("/scopes", api.GetResourceScopes)
 			kubeGroup.GET("/resource", api.GetResourceDetails) // <--- New endpoint
+			kubeGroup.DELETE("/resource", api.DeleteResource)
 			kubeGroup.GET("/dashboard", api.GetDashboardSummary)
 
 			// WS Handler

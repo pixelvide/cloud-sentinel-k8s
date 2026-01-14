@@ -280,6 +280,43 @@ export function ResourceDetailsSheet({
                                     </Button>
                                 </>
                             )}
+
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 rounded-lg gap-2 text-xs font-semibold bg-background shadow-sm border-border text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                                disabled={actioning || !details}
+                                onClick={() => {
+                                    setConfirmConfig({
+                                        isOpen: true,
+                                        title: `Delete ${kind}: ${name}`,
+                                        description: (
+                                            <>
+                                                Are you sure you want to delete <span className="font-mono font-bold text-foreground">{kind}</span> <span className="font-mono font-bold text-foreground">{name}</span>?
+                                                This action is permanent and cannot be undone.
+                                            </>
+                                        ),
+                                        confirmText: "Delete",
+                                        confirmVariant: "destructive",
+                                        onConfirm: async () => {
+                                            setActioning(true);
+                                            setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+                                            try {
+                                                await api.del(`/kube/resource?context=${context}&namespace=${namespace}&name=${name}&kind=${kind}`);
+                                                toast.success(`${kind} ${name} deleted successfully`);
+                                                onClose();
+                                            } catch (err: any) {
+                                                toast.error(err.message || "Delete failed");
+                                            } finally {
+                                                setActioning(false);
+                                            }
+                                        }
+                                    });
+                                }}
+                            >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                Delete
+                            </Button>
                         </div>
                     )}
                 </SheetHeader>
@@ -394,6 +431,6 @@ export function ResourceDetailsSheet({
                 confirmVariant={confirmConfig.confirmVariant}
                 loading={actioning}
             />
-        </Sheet>
+        </Sheet >
     );
 }
