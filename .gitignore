@@ -33,6 +33,7 @@ Thumbs.db
 
 # Backend binaries
 backend/cloud-sentinel
+backend/cloud-sentinel-k8s
 *.exe
 
 # Docker
