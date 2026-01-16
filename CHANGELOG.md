@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v1.1.0...v1.1.1) (2026-01-16)
+
+
+### Bug Fixes
+
+* **docker:** update legacy ENV format in frontend/Dockerfile ([4f1682b](https://github.com/pixelvide/cloud-sentinel-k8s/commit/4f1682b494adafcbd8c6e3e4eb0d3cb2412758bc))
+
 ## [1.1.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v1.0.0...v1.1.0) (2026-01-16)
 
 
