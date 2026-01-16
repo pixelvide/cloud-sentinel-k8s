@@ -21,7 +21,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { KubeProperties } from "@/components/KubeProperties";
 import { Button } from "@/components/ui/button";
-import { Terminal as TerminalIcon, FileText, Ban, Trash2, CheckCircle2, Edit, PauseCircle, PlayCircle, Play, Maximize2, Minus, Plus } from "lucide-react";
+import { Terminal as TerminalIcon, FileText, Ban, Trash2, CheckCircle2, Edit, PauseCircle, PlayCircle, Play, Maximize2, Minus, Plus, RotateCcw } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { LogViewerModal } from "@/components/LogViewerModal";
 import { api } from "@/lib/api";
@@ -402,6 +402,46 @@ export function ResourceDetailsSheet({
                                 >
                                     <Maximize2 className="h-3.5 w-3.5 text-blue-500" />
                                     Scale
+                                </Button>
+                            )}
+
+                            {["Deployment", "StatefulSet", "DaemonSet"].includes(kind) && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 rounded-lg gap-2 text-xs font-semibold bg-background shadow-sm border-border text-foreground hover:bg-accent"
+                                    disabled={actioning || !details}
+                                    onClick={() => {
+                                        setConfirmConfig({
+                                            isOpen: true,
+                                            title: `Restart ${kind}: ${name}`,
+                                            description: (
+                                                <>
+                                                    Are you sure you want to trigger a rollout restart for <span className="font-mono font-bold text-foreground">{kind}</span> <span className="font-mono font-bold text-foreground">{name}</span>?
+                                                    This will restart all pods in the resource.
+                                                </>
+                                            ),
+                                            confirmText: "Restart",
+                                            confirmVariant: "default",
+                                            onConfirm: async () => {
+                                                setActioning(true);
+                                                setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+                                                try {
+                                                    await api.post(`/kube/resource/restart?context=${context}&namespace=${namespace}&name=${name}&kind=${kind}`, {});
+                                                    toast.success(`${kind} ${name} restart triggered`);
+                                                    fetchDetails();
+                                                    onUpdate?.();
+                                                } catch (err: any) {
+                                                    toast.error(err.message || "Restart failed");
+                                                } finally {
+                                                    setActioning(false);
+                                                }
+                                            }
+                                        });
+                                    }}
+                                >
+                                    <RotateCcw className="h-3.5 w-3.5 text-orange-500" />
+                                    Restart
                                 </Button>
                             )}
 
