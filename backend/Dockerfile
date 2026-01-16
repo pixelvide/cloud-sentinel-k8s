@@ -5,7 +5,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 COPY version.txt .
-RUN export VERSION=$(grep -oP '(?<=version=).*' version.txt) && \
+RUN export VERSION=$(cat version.txt) && \
     go build -ldflags="-X main.Version=$VERSION" -o server main.go
 
 FROM public.ecr.aws/docker/library/alpine:latest
