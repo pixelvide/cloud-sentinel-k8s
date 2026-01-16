@@ -24,9 +24,9 @@ COPY backend/go.mod backend/go.sum ./
 RUN go mod download
 
 # Copy source, version file and build
-COPY version.txt .
 COPY backend/ ./
-RUN export VERSION=$(cat version.txt) && \
+COPY version.txt .
+RUN VERSION=$(cat version.txt | tr -d '\n\r') && \
     CGO_ENABLED=0 GOOS=linux go build -ldflags="-X main.Version=$VERSION" -o server main.go
 
 # Stage 3: Final Production Image

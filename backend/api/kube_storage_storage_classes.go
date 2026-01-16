@@ -32,6 +32,7 @@ func GetStorageClasses(c *gin.Context) {
 		Provisioner       string `json:"provisioner"`
 		ReclaimPolicy     string `json:"reclaim_policy"`
 		VolumeBindingMode string `json:"volume_binding_mode"`
+		IsDefault         bool   `json:"is_default"`
 		Age               string `json:"age"`
 	}
 
@@ -46,11 +47,21 @@ func GetStorageClasses(c *gin.Context) {
 			binding = string(*item.VolumeBindingMode)
 		}
 
+		isDefault := false
+		if item.Annotations != nil {
+			if item.Annotations["storageclass.kubernetes.io/is-default-class"] == "true" {
+				isDefault = true
+			} else if item.Annotations["storageclass.beta.kubernetes.io/is-default-class"] == "true" {
+				isDefault = true
+			}
+		}
+
 		classes = append(classes, StorageClassInfo{
 			Name:              item.Name,
 			Provisioner:       item.Provisioner,
 			ReclaimPolicy:     reclaim,
 			VolumeBindingMode: binding,
+			IsDefault:         isDefault,
 			Age:               item.CreationTimestamp.Time.Format(time.RFC3339),
 		})
 	}

@@ -20,12 +20,36 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
     const currentContext = searchParams.get("context");
 
     const [user, setUser] = useState<UserProfile | null>(null);
-    const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
-        'Workloads': true,
-        'Custom Resources': true,
-    });
+    const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
     const [crds, setCrds] = useState<any[]>([]);
     const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+
+    useEffect(() => {
+        if (!pathname) return;
+
+        // Expand active category
+        const activeItem = NAVIGATION_CONFIG.find(item =>
+            item.path === pathname || (item.path !== "/" && pathname.startsWith(item.path))
+        );
+        if (activeItem?.category) {
+            setOpenCategories(prev => ({ ...prev, [activeItem.category!]: true }));
+        }
+
+        // Special handling for CRDs
+        if (pathname.startsWith("/kube-crds")) {
+            setOpenCategories(prev => ({ ...prev, 'Custom Resources': true }));
+
+            // If it's a specific CRD, expand its group
+            const crdNameMatch = pathname.match(/\/kube-crds\/([^\/\?]+)/);
+            if (crdNameMatch && crds.length > 0) {
+                const crdName = crdNameMatch[1];
+                const crd = crds.find(c => c.name === crdName);
+                if (crd?.group) {
+                    setOpenGroups(prev => ({ ...prev, [crd.group]: true }));
+                }
+            }
+        }
+    }, [pathname, crds]);
 
     useEffect(() => {
         const fetchUser = async () => {

@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Layers, RefreshCw } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn, formatAge } from "@/lib/utils";
 import { api } from "@/lib/api";
@@ -14,6 +15,7 @@ interface StorageClassInfo {
     provisioner: string;
     reclaim_policy: string;
     volume_binding_mode: string;
+    is_default: boolean;
     age: string;
 }
 
@@ -113,7 +115,14 @@ function StorageClassesContent() {
                                     >
                                         <div className="flex flex-col lg:flex-row lg:items-center gap-4 justify-between">
                                             <div className="min-w-0 flex-1">
-                                                <p className="font-semibold text-base truncate">{item.name}</p>
+                                                <div className="flex items-center gap-2">
+                                                    <p className="font-semibold text-base truncate">{item.name}</p>
+                                                    {item.is_default && (
+                                                        <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 border-indigo-200 text-[10px] font-bold px-1.5 h-4">
+                                                            default
+                                                        </Badge>
+                                                    )}
+                                                </div>
                                                 <p className="text-xs text-muted-foreground mt-1">
                                                     Provisioner: {item.provisioner}
                                                 </p>

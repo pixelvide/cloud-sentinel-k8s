@@ -28,6 +28,8 @@ func GetPVs(c *gin.Context) {
 		return
 	}
 
+	storageClassFilter := c.Query("storageClass")
+
 	type PVInfo struct {
 		Name          string `json:"name"`
 		Capacity      string `json:"capacity"`
@@ -42,6 +44,10 @@ func GetPVs(c *gin.Context) {
 
 	var pvs []PVInfo
 	for _, item := range list.Items {
+		if storageClassFilter != "" && item.Spec.StorageClassName != storageClassFilter {
+			continue
+		}
+
 		capacity := ""
 		if val, ok := item.Spec.Capacity["storage"]; ok {
 			capacity = val.String()

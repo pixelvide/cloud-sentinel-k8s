@@ -1,8 +1,8 @@
 services:
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: ./
+      dockerfile: backend/Dockerfile
     environment:
       - GIN_MODE=${GIN_MODE:-release}
       - DB_HOST=${DB_HOST}
@@ -23,8 +23,8 @@ services:
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: ./
+      dockerfile: frontend/Dockerfile
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     depends_on:

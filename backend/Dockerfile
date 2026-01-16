@@ -1,11 +1,11 @@
 FROM public.ecr.aws/docker/library/golang:1.25-alpine AS builder
 
 WORKDIR /app
-COPY go.mod go.sum ./
+COPY backend/go.mod backend/go.sum ./
 RUN go mod download
-COPY . .
+COPY backend/ .
 COPY version.txt .
-RUN export VERSION=$(cat version.txt) && \
+RUN VERSION=$(cat version.txt | tr -d '\n\r') && \
     go build -ldflags="-X main.Version=$VERSION" -o server main.go
 
 FROM public.ecr.aws/docker/library/alpine:latest

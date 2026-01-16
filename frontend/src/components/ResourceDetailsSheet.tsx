@@ -27,6 +27,7 @@ import { LogViewerModal } from "@/components/LogViewerModal";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { RelatedPodsTable } from "@/components/RelatedPodsTable";
+import { RelatedPVsTable } from "@/components/RelatedPVsTable";
 
 
 interface ResourceDetailsSheetProps {
@@ -458,6 +459,7 @@ export function ResourceDetailsSheet({
                             <KubeProperties resource={details.raw} />
 
                             <RelatedPodsTable resource={details.raw} context={context} />
+                            <RelatedPVsTable resource={details.raw} context={context} />
 
                             {/* Events Section */}
                             <div className="space-y-3">

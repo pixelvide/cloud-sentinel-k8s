@@ -21,6 +21,8 @@ export function KubeProperties({ resource, customProperties }: KubePropertiesPro
     const [showNodeAffinity, setShowNodeAffinity] = useState(false);
     const [showPodAffinity, setShowPodAffinity] = useState(false);
     const [showPodAntiAffinity, setShowPodAntiAffinity] = useState(false);
+    const [showParameters, setShowParameters] = useState(false);
+    const [showFinalizers, setShowFinalizers] = useState(false);
 
     if (!resource || !resource.metadata) return null;
 
@@ -30,7 +32,8 @@ export function KubeProperties({ resource, customProperties }: KubePropertiesPro
         namespace,
         creationTimestamp,
         labels,
-        annotations
+        annotations,
+        finalizers
     } = metadata;
 
     const getResourceStatus = (res: any) => {
@@ -122,6 +125,27 @@ export function KubeProperties({ resource, customProperties }: KubePropertiesPro
             if (status?.addresses) {
                 extra["Addresses"] = status.addresses.map((addr: any) => `${addr.type}: ${addr.address}`);
             }
+        } else if (kind === "StorageClass") {
+            if (res.provisioner) extra["Provisioner"] = res.provisioner;
+            if (res.reclaimPolicy) extra["Reclaim Policy"] = res.reclaimPolicy;
+            if (res.volumeBindingMode) extra["Volume Binding Mode"] = res.volumeBindingMode;
+            if (res.allowVolumeExpansion) extra["Allow Volume Expansion"] = String(res.allowVolumeExpansion);
+            if (res.mountOptions) extra["Mount Options"] = res.mountOptions;
+        } else if (kind === "PersistentVolume") {
+            if (spec?.capacity?.storage) extra["Capacity"] = spec.capacity.storage;
+            if (spec?.accessModes) extra["Access Modes"] = spec.accessModes;
+            if (spec?.persistentVolumeReclaimPolicy) extra["Reclaim Policy"] = spec.persistentVolumeReclaimPolicy;
+            if (spec?.storageClassName) extra["Storage Class"] = spec.storageClassName;
+            if (spec?.claimRef) {
+                extra["Claim"] = `${spec.claimRef.namespace}/${spec.claimRef.name}`;
+            }
+            if (status?.phase) extra["Phase"] = status.phase;
+        } else if (kind === "PersistentVolumeClaim") {
+            if (status?.phase) extra["Phase"] = status.phase;
+            if (spec?.volumeName) extra["Volume"] = spec.volumeName;
+            if (status?.capacity?.storage) extra["Capacity"] = status.capacity.storage;
+            if (spec?.accessModes) extra["Access Modes"] = spec.accessModes;
+            if (spec?.storageClassName) extra["Storage Class"] = spec.storageClassName;
         }
 
         return { ...extra, ...customProperties };
@@ -141,11 +165,13 @@ export function KubeProperties({ resource, customProperties }: KubePropertiesPro
 
     const labelCount = labels ? Object.keys(labels).length : 0;
     const annotationCount = annotations ? Object.keys(annotations).length : 0;
+    const finalizerCount = finalizers ? finalizers.length : 0;
     const taints = resource.spec?.taints || [];
     const conditions = resource.status?.conditions || [];
     const tolerations = resource.spec?.tolerations || [];
     const nodeSelector = resource.spec?.nodeSelector || {};
     const affinity = resource.spec?.affinity || {};
+    const parameters = resource.parameters || {};
 
     const hasAffinity = affinity.nodeAffinity || affinity.podAffinity || affinity.podAntiAffinity;
 
@@ -275,6 +301,34 @@ export function KubeProperties({ resource, customProperties }: KubePropertiesPro
                                 {Object.entries(annotations).map(([k, v]) => (
                                     <Badge key={k} variant="outline" className="text-[10px] font-bold border-border bg-muted/50 text-foreground/80 py-0.5 px-2 max-w-full h-auto whitespace-normal break-all">
                                         {k}: {String(v)}
+                                    </Badge>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {finalizerCount > 0 && (
+                    <div className="pt-3 border-t border-border/50">
+                        <button
+                            onClick={() => setShowFinalizers(!showFinalizers)}
+                            className="flex items-center justify-between w-full text-left group"
+                        >
+                            <div className="flex items-center gap-2">
+                                <StickyNote className="h-3.5 w-3.5 text-muted-foreground/60 rotate-180" />
+                                <span className="text-muted-foreground text-xs font-semibold uppercase tracking-tight">Finalizers</span>
+                                <Badge variant="secondary" className="bg-muted text-muted-foreground border-none text-[10px] font-bold px-1.5 h-4">
+                                    {finalizerCount}
+                                </Badge>
+                            </div>
+                            {showFinalizers ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/60" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />}
+                        </button>
+
+                        {showFinalizers && (
+                            <div className="mt-3 flex flex-wrap gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                                {finalizers.map((f: string) => (
+                                    <Badge key={f} variant="outline" className="text-[10px] font-bold border-border bg-muted/50 text-foreground/80 py-0.5 px-2 h-auto whitespace-normal break-all">
+                                        {f}
                                     </Badge>
                                 ))}
                             </div>
@@ -432,6 +486,34 @@ export function KubeProperties({ resource, customProperties }: KubePropertiesPro
                         {showNodeSelector && (
                             <div className="mt-3 flex flex-wrap gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                                 {Object.entries(nodeSelector).map(([k, v]) => (
+                                    <Badge key={k} variant="outline" className="text-[10px] font-bold border-border bg-muted/50 text-foreground/80 py-0.5 px-2 h-auto whitespace-normal break-all">
+                                        {k}: {String(v)}
+                                    </Badge>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {Object.keys(parameters).length > 0 && (
+                    <div className="pt-3 border-t border-border/50">
+                        <button
+                            onClick={() => setShowParameters(!showParameters)}
+                            className="flex items-center justify-between w-full text-left group"
+                        >
+                            <div className="flex items-center gap-2">
+                                <Share2 className="h-3.5 w-3.5 text-muted-foreground/60" />
+                                <span className="text-muted-foreground text-xs font-semibold uppercase tracking-tight">Parameters</span>
+                                <Badge variant="secondary" className="bg-muted text-muted-foreground border-none text-[10px] font-bold px-1.5 h-4">
+                                    {Object.keys(parameters).length}
+                                </Badge>
+                            </div>
+                            {showParameters ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/60" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />}
+                        </button>
+
+                        {showParameters && (
+                            <div className="mt-3 flex flex-wrap gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                                {Object.entries(parameters).map(([k, v]) => (
                                     <Badge key={k} variant="outline" className="text-[10px] font-bold border-border bg-muted/50 text-foreground/80 py-0.5 px-2 h-auto whitespace-normal break-all">
                                         {k}: {String(v)}
                                     </Badge>
