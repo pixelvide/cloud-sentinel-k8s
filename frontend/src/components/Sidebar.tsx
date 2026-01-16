@@ -7,6 +7,7 @@ import { X, LayoutDashboard, ChevronDown, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { NAVIGATION_CONFIG, NavigationItem } from "@/config/navigation";
+import { VersionDisplay } from "@/components/VersionDisplay";
 
 interface UserProfile {
     id: number;
@@ -281,7 +282,8 @@ function SidebarContent({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
                     })()}
                 </nav>
 
-                <div className="p-4 mt-auto">
+                <div className="p-4 mt-auto space-y-2">
+                    <VersionDisplay />
                     <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex flex-col gap-3">
                         <div className="flex items-center gap-3">
                             <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/20">

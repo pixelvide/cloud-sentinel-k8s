@@ -24,7 +24,16 @@ Implementation of an intelligent monitoring system to detect and alert on unusua
 - **CrashLoop Correlation**: Detect patterns of restarts and failures across related services.
 - **Threshold Learning**: Dynamic adjustment of warning thresholds based on seasonal patterns.
 
-### Phase 3: Intelligence & Automated Response
+### Phase 3: Targeted Cluster Anomalies
+- **Workload Resilience**: Detect missing `PodDisruptionBudget` for active Deployments.
+- **Resource Discipline**: Identify containers missing CPU/Memory limits.
+- **Affinity Optimization**: 
+    - Flag missing `TopologySpreadConstraints` or Cross-Zone affinity for multi-zone clusters.
+    - Identify conflicting Pod Affinity and Anti-affinity rules that may cause scheduling deadlocks.
+- **Cleanliness & Hygiene**: Detect Namespaces with no active resources (excluding `default`, `kube-system`, etc.).
+- **Infrastructure Legacy**: Identify Ingress resources using the deprecated `kubernetes.io/ingress.class` annotation instead of `spec.ingressClassName`.
+
+### Phase 4: Intelligence & Automated Response
 - **ML-powered Forecasting**: Predict potential resource exhaustion or OOM kills before they occur.
 - **Root Cause Analysis (RCA)**: Automated grouping of related alerts to pinpoint the source of failure.
 - **Proactive Remediation**: Optional automated actions (e.g., scaling up, restarting pods) based on detected anomalies.

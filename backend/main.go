@@ -24,6 +24,9 @@ func main() {
 	// Reconfigure all GitLab K8s agents on startup (for non-persistent data directories)
 	go api.ReconfigureAllAgentsOnStartup()
 
+	// Set app version from build tag
+	api.SetAppVersion(Version)
+
 	r := gin.Default()
 
 	config := cors.DefaultConfig()
@@ -90,6 +93,7 @@ func main() {
 				contextMappings.DELETE("/:id", api.DeleteContextMapping)
 			}
 			settings.GET("/audit-logs", api.GetMyAuditLogs)
+			settings.GET("/version", api.GetAppVersion)
 		}
 
 		// K8s API group - all Kubernetes related endpoints
