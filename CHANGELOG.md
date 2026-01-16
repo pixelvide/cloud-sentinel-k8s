@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.4.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v1.3.0...v1.4.0) (2026-01-16)
+
+
+### Features
+
+* add rollout restart action and disable nextjs telemetry/traces ([05c66fd](https://github.com/pixelvide/cloud-sentinel-k8s/commit/05c66fd895347c2c47d79a75952fb34c2db3508b))
+* add scale in/out action for deployment, statefulset, and replicaset ([1337bf3](https://github.com/pixelvide/cloud-sentinel-k8s/commit/1337bf3322da2173e3903e01727c3a59db566696))
+* **frontend:** enhance KubeProperties with workload images, affinities, and Job-specific details ([9ce1950](https://github.com/pixelvide/cloud-sentinel-k8s/commit/9ce1950195aa558af5164db6f232271d366cbdfb))
+
 ## [1.3.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v1.2.1...v1.3.0) (2026-01-16)
 
 
