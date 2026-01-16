@@ -12,10 +12,10 @@ The system consists of three main components:
 
 ```mermaid
 graph TD
-    User[User / Browser] -->|HTTPS| Frontend[Frontend (Next.js)]
-    Frontend -->|API Calls / WS| Backend[Backend API (Go)]
+    User["User / Browser"] -->|HTTPS| Frontend["Frontend (Next.js)"]
+    Frontend -->|API Calls / WS| Backend["Backend API (Go)"]
     Backend -->|SQL| DB[(PostgreSQL)]
-    Backend -->|K8s API| K8s[Kubernetes Cluster(s)]
+    Backend -->|K8s API| K8s["Kubernetes Cluster(s)"]
     Backend -->|API| GitLab[GitLab API]
 ```
 

@@ -2,18 +2,37 @@
 
 A modern, read-optimized Kubernetes dashboard built with Next.js and Go.
 
+## Project Documentation
+
+- [**Architecture**](./ARCHITECTURE.md): High-level system design and component interaction.
+- [**Future Roadmap**](./FUTURE_ROADMAP.md): Planned features and improvements.
+- [**Contributing**](./CONTRIBUTING.md): Guidelines for contributing to the project.
+- [**Code of Conduct**](./CODE_OF_CONDUCT.md): Community standards and expectations.
+- [**Development Guide**](./DEVELOPMENT.md): Instructions for local development and setup.
+
 ## Features
 
-- **Read-Only Dashboard**: Secure viewing of Kubernetes resources.
-- **Multi-Context Support**: Switch between multiple clusters easily.
-- **Resource Views**: Pods, Deployments, Services, Ingresses, Events, and more.
-- **Interactive Terminal**: Exec into pods directly from the browser.
-- **OIDC Authentication**: Secure login with generic OIDC providers.
+### Resource Management
+- **Workloads**: Deep insights into Pods, Deployments, ReplicaSets, StatefulSets, DaemonSets, Jobs, and CronJobs.
+- **Cluster Resources**: Manage Nodes, Namespaces, StorageClasses, PVs/PVCs, and ClusterRoles.
+- **Configuration**: View and manage ConfigMaps, Secrets, RBAC (Roles, ServiceAccounts), and Network Policies.
+- **CRDs**: robust support for Custom Resource Definitions with formatted views.
+
+### Actionable & Interactive
+- **Resource Actions**: Delete resources, suspend/resume CronJobs, and drain nodes directly from the UI.
+- **Helmet Management**: Full lifecycle management for Helm releases including list, filter, history, and rollback capabilities.
+- **Terminal & Logs**: Secure, integrated terminal access to pods and real-time log streaming with search.
+- **Audit Logging**: Comprehensive audit trails for all user actions (login, delete, update).
+
+### Enhanced Visualization
+- **Rich Details**: Right-side details panel with JSON/YAML views, live Events, and deep property inspection (Affinity, Tolerations, Conditions).
+- **Resource Relations**: Automatically discover and list related resources (e.g., Pods for a Deployment).
+- **Multi-Context**: Seamlessly switch between multiple Kubernetes clusters.
 
 ## Prerequisites
 
 - **Docker & Docker Compose**: For containerized deployment.
-- **PostgreSQL**: An external database (or local instance) is required.
+- **PostgreSQL**: An external database or local instance (required for audit logs and user data).
 
 ## Quick Start
 
@@ -24,8 +43,13 @@ A modern, read-optimized Kubernetes dashboard built with Next.js and Go.
     ```
 
 2.  **Configure Environment Variables**:
-    Create a `.env` file in the root directory or set environment variables in your shell. The backend relies on these to connect to the database and OIDC provider.
-
+    Copy the example environment file:
+    ```bash
+    cp .env.example .env
+    ```
+    
+    Edit `.env` to configure your database and OIDC settings.
+    
     **Database Configuration:**
     ```env
     DB_HOST=localhost          # Hostname/IP of your Postgres DB
@@ -33,8 +57,7 @@ A modern, read-optimized Kubernetes dashboard built with Next.js and Go.
     DB_USER=postgres           # Database username
     DB_PASSWORD=secret         # Database password
     DB_NAME=cloud_sentinel     # Database name
-    DB_SSLMODE=disable         # SSL Mode: disable, require, verify-ca, etc. (default: require)
-    DB_TIMEZONE=UTC            # Timezone for sessions (default: UTC). Note: DB server must support it.
+    DB_SSLMODE=disable         # Mode: disable, require, verify-ca
     ```
 
     **OIDC Configuration:**
@@ -42,9 +65,7 @@ A modern, read-optimized Kubernetes dashboard built with Next.js and Go.
     OIDC_ISSUER=https://accounts.google.com  # OIDC Provider URL
     OIDC_CLIENT_ID=<your-client-id>
     OIDC_CLIENT_SECRET=<your-client-secret>
-    # OIDC_REDIRECT_URL is automatically derived from FRONTEND_URL + /api/v1/auth/callback
-    FRONTEND_URL=http://localhost:3000       # URL where frontend is accessible (default: http://localhost:3000)
-    FRONTEND_PORT=3000                       # Port to expose frontend on (default: 3000)
+    FRONTEND_URL=http://localhost:3000       
     ```
 
 3.  **Run with Docker Compose**:
@@ -53,27 +74,21 @@ A modern, read-optimized Kubernetes dashboard built with Next.js and Go.
     ```
 
     This will start:
-    - **Frontend**: Available at `http://localhost:3000`
-    - **Backend**: Available at `http://localhost:8080` (API)
-
-    **Note:** To restart the deployment and rebuild containers (e.g., after configuration changes), use:
-    ```bash
-    docker compose up -d --build
-    ```
+    - **Frontend**: `http://localhost:3000`
+    - **Backend**: `http://localhost:8080` (Internal API)
 
 ## Deployment Note
 
 - **Frontend-Backend Communication**:
-    - The application is configured with **Next.js rewrites** to proxy requests from `/api/*` to the backend service internally.
-    - This means API calls from the browser go to `http://localhost:3000/api/...`, and Next.js forwards them to the backend container.
-    - **The backend port (8080) is NOT exposed publicly by default** to improve security.
+    - The application uses **Next.js rewrites** to proxy requests from `/api/*` to the backend service.
+    - **Security**: The backend port (8080) is NOT exposed publicly by default.
     
-    **Important: OIDC Redirects**
-    - The `redirect_uri` sent to your OIDC provider is automatically constructed as:
-      `{FRONTEND_URL}/api/v1/auth/callback`
-    - Ensure your OIDC provider (e.g. Google Console) has this URL whitelisted.
+    **OIDC Redirects**:
+    - The `redirect_uri` is constructed as `{FRONTEND_URL}/api/v1/auth/callback`.
+    - Whitelist this URL in your OIDC provider settings.
 
 ## Development
 
-- **Backend**: Go (Gin framework)
-- **Frontend**: TypeScript, Next.js, Tailwind CSS, Shadcn UI
+- **Backend**: Go (Gin), Client-go, Dynamic Client for CRDs
+- **Frontend**: TypeScript, Next.js 14, Tailwind CSS, Shadcn UI
+- **Tools**: `kubectl`, `helm`, `fd`, `ripgrep` recommended for dev workflow.
