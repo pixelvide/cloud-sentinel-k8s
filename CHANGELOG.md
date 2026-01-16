@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v1.4.0...v1.5.0) (2026-01-16)
+
+
+### Features
+
+* add app versioning, update notifications, and roadmap enhancements ([619cddd](https://github.com/pixelvide/cloud-sentinel-k8s/commit/619cddd37fba37913f56f7a86b7376100202576b))
+
 ## [1.4.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v1.3.0...v1.4.0) (2026-01-16)
 
 
