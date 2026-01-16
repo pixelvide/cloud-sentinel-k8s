@@ -149,6 +149,7 @@ function NetworkPoliciesContent() {
                 namespace={selectedItem?.namespace || ""}
                 name={selectedItem?.name || ""}
                 kind="NetworkPolicy"
+                onUpdate={handleRefresh}
             />
         </div >
     );

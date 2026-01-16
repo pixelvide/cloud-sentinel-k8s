@@ -172,6 +172,7 @@ function ReplicaSetsContent() {
                 namespace={selectedReplicaSet?.namespace || ""}
                 name={selectedReplicaSet?.name || ""}
                 kind="ReplicaSet"
+                onUpdate={handleRefresh}
             />
         </div>
     );

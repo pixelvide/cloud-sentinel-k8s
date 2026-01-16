@@ -188,6 +188,7 @@ function CustomResourcesContent() {
                 name={selectedResource?.name || ""}
                 kind={crdMeta?.kind || ""}
                 crdName={crdName}
+                onUpdate={handleRefresh}
             />
         </div>
     );

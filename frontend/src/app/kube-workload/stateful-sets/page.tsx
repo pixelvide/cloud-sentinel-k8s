@@ -159,6 +159,7 @@ function StatefulSetsContent() {
                 namespace={selectedStatefulSet?.namespace || ""}
                 name={selectedStatefulSet?.name || ""}
                 kind="StatefulSet"
+                onUpdate={handleRefresh}
             />
         </div>
     );

@@ -132,6 +132,7 @@ function ClusterRolesContent() {
                 namespace=""
                 name={selectedItem?.name || ""}
                 kind="ClusterRole"
+                onUpdate={handleRefresh}
             />
         </div >
     );

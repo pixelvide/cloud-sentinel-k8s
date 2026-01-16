@@ -143,6 +143,7 @@ function PDBsContent() {
                 namespace={selectedResource?.namespace || ""}
                 name={selectedResource?.name || ""}
                 kind="PodDisruptionBudget"
+                onUpdate={handleRefresh}
             />
         </div>
     );

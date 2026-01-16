@@ -132,6 +132,7 @@ function RuntimeClassesContent() {
                 namespace=""
                 name={selectedResource?.name || ""}
                 kind="RuntimeClass"
+                onUpdate={handleRefresh}
             />
         </div>
     );

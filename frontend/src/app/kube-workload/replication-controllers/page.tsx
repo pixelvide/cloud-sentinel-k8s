@@ -172,6 +172,7 @@ function ReplicationControllersContent() {
                 namespace={selectedRc?.namespace || ""}
                 name={selectedRc?.name || ""}
                 kind="ReplicationController"
+                onUpdate={handleRefresh}
             />
         </div>
     );

@@ -228,6 +228,7 @@ function NodesContent() {
                 namespace=""
                 name={selectedNode?.name || ""}
                 kind="Node"
+                onUpdate={handleRefresh}
             />
         </div>
     );

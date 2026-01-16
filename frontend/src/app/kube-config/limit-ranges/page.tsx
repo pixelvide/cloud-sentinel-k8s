@@ -137,6 +137,7 @@ function LimitRangesContent() {
                 namespace={selectedResource?.namespace || ""}
                 name={selectedResource?.name || ""}
                 kind="LimitRange"
+                onUpdate={handleRefresh}
             />
         </div>
     );

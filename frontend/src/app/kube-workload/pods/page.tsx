@@ -192,6 +192,7 @@ function PodsContent() {
                 namespace={selectedPod?.namespace || ""}
                 name={selectedPod?.name || ""}
                 kind="Pod"
+                onUpdate={handleRefresh}
             />
         </div>
     );

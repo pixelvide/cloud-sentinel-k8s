@@ -153,6 +153,7 @@ function EndpointsContent() {
                 namespace={selectedItem?.namespace || ""}
                 name={selectedItem?.name || ""}
                 kind="Endpoints"
+                onUpdate={handleRefresh}
             />
         </div >
     );

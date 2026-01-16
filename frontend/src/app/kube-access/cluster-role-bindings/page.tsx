@@ -139,6 +139,7 @@ function ClusterRoleBindingsContent() {
                 namespace=""
                 name={selectedItem?.name || ""}
                 kind="ClusterRoleBinding"
+                onUpdate={handleRefresh}
             />
         </div >
     );

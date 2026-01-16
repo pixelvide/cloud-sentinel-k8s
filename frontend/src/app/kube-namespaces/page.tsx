@@ -166,6 +166,7 @@ function NamespacesContent() {
                 namespace=""
                 name={viewNamespace || ""}
                 kind="Namespace"
+                onUpdate={handleRefresh}
             />
         </div>
     );

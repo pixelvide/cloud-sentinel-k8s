@@ -160,6 +160,7 @@ function DaemonSetsContent() {
                 namespace={selectedDaemonSet?.namespace || ""}
                 name={selectedDaemonSet?.name || ""}
                 kind="DaemonSet"
+                onUpdate={handleRefresh}
             />
         </div>
     );

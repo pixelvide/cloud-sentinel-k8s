@@ -182,6 +182,7 @@ function CronJobsContent() {
                 namespace={selectedCronJob?.namespace || ""}
                 name={selectedCronJob?.name || ""}
                 kind="CronJob"
+                onUpdate={handleRefresh}
             />
         </div>
     );

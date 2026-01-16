@@ -180,6 +180,7 @@ function DeploymentsContent() {
                 namespace={selectedDeployment?.namespace || ""}
                 name={selectedDeployment?.name || ""}
                 kind="Deployment"
+                onUpdate={handleRefresh}
             />
         </div>
     );

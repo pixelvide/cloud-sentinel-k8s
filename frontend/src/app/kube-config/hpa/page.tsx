@@ -145,6 +145,7 @@ function HPAContent() {
                 namespace={selectedResource?.namespace || ""}
                 name={selectedResource?.name || ""}
                 kind="HorizontalPodAutoscaler"
+                onUpdate={handleRefresh}
             />
         </div>
     );

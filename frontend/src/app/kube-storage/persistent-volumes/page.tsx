@@ -172,6 +172,7 @@ function PVContent() {
                 namespace=""
                 name={selectedItem?.name || ""}
                 kind="PersistentVolume"
+                onUpdate={handleRefresh}
             />
         </div >
     );

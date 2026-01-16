@@ -156,6 +156,7 @@ function RoleBindingsContent() {
                 namespace={selectedItem?.namespace || ""}
                 name={selectedItem?.name || ""}
                 kind="RoleBinding"
+                onUpdate={handleRefresh}
             />
         </div >
     );

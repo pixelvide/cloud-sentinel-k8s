@@ -37,6 +37,7 @@ interface ResourceDetailsSheetProps {
     name: string;
     kind: string;
     crdName?: string;
+    onUpdate?: () => void;
 }
 
 interface EventSimple {
@@ -70,6 +71,7 @@ export function ResourceDetailsSheet({
     name,
     kind,
     crdName,
+    onUpdate,
 }: ResourceDetailsSheetProps) {
     const [details, setDetails] = useState<ResourceDetails | null>(null);
     const [loading, setLoading] = useState(false);
@@ -251,6 +253,7 @@ export function ResourceDetailsSheet({
                                                         });
                                                         toast.success(`Node ${name} ${isUnschedulable ? "uncordoned" : "cordoned"}`);
                                                         fetchDetails();
+                                                        onUpdate?.();
                                                     } catch (err: any) {
                                                         toast.error(err.message || "Action failed");
                                                     } finally {
@@ -297,6 +300,7 @@ export function ResourceDetailsSheet({
                                                         const res = await api.post<any>(`/kube/nodes/drain?context=${context}&name=${name}`, {});
                                                         toast.success(`Drain started: ${res.evicted} pods evicted, ${res.skipped} skipped.`);
                                                         fetchDetails();
+                                                        onUpdate?.();
                                                     } catch (err: any) {
                                                         toast.error(err.message || "Drain failed");
                                                     } finally {
@@ -339,6 +343,7 @@ export function ResourceDetailsSheet({
                                                     });
                                                     toast.success(`CronJob ${name} ${isSuspended ? "resumed" : "suspended"}`);
                                                     fetchDetails();
+                                                    onUpdate?.();
                                                 } catch (err: any) {
                                                     toast.error(err.message || "Action failed");
                                                 } finally {
@@ -417,6 +422,7 @@ export function ResourceDetailsSheet({
                                                 await api.del(`/kube/resource?context=${context}&namespace=${namespace}&name=${name}&kind=${kind}`);
                                                 toast.success(`${kind} ${name} deleted successfully`);
                                                 onClose();
+                                                onUpdate?.();
                                             } catch (err: any) {
                                                 toast.error(err.message || "Delete failed");
                                             } finally {
@@ -583,6 +589,7 @@ export function ResourceDetailsSheet({
                                     toast.success(`${kind} ${name} updated successfully`);
                                     setIsEditDialogOpen(false);
                                     fetchDetails();
+                                    onUpdate?.();
                                 } catch (err: any) {
                                     toast.error(err.message || "Update failed");
                                 } finally {
@@ -639,7 +646,7 @@ export function ResourceDetailsSheet({
                                     toast.success(`Job ${res.jobName} created successfully`);
                                     setIsRunDialogOpen(false);
                                     // Optionally refresh to show the new job in related lists if any? 
-                                    // For now just closing.
+                                    onUpdate?.();
                                 } catch (err: any) {
                                     toast.error(err.message || "Trigger failed");
                                 } finally {

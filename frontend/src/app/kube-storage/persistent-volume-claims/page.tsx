@@ -184,6 +184,7 @@ function PVCContent() {
                 namespace={selectedItem?.namespace || ""}
                 name={selectedItem?.name || ""}
                 kind="PersistentVolumeClaim"
+                onUpdate={handleRefresh}
             />
         </div >
     );

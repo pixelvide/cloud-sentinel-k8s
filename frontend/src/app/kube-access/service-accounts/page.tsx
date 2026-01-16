@@ -156,6 +156,7 @@ function SAContent() {
                 namespace={selectedItem?.namespace || ""}
                 name={selectedItem?.name || ""}
                 kind="ServiceAccount"
+                onUpdate={handleRefresh}
             />
         </div >
     );

@@ -132,6 +132,7 @@ function PriorityClassesContent() {
                 namespace=""
                 name={selectedResource?.name || ""}
                 kind="PriorityClass"
+                onUpdate={handleRefresh}
             />
         </div>
     );

@@ -186,6 +186,7 @@ function ServicesContent() {
                 namespace={selectedService?.namespace || ""}
                 name={selectedService?.name || ""}
                 kind="Service"
+                onUpdate={handleRefresh}
             />
         </div >
 

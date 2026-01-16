@@ -188,6 +188,7 @@ function IngressesContent() {
                 namespace={selectedIngress?.namespace || ""}
                 name={selectedIngress?.name || ""}
                 kind="Ingress"
+                onUpdate={handleRefresh}
             />
         </div >
 

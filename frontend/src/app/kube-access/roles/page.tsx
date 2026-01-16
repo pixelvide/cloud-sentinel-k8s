@@ -149,6 +149,7 @@ function RolesContent() {
                 namespace={selectedItem?.namespace || ""}
                 name={selectedItem?.name || ""}
                 kind="Role"
+                onUpdate={handleRefresh}
             />
         </div >
     );

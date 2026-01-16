@@ -132,6 +132,7 @@ function ValidatingWebhooksContent() {
                 namespace=""
                 name={selectedResource?.name || ""}
                 kind="ValidatingWebhookConfiguration"
+                onUpdate={handleRefresh}
             />
         </div>
     );

@@ -141,6 +141,7 @@ function LeasesContent() {
                 namespace={selectedResource?.namespace || ""}
                 name={selectedResource?.name || ""}
                 kind="Lease"
+                onUpdate={handleRefresh}
             />
         </div>
     );

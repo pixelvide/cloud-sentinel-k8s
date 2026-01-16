@@ -145,6 +145,7 @@ function SecretsContent() {
                 namespace={selectedResource?.namespace || ""}
                 name={selectedResource?.name || ""}
                 kind="Secret"
+                onUpdate={handleRefresh}
             />
         </div>
     );

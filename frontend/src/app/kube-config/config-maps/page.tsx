@@ -141,6 +141,7 @@ function ConfigMapsContent() {
                 namespace={selectedResource?.namespace || ""}
                 name={selectedResource?.name || ""}
                 kind="ConfigMap"
+                onUpdate={handleRefresh}
             />
         </div>
     );

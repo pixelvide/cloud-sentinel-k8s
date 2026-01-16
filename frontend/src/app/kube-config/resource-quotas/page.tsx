@@ -137,6 +137,7 @@ function ResourceQuotasContent() {
                 namespace={selectedResource?.namespace || ""}
                 name={selectedResource?.name || ""}
                 kind="ResourceQuota"
+                onUpdate={handleRefresh}
             />
         </div>
     );

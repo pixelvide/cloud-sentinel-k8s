@@ -147,6 +147,7 @@ function StorageClassesContent() {
                 namespace=""
                 name={selectedItem?.name || ""}
                 kind="StorageClass"
+                onUpdate={handleRefresh}
             />
         </div >
     );

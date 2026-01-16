@@ -136,6 +136,7 @@ function IngressClassesContent() {
                 namespace=""
                 name={selectedItem?.name || ""}
                 kind="IngressClass"
+                onUpdate={handleRefresh}
             />
         </div >
     );

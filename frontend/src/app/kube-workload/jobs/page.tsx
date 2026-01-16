@@ -200,6 +200,7 @@ function JobsContent() {
                 namespace={selectedJob?.namespace || ""}
                 name={selectedJob?.name || ""}
                 kind="Job"
+                onUpdate={handleRefresh}
             />
         </div>
     );

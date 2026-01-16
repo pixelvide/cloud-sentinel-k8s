@@ -132,6 +132,7 @@ function MutatingWebhooksContent() {
                 namespace=""
                 name={selectedResource?.name || ""}
                 kind="MutatingWebhookConfiguration"
+                onUpdate={handleRefresh}
             />
         </div>
     );
