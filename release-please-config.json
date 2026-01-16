@@ -3,7 +3,8 @@
         ".": {
             "release-type": "simple",
             "extra-files": [
-                "k8s/kustomization.yaml"
+                "k8s/kustomization.yaml",
+                "version.txt"
             ]
         }
     }
