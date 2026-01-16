@@ -5,7 +5,11 @@
             "extra-files": [
                 "k8s/kustomization.yaml",
                 "version.txt",
-                "frontend/package.json"
+                {
+                    "type": "json",
+                    "path": "frontend/package.json",
+                    "jsonpath": "$.version"
+                }
             ]
         }
     }
