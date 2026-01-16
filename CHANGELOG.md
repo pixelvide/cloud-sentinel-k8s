@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.2.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v1.1.1...v1.2.0) (2026-01-16)
+
+
+### Features
+
+* add kubernetes manifests and deployment documentation ([83eeb72](https://github.com/pixelvide/cloud-sentinel-k8s/commit/83eeb727ac07742b0ef57bd1cab50fc376849ab4))
+* inject and expose backend version in health API ([37f8898](https://github.com/pixelvide/cloud-sentinel-k8s/commit/37f8898fc34c25ed741dd0db5469887a51613873))
+
+
+### Bug Fixes
+
+* add release-please version markers ([55a422c](https://github.com/pixelvide/cloud-sentinel-k8s/commit/55a422cb7f054ee56ceb0fa792e96a2811039bc9))
+* correct release-please extra-files configuration ([70f3e10](https://github.com/pixelvide/cloud-sentinel-k8s/commit/70f3e10cb963a3be1fb55f9196994b05295d9864))
+
 ## [1.1.1](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v1.1.0...v1.1.1) (2026-01-16)
 
 
