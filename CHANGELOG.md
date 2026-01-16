@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.1](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v1.2.0...v1.2.1) (2026-01-16)
+
+
+### Bug Fixes
+
+* ensure version.txt is available in docker build context ([08d2bf2](https://github.com/pixelvide/cloud-sentinel-k8s/commit/08d2bf25d62acebed3dc6957bd3de21cd68c80c8))
+* revert version.txt to simple format and update Dockerfiles ([5e888a9](https://github.com/pixelvide/cloud-sentinel-k8s/commit/5e888a941001a88c8e7e3568ca8b64b5a6eb71cb))
+
 ## [1.2.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v1.1.1...v1.2.0) (2026-01-16)
 
 
