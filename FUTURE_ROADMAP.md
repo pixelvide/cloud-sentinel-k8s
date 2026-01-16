@@ -26,12 +26,13 @@ Implementation of an intelligent monitoring system to detect and alert on unusua
 
 ### Phase 3: Targeted Cluster Anomalies
 - **Workload Resilience**: Detect missing `PodDisruptionBudget` for active Deployments.
-- **Resource Discipline**: Identify containers missing CPU/Memory limits.
-- **Affinity Optimization**: 
-    - Flag missing `TopologySpreadConstraints` or Cross-Zone affinity for multi-zone clusters.
-    - Identify conflicting Pod Affinity and Anti-affinity rules that may cause scheduling deadlocks.
 - **Cleanliness & Hygiene**: Detect Namespaces with no active resources (excluding `default`, `kube-system`, etc.).
-- **Infrastructure Legacy**: Identify Ingress resources using the deprecated `kubernetes.io/ingress.class` annotation instead of `spec.ingressClassName`.
+- **Security Posture**:
+    - **Root Users**: Identify containers running as root (UID 0).
+    - **Dangling Services**: Detect Services whose selectors match no active Pods.
+- **Best Practices**:
+    - **Network Policies**: Identify Namespaces missing default Network Policies.
+    - **Deprecated APIs**: Scan for resources using deprecated API versions.
 
 ### Phase 4: Intelligence & Automated Response
 - **ML-powered Forecasting**: Predict potential resource exhaustion or OOM kills before they occur.

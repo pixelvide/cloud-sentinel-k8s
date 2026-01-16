@@ -5,6 +5,7 @@ import (
 	"sort"
 	"time"
 
+	"cloud-sentinel-k8s/analyzers"
 	"cloud-sentinel-k8s/models"
 
 	"github.com/gin-gonic/gin"
@@ -189,6 +190,9 @@ func GetResourceDetails(c *gin.Context) {
 		// Just return empty events
 	}
 
+	// 3. Perform on-demand analysis
+	analysis := analyzers.AnalyzeResource(resourceObj)
+
 	// Ensure we don't pass configuration secrets if any?
 	// User authorized for NS can read secrets in NS? Yes.
 	// So dumping full YAML is fine for authorized user.
@@ -196,6 +200,7 @@ func GetResourceDetails(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"manifest": string(yamlBytes),
 		"events":   events,
+		"analysis": analysis,
 		"raw":      resourceObj,
 	})
 }

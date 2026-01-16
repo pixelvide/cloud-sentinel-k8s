@@ -21,11 +21,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { KubeProperties } from "@/components/KubeProperties";
 import { Button } from "@/components/ui/button";
-import { Terminal as TerminalIcon, FileText, Ban, Trash2, CheckCircle2, Edit, PauseCircle, PlayCircle, Play, Maximize2, Minus, Plus, RotateCcw } from "lucide-react";
+import { Terminal as TerminalIcon, FileText, Ban, Trash2, CheckCircle2, Edit, PauseCircle, PlayCircle, Play, Maximize2, Minus, Plus, RotateCcw, Copy } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { LogViewerModal } from "@/components/LogViewerModal";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { RelatedPodsTable } from "@/components/RelatedPodsTable";
 import { RelatedPVsTable } from "@/components/RelatedPVsTable";
 import { RelatedJobsTable } from "@/components/RelatedJobsTable";
@@ -59,9 +60,26 @@ interface ResourceInfo {
     kind: string;
 }
 
+interface Anomaly {
+    id: string;
+    type: string;
+    severity: "Critical" | "Warning" | "Info";
+    message: string;
+    description: string;
+    suggestion: string;
+    created_at: string;
+}
+
+interface ResourceAnalysis {
+    anomalies: Anomaly[];
+    summary: string;
+    score: number;
+}
+
 interface ResourceDetails {
     manifest: string;
     events: EventSimple[];
+    analysis?: ResourceAnalysis;
     raw: any;
 }
 
@@ -515,8 +533,64 @@ export function ResourceDetailsSheet({
 
                     {details && (
                         <div className="flex flex-col gap-6 p-6">
-                            {/* Properties Section */}
                             <KubeProperties resource={details.raw} />
+
+                            {/* Insights Section */}
+                            {details.analysis && details.analysis.anomalies?.length > 0 && (
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                                            Insights & Anomalies
+                                        </h3>
+                                        <Badge variant="outline" className={cn(
+                                            "font-mono text-[10px]",
+                                            details.analysis.score >= 90 ? "text-emerald-500 border-emerald-500/20" :
+                                                details.analysis.score >= 70 ? "text-amber-500 border-amber-500/20" :
+                                                    "text-destructive border-destructive/20"
+                                        )}>
+                                            Score: {details.analysis.score}/100
+                                        </Badge>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {details.analysis.anomalies.map((anomaly) => (
+                                            <div
+                                                key={anomaly.id}
+                                                className={cn(
+                                                    "p-4 rounded-xl border shadow-sm space-y-2",
+                                                    anomaly.severity === "Critical" ? "bg-red-500/5 border-red-500/20" :
+                                                        anomaly.severity === "Warning" ? "bg-amber-500/5 border-amber-500/20" :
+                                                            "bg-blue-500/5 border-blue-500/20"
+                                                )}
+                                            >
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <Badge className={cn(
+                                                            "text-[10px] font-bold uppercase tracking-tight px-1.5 py-0 h-auto",
+                                                            anomaly.severity === "Critical" ? "bg-red-500 text-white" :
+                                                                anomaly.severity === "Warning" ? "bg-amber-500 text-white" :
+                                                                    "bg-blue-500 text-white"
+                                                        )}>
+                                                            {anomaly.severity}
+                                                        </Badge>
+                                                        <span className="text-xs font-bold text-foreground">{anomaly.message}</span>
+                                                    </div>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                                    {anomaly.description}
+                                                </p>
+                                                {anomaly.suggestion && (
+                                                    <div className="pt-2 flex items-start gap-2 border-t border-border/10 mt-2">
+                                                        <span className="text-[10px] font-bold uppercase text-primary shrink-0 mt-0.5">Suggestion:</span>
+                                                        <p className="text-xs text-foreground/80 italic">
+                                                            {anomaly.suggestion}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             <RelatedPodsTable resource={details.raw} context={context} />
                             <RelatedPVsTable resource={details.raw} context={context} />
@@ -575,8 +649,22 @@ export function ResourceDetailsSheet({
 
                             {/* Manifest Section */}
                             <div className="space-y-3">
-                                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center justify-between">
                                     YAML Manifest
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 ml-auto"
+                                        onClick={() => {
+                                            if (details.manifest) {
+                                                navigator.clipboard.writeText(details.manifest);
+                                                toast.success("Copied to clipboard");
+                                            }
+                                        }}
+                                        title="Copy YAML"
+                                    >
+                                        <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                                    </Button>
                                 </h3>
                                 <div className="relative rounded-md border border-border bg-card p-4 text-xs font-mono text-card-foreground overflow-auto max-h-[600px] shadow-sm">
                                     <pre className="whitespace-pre-wrap break-all">{details.manifest}</pre>
