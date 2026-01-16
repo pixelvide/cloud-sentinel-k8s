@@ -13,6 +13,8 @@ import (
 	"cloud-sentinel-k8s/db"
 )
 
+var Version = "dev"
+
 func main() {
 	// Initialize services
 	db.InitDB()
@@ -38,7 +40,12 @@ func main() {
 	config.AllowCredentials = true
 	r.Use(cors.New(config))
 
-	r.GET("/health", func(c *gin.Context) { c.JSON(200, gin.H{"status": "ok"}) })
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status":  "ok",
+			"version": Version,
+		})
+	})
 
 	authGroup := r.Group("/api/v1/auth")
 	{

@@ -23,9 +23,11 @@ RUN apk add --no-cache git
 COPY backend/go.mod backend/go.sum ./
 RUN go mod download
 
-# Copy source and build
+# Copy source, version file and build
+COPY version.txt ../version.txt
 COPY backend/ ./
-RUN CGO_ENABLED=0 GOOS=linux go build -o server main.go
+RUN export VERSION=$(grep -oP '(?<=version=).*' ../version.txt) && \
+    CGO_ENABLED=0 GOOS=linux go build -ldflags="-X main.Version=$VERSION" -o server main.go
 
 # Stage 3: Final Production Image
 FROM public.ecr.aws/docker/library/alpine:latest
