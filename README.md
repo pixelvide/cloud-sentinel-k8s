@@ -16,18 +16,27 @@ A modern, read-optimized Kubernetes dashboard built with Next.js and Go.
 - **Workloads**: Deep insights into Pods, Deployments, ReplicaSets, StatefulSets, DaemonSets, Jobs, and CronJobs.
 - **Cluster Resources**: Manage Nodes, Namespaces, StorageClasses, PVs/PVCs, and ClusterRoles.
 - **Configuration**: View and manage ConfigMaps, Secrets, RBAC (Roles, ServiceAccounts), and Network Policies.
-- **CRDs**: robust support for Custom Resource Definitions with formatted views.
+- **CRDs**: Robust support for Custom Resource Definitions with formatted views.
 
 ### Actionable & Interactive
-- **Resource Actions**: Delete resources, suspend/resume CronJobs, and drain nodes directly from the UI.
+- **Resource Actions**: Restart/Rollout workloads, Scale replicas, Suspend/Resume CronJobs, and Drain/Cordon nodes.
+- **Manual Triggers**: Manually trigger Jobs from CronJob templates with custom naming.
 - **Helmet Management**: Full lifecycle management for Helm releases including list, filter, history, and rollback capabilities.
 - **Terminal & Logs**: Secure, integrated terminal access to pods and real-time log streaming with search.
-- **Audit Logging**: Comprehensive audit trails for all user actions (login, delete, update).
+- **Audit Logging**: Comprehensive audit trails for all user actions (login, delete, scale, restart, etc.).
 
 ### Enhanced Visualization
-- **Rich Details**: Right-side details panel with JSON/YAML views, live Events, and deep property inspection (Affinity, Tolerations, Conditions).
-- **Resource Relations**: Automatically discover and list related resources (e.g., Pods for a Deployment).
+- **Deep Inspection**: Right-side details panel with JSON/YAML views, live Events, and detailed properties (Affinity/Anti-affinity, Tolerations, Images, Conditions).
+- **Resource Relations**: Automatically discover and list related resources (e.g., Pods for a Deployment, PVs for a StorageClass).
 - **Multi-Context**: Seamlessly switch between multiple Kubernetes clusters.
+
+## CI/CD & Automation
+
+Cloud Sentinel uses an automated release pipeline:
+- **GitHub Actions**: Automated Docker builds for `amd64` and `arm64` architectures.
+- **GHCR**: Images are automatically pushed to GitHub Container Registry on tagged releases.
+- **Release-Please**: Automatically manages versioning and changelogs based on Conventional Commits.
+
 
 ## Prerequisites
 

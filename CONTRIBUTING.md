@@ -60,5 +60,13 @@ Please refer to [ARCHITECTURE.md](./ARCHITECTURE.md) for a high-level overview o
 5.  Open a **Merge Request** (MR) targeting the `main` branch.
 6.  Ensure your MR has a clear description of the changes and screenshots if UI is affected.
 
+## 📦 Release Management
+
+Cloud Sentinel follows [Semantic Versioning](https://semver.org/).
+- **Automated Releases**: We use **Release-Please** to automate changelog generation and versioning.
+- **Conventional Commits**: Please use [Conventional Commits](https://www.conventionalcommits.org/) for your commit messages (e.g., `feat:`, `fix:`, `chore:`, `docs:`) to ensure they are correctly picked up by the release automation.
+- **Deployment**: Official images are built and pushed to GHCR on every tagged release.
+
 ## 📜 Code of Conduct
+
 Please review our [Code of Conduct](./CODE_OF_CONDUCT.md) before contributing.

@@ -54,3 +54,20 @@ The application handles minimal state, delegating most source-of-truth to Kubern
     - Backend validates valid JWT in `Authorization` header.
     - Kubernetes RBAC is respected by using the underlying kubeconfig credentials (impersonation or direct use depending on deployment).
 - **Sensitive Data**: Kubeconfigs and Secrets are never exposed to the frontend; the backend acts as a secure proxy.
+
+## 6. Resource Action Flow
+When a user triggers an action (e.g., Restart Deployment or Suspend CronJob):
+1.  **Frontend**: Sends a POST/PATCH request to the specific action endpoint (e.g., `/api/v1/kube/workloads/deployments/restart`).
+2.  **Backend**:
+    - Validates the request and user permissions.
+    - Uses the `dynamic client` or `client-go` to apply the transformation (e.g., updating a `rollout.kubernetes.io/restartedAt` annotation).
+    - Records the action in the **Audit Log** (PostgreSQL).
+3.  **Kubernetes**: Reconciles the resource based on the updated specification.
+
+## 7. CI/CD & Delivery
+The project follows an automated delivery pipeline:
+- **Versioning**: Managed by `release-please` based on commit types (feat, fix, etc.).
+- **Build**: GitHub Actions triggers on new tags to build multi-arch Docker images (`linux/amd64`, `linux/arm64`).
+- **Registry**: Images are stored in **GitHub Container Registry (GHCR)**.
+- **Environment**: Configuration is managed via environment variables and `.env` files, ensuring secrets are handled securely outside the code.
+
