@@ -4,7 +4,7 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-COPY ../version.txt .
+COPY version.txt .
 RUN export VERSION=$(grep -oP '(?<=version=).*' version.txt) && \
     go build -ldflags="-X main.Version=$VERSION" -o server main.go
 
