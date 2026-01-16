@@ -76,6 +76,13 @@ export function KubeProperties({ resource, customProperties }: KubePropertiesPro
 
     const statusValue = getResourceStatus(resource);
 
+    const getUniqueImages = (podSpec: any) => {
+        const images = new Set<string>();
+        podSpec?.containers?.forEach((c: any) => c.image && images.add(c.image));
+        podSpec?.initContainers?.forEach((c: any) => c.image && images.add(c.image));
+        return images.size > 0 ? Array.from(images) : null;
+    };
+
     const getExtraProperties = (res: any) => {
         const extra: Record<string, string | string[]> = {};
         const { kind, spec, status } = res;
@@ -109,6 +116,18 @@ export function KubeProperties({ resource, customProperties }: KubePropertiesPro
             if (status?.lastScheduleTime) {
                 extra["Last schedule"] = `${new Date(status.lastScheduleTime).toLocaleString()} (${formatAge(status.lastScheduleTime)} ago)`;
             }
+        } else if (kind === "Job") {
+            if (metadata?.ownerReferences) {
+                extra["Controlled by"] = metadata.ownerReferences.map((ref: any) => `${ref.kind}/${ref.name}`);
+            }
+            if (spec?.completions !== undefined) extra["Completions"] = String(spec.completions);
+            if (spec?.parallelism !== undefined) extra["Parallelism"] = String(spec.parallelism);
+            if (spec?.selector?.matchLabels) {
+                extra["Selector"] = Object.entries(spec.selector.matchLabels).map(([k, v]) => `${k}=${v}`);
+            }
+
+            const images = getUniqueImages(spec?.template?.spec);
+            if (images) extra["Images"] = images;
         } else if (kind === "Deployment") {
             if (spec?.selector?.matchLabels) {
                 extra["Selector"] = Object.entries(spec.selector.matchLabels).map(([k, v]) => `${k}=${v}`);
@@ -124,6 +143,9 @@ export function KubeProperties({ resource, customProperties }: KubePropertiesPro
                 const unavailable = status.unavailableReplicas || 0;
                 extra["Replicas"] = `${desired} desired, ${updated} updated, ${total} total, ${available} available, ${unavailable} unavailable`;
             }
+
+            const images = getUniqueImages(spec?.template?.spec);
+            if (images) extra["Images"] = images;
         } else if (kind === "DaemonSet") {
             if (spec?.selector?.matchLabels) {
                 extra["Selector"] = Object.entries(spec.selector.matchLabels).map(([k, v]) => `${k}=${v}`);
@@ -131,6 +153,26 @@ export function KubeProperties({ resource, customProperties }: KubePropertiesPro
             if (spec?.updateStrategy?.type) {
                 extra["Strategy Type"] = spec.updateStrategy.type;
             }
+
+            const images = getUniqueImages(spec?.template?.spec);
+            if (images) extra["Images"] = images;
+        } else if (kind === "StatefulSet") {
+            if (spec?.selector?.matchLabels) {
+                extra["Selector"] = Object.entries(spec.selector.matchLabels).map(([k, v]) => `${k}=${v}`);
+            }
+            if (spec?.updateStrategy?.type) {
+                extra["Strategy Type"] = spec.updateStrategy.type;
+            }
+
+            const images = getUniqueImages(spec?.template?.spec);
+            if (images) extra["Images"] = images;
+        } else if (kind === "ReplicaSet") {
+            if (spec?.selector?.matchLabels) {
+                extra["Selector"] = Object.entries(spec.selector.matchLabels).map(([k, v]) => `${k}=${v}`);
+            }
+
+            const images = getUniqueImages(spec?.template?.spec);
+            if (images) extra["Images"] = images;
         } else if (kind === "Pod") {
             if (metadata?.ownerReferences) {
                 extra["Controlled by"] = metadata.ownerReferences.map((ref: any) => `${ref.kind}/${ref.name}`);
@@ -194,11 +236,17 @@ export function KubeProperties({ resource, customProperties }: KubePropertiesPro
     const labelCount = labels ? Object.keys(labels).length : 0;
     const annotationCount = annotations ? Object.keys(annotations).length : 0;
     const finalizerCount = finalizers ? finalizers.length : 0;
-    const taints = resource.spec?.taints || [];
+
+    // Workloads have pod spec nested in template
+    const podSpec = ["Deployment", "DaemonSet", "ReplicaSet", "StatefulSet", "Job"].includes(kind)
+        ? resource.spec?.template?.spec
+        : resource.spec;
+
+    const taints = (kind === "Node") ? (resource.spec?.taints || []) : [];
     const conditions = resource.status?.conditions || [];
-    const tolerations = resource.spec?.tolerations || [];
-    const nodeSelector = resource.spec?.nodeSelector || {};
-    const affinity = resource.spec?.affinity || {};
+    const tolerations = podSpec?.tolerations || [];
+    const nodeSelector = podSpec?.nodeSelector || {};
+    const affinity = podSpec?.affinity || {};
     const parameters = resource.parameters || {};
 
     const hasAffinity = affinity.nodeAffinity || affinity.podAffinity || affinity.podAntiAffinity;
@@ -373,7 +421,7 @@ export function KubeProperties({ resource, customProperties }: KubePropertiesPro
                                     <div className="col-span-2 flex flex-wrap gap-1">
                                         {Array.isArray(value) ? (
                                             value.map((v, i) => (
-                                                <Badge key={i} variant="outline" className="text-[10px] font-bold border-border bg-muted/50 text-foreground/80 py-0 px-1.5 h-auto">
+                                                <Badge key={i} variant="outline" className="text-[10px] font-bold border-border bg-muted/50 text-foreground/80 py-0 px-1.5 h-auto whitespace-normal break-all">
                                                     {v}
                                                 </Badge>
                                             ))
