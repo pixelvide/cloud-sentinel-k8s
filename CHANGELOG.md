@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v1.2.1...v1.3.0) (2026-01-16)
+
+
+### Features
+
+* enhance CronJob display with timezone support and robust job history ([c742fde](https://github.com/pixelvide/cloud-sentinel-k8s/commit/c742fdef1ee169f10a38a051305f8130a5276646))
+* enhance storage views, fix docker builds, and improve sidebar navigation ([2920eb8](https://github.com/pixelvide/cloud-sentinel-k8s/commit/2920eb8eb7497f99ed80fee208759515ac8e41d2))
+
 ## [1.2.1](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v1.2.0...v1.2.1) (2026-01-16)
 
 
