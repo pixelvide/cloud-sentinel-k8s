@@ -27,10 +27,15 @@
         "clsx": "^2.1.1",
         "cmdk": "^1.1.1",
         "cron-parser": "^5.5.0",
+        "culori": "^4.0.2",
         "date-fns": "^4.1.0",
+        "i18next": "^25.7.4",
+        "i18next-browser-languagedetector": "^8.2.0",
         "lucide-react": "^0.562.0",
+        "next-themes": "^0.4.6",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
+        "react-i18next": "^16.5.3",
         "react-router-dom": "^6.21.3",
         "recharts": "^3.6.0",
         "sonner": "^2.0.7",
@@ -46,10 +51,11 @@
         "eslint-plugin-react-hooks": "^7.0.1",
         "eslint-plugin-react-refresh": "^0.4.26",
         "postcss": "^8.4.33",
-        "tailwindcss": "^4.1.18",
         "prettier": "^3.5.0",
+        "tailwindcss": "^4.1.18",
         "typescript": "^5.3.3",
         "typescript-eslint": "^8.53.0",
-        "vite": "^5.0.12"
+        "vite": "^5.0.12",
+        "vite-plugin-dynamic-base": "^1.2.0"
     }
 }

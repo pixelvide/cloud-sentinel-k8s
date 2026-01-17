@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { NAVIGATION_CONFIG, NavigationItem } from "@/config/navigation";
 import { VersionDisplay } from "@/components/VersionDisplay";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { api } from "@/lib/api";
 
 interface UserProfile {
@@ -165,6 +166,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
                             <X className="h-5 w-5" />
                         </Button>
                     </div>
+                    <ThemeSwitcher />
                 </div>
 
                 <nav className="flex-1 px-3 space-y-1.5 overflow-y-auto">

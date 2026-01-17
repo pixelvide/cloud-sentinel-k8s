@@ -1,0 +1,21 @@
+{
+    "common": {
+        "loading": "Loading...",
+        "error": "Error: {{error}}",
+        "search": "Search...",
+        "settings": "Settings",
+        "logout": "Logout",
+        "appearance": "Appearance",
+        "language": "Language"
+    },
+    "sidebar": {
+        "workloads": "Workloads",
+        "network": "Network",
+        "storage": "Storage",
+        "config": "Config",
+        "access": "Access",
+        "events": "Events",
+        "helm": "Helm",
+        "crds": "CRDs"
+    }
+}
