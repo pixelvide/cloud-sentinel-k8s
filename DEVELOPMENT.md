@@ -40,12 +40,17 @@ The application requires the following environment variables (see `.env.example`
 
 **Database**:
 ```env
-DB_TYPE=postgres  # Options: postgres, mysql, sqlite
-DB_DSN=host=localhost user=postgres password=secret dbname=cloud_sentinel_dev port=5432 sslmode=disable TimeZone=UTC
+DB_TYPE=sqlite    # Default: sqlite. Options: postgres, mysql, sqlite
+DB_DSN=dev.db     # Default: dev.db
 ```
 
 **Authentication**:
 ```env
+# Encryption & Security
+CLOUD_SENTINAL_ENCRYPT_KEY=your-secure-encryption-key
+JWT_SECRET=your-secure-jwt-secret
+
+# OIDC (Optional)
 OIDC_ISSUER=https://your-oidc-provider.com
 OIDC_CLIENT_ID=your-client-id
 OIDC_CLIENT_SECRET=your-client-secret

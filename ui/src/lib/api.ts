@@ -1,33 +1,47 @@
 import { API_URL } from "./config";
 import { getSubPath, withSubPath } from "./subpath";
 
-export async function apiFetch(path: string, options: RequestInit = {}) {
-    const subPath = getSubPath();
-    const fullApiBase = subPath ? `${subPath}${API_URL}` : API_URL;
+interface ApiFetchOptions extends RequestInit {
+    skipRedirect401?: boolean;
+}
+
+export async function apiFetch(path: string, options: ApiFetchOptions = {}) {
+    const subPath = getSubPath(); // e.g. /my-app or empty string
+    const apiV1Base = subPath ? `${subPath}${API_URL}` : API_URL; // e.g. /my-app/api/v1 or /api/v1
 
     // If it's a relative path, prepend API_URL
-    const url =
-        path.startsWith("http") || (path.startsWith("/") && path.startsWith(fullApiBase))
-            ? path
-            : `${fullApiBase}${path.startsWith("/") ? "" : "/"}${path}`;
+    let url: string;
+    if (path.startsWith("http")) {
+        url = path;
+    } else if (path.startsWith("/api/auth")) {
+        // Special handling for auth routes which are now at /api/auth (not /api/v1/auth)
+        const baseUrl = subPath ? subPath : "";
+        url = `${baseUrl}${path}`;
+    } else if (path.startsWith("/") && path.startsWith(apiV1Base)) {
+        url = path;
+    } else {
+        url = `${apiV1Base}${path.startsWith("/") ? "" : "/"}${path}`;
+    }
+
+    const { skipRedirect401, ...fetchOptions } = options;
 
     const defaultOptions: RequestInit = {
         credentials: "include",
-        ...options,
+        ...fetchOptions,
         headers: {
             "Content-Type": "application/json",
-            ...options.headers,
+            ...fetchOptions.headers,
         },
     };
 
-    if (options.body instanceof FormData) {
+    if (fetchOptions.body instanceof FormData) {
         // Let the browser set the Content-Type with the boundary
         delete (defaultOptions.headers as any)["Content-Type"];
     }
 
     const response = await fetch(url, defaultOptions);
 
-    if (response.status === 401) {
+    if (response.status === 401 && !skipRedirect401) {
         if (typeof window !== "undefined") {
             window.location.href = withSubPath("/login");
         }
@@ -36,22 +50,40 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
     return response;
 }
 
-export async function get<T>(path: string, options: RequestInit = {}): Promise<T> {
+export async function get<T>(path: string, options: ApiFetchOptions = {}): Promise<T> {
     const response = await apiFetch(path, { ...options, method: "GET" });
     if (!response.ok) {
-        throw new Error(`API Error: ${response.statusText}`);
+        let errorMessage = `API Error: ${response.statusText}`;
+        try {
+            const errorData = await response.json();
+            if (errorData && errorData.error) {
+                errorMessage = errorData.error;
+            }
+        } catch (e) {
+            // Ignore JSON parse error, use default message
+        }
+        throw new Error(errorMessage);
     }
     return response.json();
 }
 
-export async function post<T>(path: string, body?: any, options: RequestInit = {}): Promise<T> {
+export async function post<T>(path: string, body?: any, options: ApiFetchOptions = {}): Promise<T> {
     const response = await apiFetch(path, {
         ...options,
         method: "POST",
         body: body ? JSON.stringify(body) : undefined,
     });
     if (!response.ok) {
-        throw new Error(`API Error: ${response.statusText}`);
+        let errorMessage = `API Error: ${response.statusText}`;
+        try {
+            const errorData = await response.json();
+            if (errorData && errorData.error) {
+                errorMessage = errorData.error;
+            }
+        } catch (e) {
+            // Ignore JSON parse error, use default message
+        }
+        throw new Error(errorMessage);
     }
     return response.json();
 }
@@ -88,7 +120,16 @@ export async function put<T>(path: string, body?: any, options: RequestInit = {}
         body: body ? JSON.stringify(body) : undefined,
     });
     if (!response.ok) {
-        throw new Error(`API Error: ${response.statusText}`);
+        let errorMessage = `API Error: ${response.statusText}`;
+        try {
+            const errorData = await response.json();
+            if (errorData && errorData.error) {
+                errorMessage = errorData.error;
+            }
+        } catch (e) {
+            // Ignore JSON parse error, use default message
+        }
+        throw new Error(errorMessage);
     }
     return response.json();
 }
@@ -96,7 +137,16 @@ export async function put<T>(path: string, body?: any, options: RequestInit = {}
 export async function del<T>(path: string, options: RequestInit = {}): Promise<T> {
     const response = await apiFetch(path, { ...options, method: "DELETE" });
     if (!response.ok) {
-        throw new Error(`API Error: ${response.statusText}`);
+        let errorMessage = `API Error: ${response.statusText}`;
+        try {
+            const errorData = await response.json();
+            if (errorData && errorData.error) {
+                errorMessage = errorData.error;
+            }
+        } catch (e) {
+            // Ignore JSON parse error, use default message
+        }
+        throw new Error(errorMessage);
     }
     return response.json();
 }
@@ -127,6 +177,12 @@ export const api = {
     },
     skipOIDC: async () => {
         return post("/skip_oidc");
+    },
+    getProviders: async () => {
+        return get<string[]>("/api/auth/providers"); // Explicit api/auth path
+    },
+    loginWithPassword: async (data: any) => {
+        return post("/api/auth/login/password", data, { skipRedirect401: true }); // Explicit api/auth path
     },
 };
 

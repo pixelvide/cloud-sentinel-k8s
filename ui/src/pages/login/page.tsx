@@ -1,33 +1,43 @@
-"use client";
-
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
 import { withSubPath } from "@/lib/subpath";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShieldCheck } from "lucide-react";
+import { PasswordLoginForm } from "@/components/PasswordLoginForm";
 
 export default function LoginPage() {
     const navigate = useNavigate();
+    const [providers, setProviders] = useState<string[]>([]);
+    const [loadingProviders, setLoadingProviders] = useState(true);
 
     useEffect(() => {
-        const checkInit = async () => {
+        const checkInitAndFetchProviders = async () => {
             try {
-                const data = await api.checkInit();
-                if (!data.initialized) {
+                const initData = await api.checkInit();
+                if (!initData.initialized) {
                     navigate("/setup");
+                    return;
                 }
+
+                const fetchedProviders = await api.getProviders();
+                setProviders(fetchedProviders);
             } catch (e) {
-                console.error("Init check failed", e);
+                console.error("Init check or provider fetch failed", e);
+            } finally {
+                setLoadingProviders(false);
             }
         };
-        checkInit();
+        checkInitAndFetchProviders();
     }, [navigate]);
 
-    const handleLogin = () => {
-        window.location.href = withSubPath("/api/v1/auth/login");
+    const handleSSOLogin = () => {
+        window.location.href = withSubPath("/api/auth/login");
     };
+
+    const hasPassword = providers.includes("password");
+    const hasSSO = providers.some((p) => p !== "password" && p !== "skipped");
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-background relative overflow-hidden">
@@ -57,15 +67,42 @@ export default function LoginPage() {
                             A secure, professional-grade k8s access environment for managing your Kubernetes clusters at
                             scale.
                         </p>
-                        <Button
-                            className="w-full h-14 font-extrabold text-sm uppercase tracking-widest shadow-xl shadow-primary/20 rounded-2xl transition-all active:scale-95 group"
-                            onClick={handleLogin}
-                        >
-                            <span className="group-hover:translate-x-1 transition-transform inline-block mr-2">
-                                Secure SSO Login
-                            </span>
-                            &rarr;
-                        </Button>
+
+                        {loadingProviders ? (
+                            <div className="flex justify-center py-4">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {hasPassword && <PasswordLoginForm />}
+
+                                {hasPassword && hasSSO && (
+                                    <div className="relative">
+                                        <div className="absolute inset-0 flex items-center">
+                                            <span className="w-full border-t" />
+                                        </div>
+                                        <div className="relative flex justify-center text-xs uppercase">
+                                            <span className="px-2 text-muted-foreground bg-card rounded">
+                                                Or continue with
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {hasSSO && (
+                                    <Button
+                                        className="w-full h-14 font-extrabold text-sm uppercase tracking-widest shadow-xl shadow-primary/20 rounded-2xl transition-all active:scale-95 group"
+                                        onClick={handleSSOLogin}
+                                        variant={hasPassword ? "outline" : "default"}
+                                    >
+                                        <span className="group-hover:translate-x-1 transition-transform inline-block mr-2">
+                                            Secure SSO Login
+                                        </span>
+                                        &rarr;
+                                    </Button>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </CardContent>
             </Card>

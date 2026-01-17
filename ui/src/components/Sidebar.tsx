@@ -109,7 +109,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
     };
 
     const handleLogout = () => {
-        window.location.href = "/api/v1/auth/logout";
+        window.location.href = "/api/auth/logout";
     };
 
     const toggleCategory = (category: string) => {

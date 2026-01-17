@@ -18,6 +18,8 @@ A modern, read-optimized Kubernetes dashboard built with Next.js and Go.
 - **Cluster Resources**: Manage Nodes, Namespaces, StorageClasses, PVs/PVCs, and ClusterRoles.
 - **Configuration**: View and manage ConfigMaps, Secrets, RBAC (Roles, ServiceAccounts), and Network Policies.
 - **CRDs**: Robust support for Custom Resource Definitions with formatted views.
+- **Authentication**: Dual support for OIDC (SSO) and Password-based local login.
+- **Persistent Configuration**: Application settings and OIDC providers are persisted in the database.
 
 ### Actionable & Interactive
 - **Resource Actions**: Restart/Rollout workloads, Scale replicas, Suspend/Resume CronJobs, and Drain/Cordon nodes.
@@ -62,18 +64,25 @@ Cloud Sentinel uses an automated release pipeline:
     
     **Database Configuration:**
     ```env
-    DB_TYPE=postgres           # Database type: postgres, mysql, or sqlite
-    DB_DSN=host=localhost user=postgres password=secret dbname=cloud_sentinel port=5432 sslmode=disable TimeZone=UTC
+    DB_TYPE=sqlite                     # Default is sqlite. Options: postgres, mysql, sqlite
+    DB_DSN=dev.db                      # Default is dev.db.
     ```
     
     Example DSN formats:
     - **PostgreSQL**: `host=localhost user=postgres password=secret dbname=cloud_sentinel port=5432 sslmode=disable TimeZone=UTC`
     - **MySQL**: `user:password@tcp(localhost:3306)/dbname?charset=utf8mb4&parseTime=True&loc=UTC`
-    - **SQLite**: `file:./cloud_sentinel.db`
+    - **SQLite**: `dev.db` or `file:./cloud_sentinel.db`
 
-    **OIDC Configuration:**
+    **Authentication Configuration:**
     ```env
-    OIDC_ISSUER=https://accounts.google.com  # OIDC Provider URL
+    # Encryption key for sensitive data in DB
+    CLOUD_SENTINAL_ENCRYPT_KEY=your-secure-encryption-key 
+
+    # JWT Secret for session tokens
+    JWT_SECRET=your-secure-jwt-secret
+
+    # OIDC Configuration (Optional if using Password Login)
+    OIDC_ISSUER=https://accounts.google.com
     OIDC_CLIENT_ID=<your-client-id>
     OIDC_CLIENT_SECRET=<your-client-secret>
     FRONTEND_URL=http://localhost:3000       
@@ -100,7 +109,7 @@ Cloud Sentinel uses an automated release pipeline:
     - **Security**: The backend port (8080) is NOT exposed publicly by default.
     
     **OIDC Redirects**:
-    - The `redirect_uri` is constructed as `{FRONTEND_URL}/api/v1/auth/callback`.
+    - The `redirect_uri` is constructed as `{FRONTEND_URL}/api/auth/callback`.
     - Whitelist this URL in your OIDC provider settings.
 
 ## Development
