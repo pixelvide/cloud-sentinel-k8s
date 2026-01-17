@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v1.7.0...v1.8.0) (2026-01-17)
+
+
+### Features
+
+* add custom kubeconfig upload and persistence ([6562463](https://github.com/pixelvide/cloud-sentinel-k8s/commit/6562463860d50f55f2267dd317b87137eb69f140))
+
 ## [1.7.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v1.6.0...v1.7.0) (2026-01-17)
 
 
