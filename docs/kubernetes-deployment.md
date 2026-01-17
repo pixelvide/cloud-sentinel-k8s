@@ -25,7 +25,7 @@ kubectl create configmap cloud-sentinel-config \
   --from-literal=DB_SSLMODE=require \
   --from-literal=OIDC_ISSUER=https://your-oidc-issuer \
   --from-literal=OIDC_CLIENT_ID=your-client-id \
-  --from-literal=FRONTEND_URL=http://cloud-sentinel-frontend:3000
+  --from-literal=FRONTEND_URL=http://cloud-sentinel-ui:3000
 ```
 
 ### Create Secrets
@@ -50,7 +50,7 @@ kubectl create secret docker-registry ghcr-pull-secret \
 
 ## 2. Deploying the Application
 
-Use Kustomize to deploy both frontend and backend services together.
+Use Kustomize to deploy the service.
 
 ### Preview Manifests
 ```bash
@@ -93,7 +93,7 @@ kubectl apply -k k8s/ --namespace cloud-sentinel-ns
 - **Backend**: Accessible internally within the cluster at `http://cloud-sentinel-backend:8080`.
 - **Frontend**: Exposed via a `LoadBalancer` service. You can find the external IP using:
   ```bash
-  kubectl get service cloud-sentinel-frontend
+  kubectl get service cloud-sentinel-ui
   ```
 
 ## 4. Updates and Versioning

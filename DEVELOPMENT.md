@@ -23,17 +23,15 @@ As of current development sessions, we use **Docker Compose** as the primary met
   docker compose logs -f
   ```
 
-- **Restart a Specific Service**:
+- **Restart Backend**:
   ```bash
-  docker compose up -d --build frontend
-  # or
   docker compose up -d --build backend
   ```
 
 ### Development Environment
 
-- **Frontend**: Accessible at `http://localhost:3000`
-- **Backend**: Proxied through the frontend at `http://localhost:3000/api`
+- **UI**: Accessible at `http://localhost:3000`
+- **Backend**: Served directly from the backend service.
 - **Configuration**: Managed via `.env` in the root directory.
 
 ### Session Persistence

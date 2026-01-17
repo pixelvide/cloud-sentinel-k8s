@@ -3,8 +3,8 @@
 Thank you for your interest in contributing to Cloud Sentinel! We welcome contributions from everyone. This document outlines the process for setting up your environment and submitting changes.
 
 ## 🛠️ Tech Stack
-- **Frontend**: Next.js 14+ (App Router), TypeScript, Tailwind CSS, Shadcn UI.
-- **Backend**: Go (Golang) 1.22+, Gin Gonic framework.
+- **UI**: React + Vite, TypeScript, Tailwind CSS, Shadcn UI.
+- **Backend**: Go (Golang) 1.25+, Gin Gonic framework.
 - **Database**: PostgreSQL.
 - **Infrastructure**: Kubernetes, GitLab CI/CD.
 
@@ -33,12 +33,12 @@ go run main.go
 ```
 The server will start on `http://localhost:8080`.
 
-### 3. Frontend Setup
-Navigate to the frontend directory and start the dev server:
+### 3. UI Setup
+Navigate to the ui directory and start the dev server:
 ```bash
-cd frontend
-npm install
-npm run dev
+cd ui
+pnpm install
+pnpm dev
 ```
 The application will be available at `http://localhost:3000`.
 
@@ -48,7 +48,7 @@ Please refer to [ARCHITECTURE.md](./ARCHITECTURE.md) for a high-level overview o
 ## 🤝 Code Standards
 
 - **Go**: We adhere to standard Go formatting. Please run `go fmt ./...` before committing.
-- **TypeScript**: We use ESLint. Run `npm run lint` to check for issues.
+- **TypeScript**: We use ESLint. Run `pnpm run lint` to check for issues.
 - **Commits**: Use descriptive commit messages.
 
 ## 🔀 Submission Guidelines (GitLab)

@@ -7,7 +7,7 @@
                 "version.txt",
                 {
                     "type": "json",
-                    "path": "frontend/package.json",
+                    "path": "ui/package.json",
                     "jsonpath": "$.version"
                 }
             ]
