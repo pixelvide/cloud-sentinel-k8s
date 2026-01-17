@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/dynamic"
 )
 
 // ImmutableTagAnalyzer detects usage of 'latest' tag or missing tags
@@ -13,7 +14,7 @@ type ImmutableTagAnalyzer struct{}
 
 func (i *ImmutableTagAnalyzer) Name() string { return "ImmutableTags" }
 
-func (i *ImmutableTagAnalyzer) Analyze(obj *unstructured.Unstructured) []models.Anomaly {
+func (i *ImmutableTagAnalyzer) Analyze(obj *unstructured.Unstructured, client dynamic.Interface) []models.Anomaly {
 	kind := obj.GetKind()
 	supportedKinds := map[string]bool{
 		"Deployment":  true,
@@ -91,7 +92,7 @@ type PrivilegedContainerAnalyzer struct{}
 
 func (p *PrivilegedContainerAnalyzer) Name() string { return "PrivilegedContainer" }
 
-func (p *PrivilegedContainerAnalyzer) Analyze(obj *unstructured.Unstructured) []models.Anomaly {
+func (p *PrivilegedContainerAnalyzer) Analyze(obj *unstructured.Unstructured, client dynamic.Interface) []models.Anomaly {
 	kind := obj.GetKind()
 	supportedKinds := map[string]bool{
 		"Deployment":  true,
@@ -149,7 +150,123 @@ func (p *PrivilegedContainerAnalyzer) Analyze(obj *unstructured.Unstructured) []
 	return anomalies
 }
 
+// RootUserAnalyzer detects containers running as root (UID 0)
+type RootUserAnalyzer struct{}
+
+func (r *RootUserAnalyzer) Name() string { return "RootUser" }
+
+func (r *RootUserAnalyzer) Analyze(obj *unstructured.Unstructured, client dynamic.Interface) []models.Anomaly {
+	kind := obj.GetKind()
+	supportedKinds := map[string]bool{
+		"Deployment":  true,
+		"StatefulSet": true,
+		"DaemonSet":   true,
+		"Pod":         true,
+	}
+
+	if !supportedKinds[kind] {
+		return nil
+	}
+
+	// Helper to extract containers from different resource types
+	var containers []interface{}
+	var initContainers []interface{}
+	var foundC, foundIC bool
+	var errC, errIC error
+
+	if kind == "Pod" {
+		containers, foundC, errC = unstructured.NestedSlice(obj.Object, "spec", "containers")
+		initContainers, foundIC, errIC = unstructured.NestedSlice(obj.Object, "spec", "initContainers")
+	} else {
+		// Workloads (Deployment, StatefulSet, DaemonSet) store containers in spec.template.spec.containers
+		containers, foundC, errC = unstructured.NestedSlice(obj.Object, "spec", "template", "spec", "containers")
+		initContainers, foundIC, errIC = unstructured.NestedSlice(obj.Object, "spec", "template", "spec", "initContainers")
+	}
+
+	if (errC != nil || !foundC) && (errIC != nil || !foundIC) {
+		return nil
+	}
+
+	var anomalies []models.Anomaly
+	allContainers := append(containers, initContainers...)
+
+	// Check PodSecurityContext first for runAsNonRoot or runAsUser
+	var podSecurityContext map[string]interface{}
+	if kind == "Pod" {
+		podSecurityContext, _, _ = unstructured.NestedMap(obj.Object, "spec", "securityContext")
+	} else {
+		podSecurityContext, _, _ = unstructured.NestedMap(obj.Object, "spec", "template", "spec", "securityContext")
+	}
+
+	podRunAsNonRoot := false
+	podRunAsUser := int64(-1)
+	if podSecurityContext != nil {
+		if val, found, _ := unstructured.NestedBool(podSecurityContext, "runAsNonRoot"); found && val {
+			podRunAsNonRoot = true
+		}
+		if val, found, _ := unstructured.NestedInt64(podSecurityContext, "runAsUser"); found {
+			podRunAsUser = val
+		}
+	}
+
+	for _, c := range allContainers {
+		container, ok := c.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		name, _, _ := unstructured.NestedString(container, "name")
+
+		// Container Security Context overrides Pod Security Context
+		securityContext, foundSC, _ := unstructured.NestedMap(container, "securityContext")
+
+		runAsNonRoot := podRunAsNonRoot
+		runAsUser := podRunAsUser
+
+		if foundSC {
+			if val, found, _ := unstructured.NestedBool(securityContext, "runAsNonRoot"); found {
+				runAsNonRoot = val
+			}
+			if val, found, _ := unstructured.NestedInt64(securityContext, "runAsUser"); found {
+				runAsUser = val
+			}
+		}
+
+		// Analysis Logic:
+		// 1. If runAsUser is 0 -> Root
+		// 2. If runAsUser is NOT set, and runAsNonRoot is false (or unset) -> Potentially Root (default in many images)
+		// We will only flag EXPLICIT root or MISSING non-root enforcement.
+		// Actually, standard practice is to flag if it's NOT explicitly running as non-root.
+
+		isRoot := false
+		if runAsUser == 0 {
+			isRoot = true
+		} else if runAsUser == -1 && !runAsNonRoot {
+			// If no user specified and not enforced non-root, it acts as root (UID 0) in standard Docker images.
+			isRoot = true
+		}
+
+		if isRoot {
+			msg := fmt.Sprintf("Container '%s' may be running as root.", name)
+			if runAsUser == 0 {
+				msg = fmt.Sprintf("Container '%s' is explicitly configured to run as root (UID 0).", name)
+			}
+
+			anomalies = append(anomalies, NewAnomaly(
+				r.Name(),
+				models.SeverityWarning,
+				"Container Running as Root",
+				msg,
+				"Configure 'securityContext.runAsUser' to a non-zero ID or set 'securityContext.runAsNonRoot: true' to improve security isolation.",
+			))
+		}
+	}
+
+	return anomalies
+}
+
 func init() {
 	GlobalAnalyzers = append(GlobalAnalyzers, &ImmutableTagAnalyzer{})
 	GlobalAnalyzers = append(GlobalAnalyzers, &PrivilegedContainerAnalyzer{})
+	GlobalAnalyzers = append(GlobalAnalyzers, &RootUserAnalyzer{})
 }

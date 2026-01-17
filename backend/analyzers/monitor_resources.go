@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/dynamic"
 )
 
 // ResourceLimitsAnalyzer detects missing resource limits/requests in workloads and pods
@@ -12,7 +13,7 @@ type ResourceLimitsAnalyzer struct{}
 
 func (r *ResourceLimitsAnalyzer) Name() string { return "ResourceLimits" }
 
-func (r *ResourceLimitsAnalyzer) Analyze(obj *unstructured.Unstructured) []models.Anomaly {
+func (r *ResourceLimitsAnalyzer) Analyze(obj *unstructured.Unstructured, client dynamic.Interface) []models.Anomaly {
 	kind := obj.GetKind()
 	supportedKinds := map[string]bool{
 		"Deployment":  true,

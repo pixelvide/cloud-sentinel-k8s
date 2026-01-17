@@ -9,6 +9,7 @@ A modern, read-optimized Kubernetes dashboard built with Next.js and Go.
 - [**Contributing**](./CONTRIBUTING.md): Guidelines for contributing to the project.
 - [**Code of Conduct**](./CODE_OF_CONDUCT.md): Community standards and expectations.
 - [**Development Guide**](./DEVELOPMENT.md): Instructions for local development and setup.
+- [**Supported Anomalies**](./docs/ANOMALIES.md): List of implemented anomaly detection rules.
 
 ## Features
 

@@ -25,14 +25,8 @@ Implementation of an intelligent monitoring system to detect and alert on unusua
 - **Threshold Learning**: Dynamic adjustment of warning thresholds based on seasonal patterns.
 
 ### Phase 3: Targeted Cluster Anomalies
-- **Workload Resilience**: Detect missing `PodDisruptionBudget` for active Deployments.
-- **Cleanliness & Hygiene**: Detect Namespaces with no active resources (excluding `default`, `kube-system`, etc.).
-- **Security Posture**:
-    - **Root Users**: Identify containers running as root (UID 0).
-    - **Dangling Services**: Detect Services whose selectors match no active Pods.
-- **Best Practices**:
-    - **Network Policies**: Identify Namespaces missing default Network Policies.
-    - **Deprecated APIs**: Scan for resources using deprecated API versions.
+- **Network Policies**: Identify Namespaces missing default Network Policies.
+- **Deprecated APIs**: Scan for resources using deprecated API versions.
 
 ### Phase 4: Intelligence & Automated Response
 - **ML-powered Forecasting**: Predict potential resource exhaustion or OOM kills before they occur.

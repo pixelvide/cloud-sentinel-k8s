@@ -4,6 +4,7 @@ import (
 	"cloud-sentinel-k8s/models"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/dynamic"
 )
 
 // IngressClassAnalyzer detects deprecated ingress class annotations
@@ -11,7 +12,7 @@ type IngressClassAnalyzer struct{}
 
 func (i *IngressClassAnalyzer) Name() string { return "DeprecatedIngressClass" }
 
-func (i *IngressClassAnalyzer) Analyze(obj *unstructured.Unstructured) []models.Anomaly {
+func (i *IngressClassAnalyzer) Analyze(obj *unstructured.Unstructured, client dynamic.Interface) []models.Anomaly {
 	if obj.GetKind() != "Ingress" {
 		return nil
 	}

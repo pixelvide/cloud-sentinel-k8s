@@ -6,24 +6,25 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/dynamic"
 )
 
 // Analyzer defines the interface for resource analysis rules
 type Analyzer interface {
 	Name() string
-	Analyze(obj *unstructured.Unstructured) []models.Anomaly
+	Analyze(obj *unstructured.Unstructured, client dynamic.Interface) []models.Anomaly
 }
 
 // GlobalAnalyzers is the registry of all active analysis rules
 var GlobalAnalyzers []Analyzer
 
 // AnalyzeResource performs on-demand analysis of a Kubernetes resource
-func AnalyzeResource(obj *unstructured.Unstructured) models.ResourceAnalysis {
+func AnalyzeResource(obj *unstructured.Unstructured, client dynamic.Interface) models.ResourceAnalysis {
 	anomalies := []models.Anomaly{}
 
 	// Run all registered analyzers
 	for _, analyzer := range GlobalAnalyzers {
-		results := analyzer.Analyze(obj)
+		results := analyzer.Analyze(obj, client)
 		if len(results) > 0 {
 			anomalies = append(anomalies, results...)
 		}

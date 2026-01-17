@@ -191,7 +191,7 @@ func GetResourceDetails(c *gin.Context) {
 	}
 
 	// 3. Perform on-demand analysis
-	analysis := analyzers.AnalyzeResource(resourceObj)
+	analysis := analyzers.AnalyzeResource(resourceObj, dynamicClient)
 
 	// Ensure we don't pass configuration secrets if any?
 	// User authorized for NS can read secrets in NS? Yes.

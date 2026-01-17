@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/dynamic"
 )
 
 // TopologySpreadAnalyzer detects missing topology spread constraints in workloads
@@ -12,7 +13,7 @@ type TopologySpreadAnalyzer struct{}
 
 func (t *TopologySpreadAnalyzer) Name() string { return "TopologySpreadConstraints" }
 
-func (t *TopologySpreadAnalyzer) Analyze(obj *unstructured.Unstructured) []models.Anomaly {
+func (t *TopologySpreadAnalyzer) Analyze(obj *unstructured.Unstructured, client dynamic.Interface) []models.Anomaly {
 	kind := obj.GetKind()
 	if kind != "Deployment" && kind != "StatefulSet" {
 		return nil
@@ -50,7 +51,7 @@ type AffinityAnalyzer struct{}
 
 func (a *AffinityAnalyzer) Name() string { return "ConflictingAffinity" }
 
-func (a *AffinityAnalyzer) Analyze(obj *unstructured.Unstructured) []models.Anomaly {
+func (a *AffinityAnalyzer) Analyze(obj *unstructured.Unstructured, client dynamic.Interface) []models.Anomaly {
 	kind := obj.GetKind()
 	supportedKinds := map[string]bool{
 		"Deployment":  true,
