@@ -5,15 +5,12 @@ services:
       dockerfile: backend/Dockerfile
     environment:
       - GIN_MODE=${GIN_MODE:-release}
-      - DB_HOST=${DB_HOST}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
+      - DB_TYPE=${DB_TYPE:-postgres}
+      - DB_DSN=${DB_DSN}
       - OIDC_ISSUER=${OIDC_ISSUER}
       - OIDC_CLIENT_ID=${OIDC_CLIENT_ID}
       - OIDC_CLIENT_SECRET=${OIDC_CLIENT_SECRET}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
-      - DB_TIMEZONE=${DB_TIMEZONE:-UTC}
       - CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
     ports:
       - "${FRONTEND_PORT:-3000}:8080"

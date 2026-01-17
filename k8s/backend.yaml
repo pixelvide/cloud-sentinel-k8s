@@ -25,36 +25,16 @@ spec:
         env:
         - name: GIN_MODE
           value: "release"
-        - name: DB_HOST
+        - name: DB_TYPE
           valueFrom:
             configMapKeyRef:
               name: cloud-sentinel-config
-              key: DB_HOST
-        - name: DB_USER
-          valueFrom:
-            configMapKeyRef:
-              name: cloud-sentinel-config
-              key: DB_USER
-        - name: DB_NAME
-          valueFrom:
-            configMapKeyRef:
-              name: cloud-sentinel-config
-              key: DB_NAME
-        - name: DB_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: cloud-sentinel-config
-              key: DB_PORT
-        - name: DB_SSLMODE
-          valueFrom:
-            configMapKeyRef:
-              name: cloud-sentinel-config
-              key: DB_SSLMODE
-        - name: DB_PASSWORD
+              key: DB_TYPE
+        - name: DB_DSN
           valueFrom:
             secretKeyRef:
               name: cloud-sentinel-secrets
-              key: DB_PASSWORD
+              key: DB_DSN
         - name: OIDC_ISSUER
           valueFrom:
             configMapKeyRef:

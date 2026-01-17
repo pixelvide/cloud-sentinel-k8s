@@ -6,7 +6,6 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"cloud-sentinel-k8s/db"
 	"cloud-sentinel-k8s/pkg/models"
 )
 
@@ -17,7 +16,7 @@ func ReconfigureAllAgentsOnStartup() {
 
 	// Get all agent configs that are marked as configured
 	var agentConfigs []models.GitlabK8sAgentConfig
-	if err := db.DB.Preload("GitlabConfig").Preload("GitlabConfig.User").Where("is_configured = ?", true).Find(&agentConfigs).Error; err != nil {
+	if err := models.DB.Preload("GitlabConfig").Preload("GitlabConfig.User").Where("is_configured = ?", true).Find(&agentConfigs).Error; err != nil {
 		log.Printf("[Startup] Failed to fetch agent configs: %v", err)
 		return
 	}
@@ -35,7 +34,7 @@ func ReconfigureAllAgentsOnStartup() {
 
 		// Get storage namespace from GitlabConfig -> User
 		var user models.User
-		if err := db.DB.First(&user, agentConfig.UserID).Error; err != nil {
+		if err := models.DB.First(&user, agentConfig.UserID).Error; err != nil {
 			log.Printf("[Startup] Failed to fetch user %d: %v", agentConfig.UserID, err)
 			continue
 		}
@@ -98,7 +97,7 @@ func ReconfigureAllAgentsOnStartup() {
 
 func ReconfigureAllKubeConfigsOnStartup() {
 	var users []models.User
-	if err := db.DB.Find(&users).Error; err != nil {
+	if err := models.DB.Find(&users).Error; err != nil {
 		log.Printf("Failed to fetch users for kubeconfig reconfiguration: %v", err)
 		return
 	}

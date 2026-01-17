@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"cloud-sentinel-k8s/api"
-	"cloud-sentinel-k8s/db"
 	"cloud-sentinel-k8s/pkg/models"
 
 	"crypto/tls"
@@ -19,6 +18,7 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
+	"gorm.io/gorm"
 )
 
 var (
@@ -146,24 +146,24 @@ func CallbackHandler(c *gin.Context) {
 	var identity models.UserIdentity
 
 	// 1. Check if this specific identity exists
-	err = db.DB.Where("provider = ? AND provider_id = ?", "oidc", claims.Sub).First(&identity).Error
+	err = models.DB.Where("provider = ? AND provider_id = ?", "oidc", claims.Sub).First(&identity).Error
 	if err == nil {
 		// Identity exists, get the user
-		if err := db.DB.First(&dbUser, identity.UserID).Error; err != nil {
+		if err := models.DB.First(&dbUser, identity.UserID).Error; err != nil {
 			log.Printf("Failed to find user for identity: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to find associated user"})
 			return
 		}
 	} else {
 		// Identity doesn't exist, check if user with same email exists
-		err = db.DB.Where("email = ?", claims.Email).First(&dbUser).Error
+		err = models.DB.Where("email = ?", claims.Email).First(&dbUser).Error
 		if err != nil {
 			// No user with this email, create new user
 			dbUser = models.User{
 				Email: claims.Email,
 				Name:  claims.Name,
 			}
-			if err := db.DB.Create(&dbUser).Error; err != nil {
+			if err := models.DB.Create(&dbUser).Error; err != nil {
 				log.Printf("Failed to create user: %v", err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})
 				return
@@ -176,7 +176,7 @@ func CallbackHandler(c *gin.Context) {
 			Provider:   "oidc",
 			ProviderID: claims.Sub,
 		}
-		if err := db.DB.Create(&identity).Error; err != nil {
+		if err := models.DB.Create(&identity).Error; err != nil {
 			log.Printf("Failed to create user identity: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to link identity"})
 			return
@@ -186,7 +186,7 @@ func CallbackHandler(c *gin.Context) {
 	// Update user info if needed
 	if dbUser.Name != claims.Name {
 		dbUser.Name = claims.Name
-		db.DB.Save(&dbUser)
+		models.DB.Save(&dbUser)
 	}
 
 	// Generate internal JWT
@@ -217,6 +217,37 @@ func CallbackHandler(c *gin.Context) {
 		"name":  dbUser.Name,
 	})
 
+	// Auto-grant access to apps with DefaultUserAccess=true
+	var app models.App
+	if err := models.DB.Where("name = ?", "cloud-sentinel-k8s").First(&app).Error; err == nil {
+		// App exists, check if it has default user access enabled
+		if app.Enabled && app.DefaultUserAccess {
+			// Check if user already has an access record
+			var appUser models.AppUser
+			err := models.DB.Where("user_id = ? AND app_id = ?", dbUser.ID, app.ID).First(&appUser).Error
+			if err != nil {
+				if err == gorm.ErrRecordNotFound {
+					// Create new AppUser record with access enabled
+					appUser = models.AppUser{
+						UserID:  dbUser.ID,
+						AppID:   app.ID,
+						Enabled: true,
+					}
+					if createErr := models.DB.Create(&appUser).Error; createErr != nil {
+						log.Printf("Failed to create AppUser record for user %d and app %d: %v", dbUser.ID, app.ID, createErr)
+					} else {
+						log.Printf("Auto-granted access to app '%s' for user %s", app.Name, dbUser.Email)
+					}
+				} else {
+					log.Printf("Error checking AppUser record: %v", err)
+				}
+			}
+			// If record exists, no action needed (respect existing enabled/disabled state)
+		}
+	} else if err != gorm.ErrRecordNotFound {
+		log.Printf("Error fetching cloud-sentinel-k8s app: %v", err)
+	}
+
 	// Redirect to Frontend
 	c.Redirect(http.StatusFound, frontendURL+base)
 }
@@ -239,7 +270,7 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		// Fetch user from DB using the user ID from claims
 		var user models.User
-		if err := db.DB.First(&user, claims.UserID).Error; err != nil {
+		if err := models.DB.First(&user, claims.UserID).Error; err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
 			return
 		}

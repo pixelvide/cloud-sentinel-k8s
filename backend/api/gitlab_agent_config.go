@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"cloud-sentinel-k8s/db"
 	"cloud-sentinel-k8s/pkg/models"
 
 	"github.com/gin-gonic/gin"
@@ -22,7 +21,7 @@ func ListGitlabAgentConfigs(c *gin.Context) {
 	}
 
 	var configs []models.GitlabK8sAgentConfig
-	if err := db.DB.Preload("GitlabConfig").Where("user_id = ?", user.ID).Find(&configs).Error; err != nil {
+	if err := models.DB.Preload("GitlabConfig").Where("user_id = ?", user.ID).Find(&configs).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch agent configs"})
 		return
 	}
@@ -50,7 +49,7 @@ func CreateGitlabAgentConfig(c *gin.Context) {
 
 	// Verify the GitLab config exists and belongs to the user
 	var gitlabConfig models.GitlabConfig
-	if err := db.DB.Where("id = ? AND user_id = ?", input.GitlabConfigID, user.ID).First(&gitlabConfig).Error; err != nil {
+	if err := models.DB.Where("id = ? AND user_id = ?", input.GitlabConfigID, user.ID).First(&gitlabConfig).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "GitLab config not found"})
 		return
 	}
@@ -62,7 +61,7 @@ func CreateGitlabAgentConfig(c *gin.Context) {
 		AgentRepo:      input.AgentRepo,
 	}
 
-	if err := db.DB.Create(&config).Error; err != nil {
+	if err := models.DB.Create(&config).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create agent config"})
 		return
 	}
@@ -84,7 +83,7 @@ func DeleteGitlabAgentConfig(c *gin.Context) {
 		return
 	}
 
-	result := db.DB.Where("id = ? AND user_id = ?", id, user.ID).Delete(&models.GitlabK8sAgentConfig{})
+	result := models.DB.Where("id = ? AND user_id = ?", id, user.ID).Delete(&models.GitlabK8sAgentConfig{})
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete agent config"})
 		return
@@ -112,7 +111,7 @@ func ConfigureGitlabAgent(c *gin.Context) {
 	}
 
 	var agentConfig models.GitlabK8sAgentConfig
-	if err := db.DB.Preload("GitlabConfig").Where("id = ? AND user_id = ?", id, user.ID).First(&agentConfig).Error; err != nil {
+	if err := models.DB.Preload("GitlabConfig").Where("id = ? AND user_id = ?", id, user.ID).First(&agentConfig).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "agent config not found"})
 		return
 	}
@@ -169,7 +168,7 @@ func ConfigureGitlabAgent(c *gin.Context) {
 	os.Chmod(kubeConfigPath, 0666)
 
 	// Update configuration status in database
-	if err := db.DB.Model(&agentConfig).Update("is_configured", true).Error; err != nil {
+	if err := models.DB.Model(&agentConfig).Update("is_configured", true).Error; err != nil {
 		log.Printf("Failed to update agent config status: %v", err)
 	}
 

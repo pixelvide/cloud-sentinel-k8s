@@ -8,40 +8,53 @@ The system consists of three main components:
 
 1.  **Frontend**: A Next.js (React) application.
 2.  **Backend**: A Go (Golang) REST API.
-3.  **Database**: PostgreSQL for persistent storage of user configs and audit logs.
+3.  **Database**: PostgreSQL (recommended), MySQL, or SQLite for persistent storage.
 
 ```mermaid
 graph TD
     User["User / Browser"] -->|HTTPS| Frontend["Frontend (Next.js)"]
     Frontend -->|API Calls / WS| Backend["Backend API (Go)"]
-    Backend -->|SQL| DB[(PostgreSQL)]
+    Backend -->|SQL| DB[(Database)]
     Backend -->|K8s API| K8s["Kubernetes Cluster(s)"]
     Backend -->|API| GitLab[GitLab API]
 ```
 
 ## 1. Frontend Layer
-- **Framework**: Next.js 14+ (App Router).
+- **Framework**: React with Vite.
 - **Styling**: Tailwind CSS with Shadcn UI components.
 - **State Management**: React Hooks & Context.
+- **Subpath Support**: Can be hosted on custom subpaths via `CLOUD_SENTINEL_K8S_BASE`.
 - **Communication**:
     - **REST**: Standard API calls for fetching resource lists.
     - **WebSockets**: Real-time streaming for Logs (`/api/v1/kube/logs`) and Terminal Exec (`/api/v1/kube/exec`).
 
 ## 2. Backend Layer
 - **Framework**: Gin Gonic (High-performance HTTP web framework).
-- **Language**: Go 1.22+.
+- **Language**: Go 1.25+.
 - **Key Modules**:
     - `api/`: REST handlers for Kubernetes resources (Pods, Deployments, CRDs, etc.).
     - `auth/`: OIDC authentication flow and JWT token generation.
-    - `db/`: Database connection and ORM models using GORM.
-    - `k8s/`: Wrapper around `client-go` for interacting with K8s clusters.
+    - `pkg/models/`: GORM models with centralized database initialization.
+    - `pkg/middleware/`: Custom middleware for metrics, logging, and CORS.
+    - `pkg/utils/`: Utility functions for HTML injection and helper methods.
+- **Middleware Stack** (in order):
+    1. Metrics (Prometheus instrumentation)
+    2. Recovery (panic recovery)
+    3. Logger (klog-based request logging)
+    4. CORS (custom CORS handling)
 
-## 3. Data Storage (PostgreSQL)
-The application handles minimal state, delegating most source-of-truth to Kubernetes itself. However, it persists:
-- **Users**: User profiles and authentication context.
+## 3. Data Storage
+The application supports **PostgreSQL** (recommended), **MySQL**, and **SQLite** as database backends. It persists:
+- **Apps & Access Control**: Application registry and user-app access mapping.
+- **Users**: User profiles with support for OAuth and local authentication.
+- **User Identities**: Multi-provider authentication support (OIDC, GitLab, etc.).
 - **Audit Logs**: Records of critical actions (e.g., Delete Resource, Cordon Node).
-- **Cluster Mappings**: Context configuration for multi-cluster management.
+- **Cluster Mappings**: Context configuration and display names for multi-cluster management.
 - **GitLab Config**: Access tokens and project mappings for GitOps integration.
+- **Kubeconfig Management**: User-uploaded kubeconfig files and EKS cluster configurations.
+
+### Model Structure
+All models inherit from a base `Model` struct with common fields (`ID`, `CreatedAt`, `UpdatedAt`), ensuring consistency across the database schema.
 
 ## 4. Kubernetes Integration
 - **Client**: Uses official `k8s.io/client-go`.

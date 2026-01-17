@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"cloud-sentinel-k8s/db"
 	"cloud-sentinel-k8s/pkg/models"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -48,7 +47,7 @@ func ListAWSConfigs(c *gin.Context) {
 
 	var configs []models.AWSConfig
 	// Select only necessary fields (excluding secret key)
-	if err := db.DB.Where("user_id = ?", user.ID).Select("id, user_id, name, access_key_id, region, created_at, updated_at").Find(&configs).Error; err != nil {
+	if err := models.DB.Where("user_id = ?", user.ID).Select("id, user_id, name, access_key_id, region, created_at, updated_at").Find(&configs).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch aws configs"})
 		return
 	}
@@ -102,7 +101,7 @@ func CreateAWSConfig(c *gin.Context) {
 		Region:          req.Region,
 	}
 
-	if err := db.DB.Create(&newConfig).Error; err != nil {
+	if err := models.DB.Create(&newConfig).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save aws config"})
 		return
 	}
@@ -125,7 +124,7 @@ func DeleteAWSConfig(c *gin.Context) {
 	id := c.Param("id")
 
 	// Delete
-	if err := db.DB.Where("id = ? AND user_id = ?", id, user.ID).Delete(&models.AWSConfig{}).Error; err != nil {
+	if err := models.DB.Where("id = ? AND user_id = ?", id, user.ID).Delete(&models.AWSConfig{}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete aws config"})
 		return
 	}

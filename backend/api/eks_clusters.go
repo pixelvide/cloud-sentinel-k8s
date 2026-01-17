@@ -1,7 +1,6 @@
 package api
 
 import (
-	"cloud-sentinel-k8s/db"
 	"cloud-sentinel-k8s/pkg/models"
 	"context"
 	"fmt"
@@ -39,7 +38,7 @@ type ImportEKSClustersRequest struct {
 // Helper to get config from DB and load AWS config
 func getAWSConfigFromDB(ctx context.Context, awsConfigID uint, userID uint, regionOverride string) (aws.Config, *models.AWSConfig, error) {
 	var awsCfg models.AWSConfig
-	if err := db.DB.Where("id = ? AND user_id = ?", awsConfigID, userID).First(&awsCfg).Error; err != nil {
+	if err := models.DB.Where("id = ? AND user_id = ?", awsConfigID, userID).First(&awsCfg).Error; err != nil {
 		return aws.Config{}, nil, err
 	}
 
@@ -182,15 +181,15 @@ func ImportEKSClusters(c *gin.Context) {
 
 		// Check if exists
 		var existing models.EKSCluster
-		if err := db.DB.Where("user_id = ? AND aws_config_id = ? AND name = ?", user.ID, awsConfig.ID, clusterName).First(&existing).Error; err == nil {
+		if err := models.DB.Where("user_id = ? AND aws_config_id = ? AND name = ?", user.ID, awsConfig.ID, clusterName).First(&existing).Error; err == nil {
 			// Update
 			existing.Endpoint = newCluster.Endpoint
 			existing.CertificateAuthorityData = newCluster.CertificateAuthorityData
 			existing.Region = newCluster.Region
-			db.DB.Save(&existing)
+			models.DB.Save(&existing)
 		} else {
 			// Create
-			db.DB.Create(&newCluster)
+			models.DB.Create(&newCluster)
 		}
 		importedCount++
 	}

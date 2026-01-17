@@ -1,7 +1,6 @@
 package api
 
 import (
-	"cloud-sentinel-k8s/db"
 	"cloud-sentinel-k8s/pkg/models"
 	"net/http"
 	"os"
@@ -30,7 +29,7 @@ func UpdateKubeConfig(c *gin.Context) {
 
 	// Update or Create Default Config in DB
 	var config models.KubeConfig
-	err := db.DB.Where("user_id = ? AND is_default = ?", user.ID, true).First(&config).Error
+	err := models.DB.Where("user_id = ? AND is_default = ?", user.ID, true).First(&config).Error
 	if err != nil {
 		// Create new default
 		config = models.KubeConfig{
@@ -39,14 +38,14 @@ func UpdateKubeConfig(c *gin.Context) {
 			Content:   input.Config,
 			IsDefault: true,
 		}
-		if err := db.DB.Create(&config).Error; err != nil {
+		if err := models.DB.Create(&config).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save kubeconfig to db"})
 			return
 		}
 	} else {
 		// Update existing
 		config.Content = input.Config
-		if err := db.DB.Save(&config).Error; err != nil {
+		if err := models.DB.Save(&config).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update kubeconfig in db"})
 			return
 		}
@@ -73,7 +72,7 @@ func GetKubeConfig(c *gin.Context) {
 
 	// Try to get from DB first
 	var config models.KubeConfig
-	err := db.DB.Where("user_id = ? AND is_default = ?", user.ID, true).First(&config).Error
+	err := models.DB.Where("user_id = ? AND is_default = ?", user.ID, true).First(&config).Error
 	if err == nil {
 		c.JSON(http.StatusOK, gin.H{"config": config.Content})
 		return
@@ -90,7 +89,7 @@ func GetKubeConfig(c *gin.Context) {
 			Content:   string(content),
 			IsDefault: true,
 		}
-		db.DB.Create(&newConfig)
+		models.DB.Create(&newConfig)
 		c.JSON(http.StatusOK, gin.H{"config": string(content)})
 		return
 	}

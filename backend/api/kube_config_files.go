@@ -1,7 +1,6 @@
 package api
 
 import (
-	"cloud-sentinel-k8s/db"
 	"cloud-sentinel-k8s/pkg/models"
 	"fmt"
 	"net/http"
@@ -19,12 +18,12 @@ import (
 // This is the "source of truth" -> "artifact" generation step.
 func SyncKubeConfigs(user *models.User) error {
 	var configs []models.KubeConfig
-	if err := db.DB.Where("user_id = ?", user.ID).Find(&configs).Error; err != nil {
+	if err := models.DB.Where("user_id = ?", user.ID).Find(&configs).Error; err != nil {
 		return err
 	}
 
 	var eksClusters []models.EKSCluster
-	if err := db.DB.Preload("AWSConfig").Where("user_id = ?", user.ID).Find(&eksClusters).Error; err != nil {
+	if err := models.DB.Preload("AWSConfig").Where("user_id = ?", user.ID).Find(&eksClusters).Error; err != nil {
 		return err
 	}
 
@@ -184,7 +183,7 @@ func UploadKubeConfig(c *gin.Context) {
 		IsDefault: false,
 	}
 
-	if err := db.DB.Create(&newConfig).Error; err != nil {
+	if err := models.DB.Create(&newConfig).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save to database"})
 		return
 	}
@@ -209,7 +208,7 @@ func ListKubeConfigs(c *gin.Context) {
 	}
 
 	var configs []models.KubeConfig
-	if err := db.DB.Where("user_id = ?", user.ID).Select("id, name, is_default, created_at").Find(&configs).Error; err != nil {
+	if err := models.DB.Where("user_id = ?", user.ID).Select("id, name, is_default, created_at").Find(&configs).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch configs"})
 		return
 	}
@@ -227,7 +226,7 @@ func DeleteKubeConfig(c *gin.Context) {
 	id := c.Param("id")
 
 	var config models.KubeConfig
-	if err := db.DB.Where("id = ? AND user_id = ?", id, user.ID).First(&config).Error; err != nil {
+	if err := models.DB.Where("id = ? AND user_id = ?", id, user.ID).First(&config).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "config not found"})
 		return
 	}
@@ -237,7 +236,7 @@ func DeleteKubeConfig(c *gin.Context) {
 		return
 	}
 
-	if err := db.DB.Delete(&config).Error; err != nil {
+	if err := models.DB.Delete(&config).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete config"})
 		return
 	}

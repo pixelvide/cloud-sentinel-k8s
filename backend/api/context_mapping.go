@@ -1,7 +1,6 @@
 package api
 
 import (
-	"cloud-sentinel-k8s/db"
 	"cloud-sentinel-k8s/pkg/models"
 	"net/http"
 
@@ -17,7 +16,7 @@ func ListContextMappings(c *gin.Context) {
 	}
 
 	var mappings []models.K8sClusterContextMapping
-	if err := db.DB.Where("user_id = ?", user.ID).Find(&mappings).Error; err != nil {
+	if err := models.DB.Where("user_id = ?", user.ID).Find(&mappings).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch mappings"})
 		return
 	}
@@ -44,7 +43,7 @@ func UpsertContextMapping(c *gin.Context) {
 	}
 
 	var mapping models.K8sClusterContextMapping
-	result := db.DB.Where("user_id = ? AND context_name = ?", user.ID, input.ContextName).First(&mapping)
+	result := models.DB.Where("user_id = ? AND context_name = ?", user.ID, input.ContextName).First(&mapping)
 
 	if result.Error != nil {
 		// Create new mapping
@@ -53,14 +52,14 @@ func UpsertContextMapping(c *gin.Context) {
 			ContextName: input.ContextName,
 			DisplayName: input.DisplayName,
 		}
-		if err := db.DB.Create(&mapping).Error; err != nil {
+		if err := models.DB.Create(&mapping).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create mapping"})
 			return
 		}
 	} else {
 		// Update existing
 		mapping.DisplayName = input.DisplayName
-		if err := db.DB.Save(&mapping).Error; err != nil {
+		if err := models.DB.Save(&mapping).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update mapping"})
 			return
 		}
@@ -81,7 +80,7 @@ func DeleteContextMapping(c *gin.Context) {
 	}
 
 	id := c.Param("id")
-	if err := db.DB.Where("id = ? AND user_id = ?", id, user.ID).Delete(&models.K8sClusterContextMapping{}).Error; err != nil {
+	if err := models.DB.Where("id = ? AND user_id = ?", id, user.ID).Delete(&models.K8sClusterContextMapping{}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete mapping"})
 		return
 	}

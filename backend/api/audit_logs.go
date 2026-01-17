@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"cloud-sentinel-k8s/db"
 	"cloud-sentinel-k8s/pkg/models"
 
 	"github.com/gin-gonic/gin"
@@ -33,7 +32,7 @@ func GetMyAuditLogs(c *gin.Context) {
 	var logs []models.AuditLog
 	var total int64
 
-	query := db.DB.Model(&models.AuditLog{}).Where("actor = ?", user.Email)
+	query := models.DB.Model(&models.AuditLog{}).Where("actor = ?", user.Email)
 
 	if err := query.Count(&total).Error; err != nil {
 		log.Printf("Failed to count audit logs: %v", err)

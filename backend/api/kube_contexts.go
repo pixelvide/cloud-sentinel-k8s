@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"cloud-sentinel-k8s/db"
 	"cloud-sentinel-k8s/pkg/models"
 
 	"github.com/gin-gonic/gin"
@@ -32,7 +31,7 @@ func GetContexts(c *gin.Context) {
 
 	// Fetch user's context mappings
 	var mappings []models.K8sClusterContextMapping
-	db.DB.Where("user_id = ?", user.ID).Find(&mappings)
+	models.DB.Where("user_id = ?", user.ID).Find(&mappings)
 	mappingMap := make(map[string]string)
 	for _, m := range mappings {
 		mappingMap[m.ContextName] = m.DisplayName

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 
-	"cloud-sentinel-k8s/db"
 	"cloud-sentinel-k8s/pkg/models"
 
 	"github.com/gin-gonic/gin"
@@ -43,7 +42,7 @@ func RecordAuditLogForUser(c *gin.Context, action string, actor string, payload 
 		Payload:   payloadStr,
 	}
 
-	if err := db.DB.Create(&auditLog).Error; err != nil {
+	if err := models.DB.Create(&auditLog).Error; err != nil {
 		log.Printf("CRITICAL: Failed to record audit log: %v", err)
 	}
 }

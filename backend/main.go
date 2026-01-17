@@ -15,8 +15,8 @@ import (
 
 	"cloud-sentinel-k8s/api"
 	"cloud-sentinel-k8s/auth"
-	"cloud-sentinel-k8s/db"
 	"cloud-sentinel-k8s/pkg/middleware"
+	"cloud-sentinel-k8s/pkg/models"
 	"cloud-sentinel-k8s/pkg/utils"
 )
 
@@ -33,7 +33,7 @@ func main() {
 	}
 
 	// Initialize services
-	db.InitDB()
+	models.InitDB()
 	auth.InitOIDC()
 	auth.InitJWT()
 

@@ -18,14 +18,10 @@ Replace the values below with your actual configuration.
 
 ```bash
 kubectl create configmap cloud-sentinel-config \
-  --from-literal=DB_HOST=your-db-host \
-  --from-literal=DB_USER=your-db-user \
-  --from-literal=DB_NAME=cloud_sentinel \
-  --from-literal=DB_PORT=5432 \
-  --from-literal=DB_SSLMODE=require \
+  --from-literal=DB_TYPE=postgres \
   --from-literal=OIDC_ISSUER=https://your-oidc-issuer \
   --from-literal=OIDC_CLIENT_ID=your-client-id \
-  --from-literal=FRONTEND_URL=http://cloud-sentinel-ui:3000
+  --from-literal=FRONTEND_URL=https://cloud-sentinel.yourdomain.com
 ```
 
 ### Create Secrets
@@ -33,9 +29,14 @@ Store sensitive information in a Secret.
 
 ```bash
 kubectl create secret generic cloud-sentinel-secrets \
-  --from-literal=DB_PASSWORD=your-db-password \
+  --from-literal=DB_DSN="host=your-db-host user=your-db-user password=your-db-password dbname=cloud_sentinel port=5432 sslmode=require TimeZone=UTC" \
   --from-literal=OIDC_CLIENT_SECRET=your-oidc-secret
 ```
+
+**Note**: The `DB_DSN` should be a complete database connection string. Examples:
+- **PostgreSQL**: `host=db.example.com user=postgres password=secret dbname=cloud_sentinel port=5432 sslmode=require TimeZone=UTC`
+- **MySQL**: `user:password@tcp(db.example.com:3306)/cloud_sentinel?charset=utf8mb4&parseTime=True&loc=UTC`
+- **SQLite**: `file:/data/cloud_sentinel.db`
 
 ### GHCR Authentication (Optional)
 Since GHCR is public, you do not need an image pull secret. However, if you decide to make it private in the future, you can create one:

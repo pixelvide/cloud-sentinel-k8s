@@ -42,7 +42,7 @@ Cloud Sentinel uses an automated release pipeline:
 ## Prerequisites
 
 - **Docker & Docker Compose**: For containerized deployment.
-- **PostgreSQL**: An external database or local instance (required for audit logs and user data).
+- **Database**: PostgreSQL (recommended), MySQL, or SQLite for audit logs and user data.
 
 ## Quick Start
 
@@ -62,13 +62,14 @@ Cloud Sentinel uses an automated release pipeline:
     
     **Database Configuration:**
     ```env
-    DB_HOST=localhost          # Hostname/IP of your Postgres DB
-    DB_PORT=5432               # Port (default: 5432)
-    DB_USER=postgres           # Database username
-    DB_PASSWORD=secret         # Database password
-    DB_NAME=cloud_sentinel     # Database name
-    DB_SSLMODE=disable         # Mode: disable, require, verify-ca
+    DB_TYPE=postgres           # Database type: postgres, mysql, or sqlite
+    DB_DSN=host=localhost user=postgres password=secret dbname=cloud_sentinel port=5432 sslmode=disable TimeZone=UTC
     ```
+    
+    Example DSN formats:
+    - **PostgreSQL**: `host=localhost user=postgres password=secret dbname=cloud_sentinel port=5432 sslmode=disable TimeZone=UTC`
+    - **MySQL**: `user:password@tcp(localhost:3306)/dbname?charset=utf8mb4&parseTime=True&loc=UTC`
+    - **SQLite**: `file:./cloud_sentinel.db`
 
     **OIDC Configuration:**
     ```env
@@ -76,6 +77,11 @@ Cloud Sentinel uses an automated release pipeline:
     OIDC_CLIENT_ID=<your-client-id>
     OIDC_CLIENT_SECRET=<your-client-secret>
     FRONTEND_URL=http://localhost:3000       
+    ```
+
+    **Subpath Support (Optional):**
+    ```env
+    CLOUD_SENTINEL_K8S_BASE=/cloud-sentinel  # Host on a custom subpath
     ```
 
 3.  **Run with Docker Compose**:

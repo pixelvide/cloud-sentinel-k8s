@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"strconv"
 
-	"cloud-sentinel-k8s/db"
 	"cloud-sentinel-k8s/pkg/models"
 
 	"github.com/gin-gonic/gin"
@@ -21,7 +20,7 @@ func ListGitlabConfigs(c *gin.Context) {
 	}
 
 	var configs []models.GitlabConfig
-	if err := db.DB.Where("user_id = ?", user.ID).Find(&configs).Error; err != nil {
+	if err := models.DB.Where("user_id = ?", user.ID).Find(&configs).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch configs"})
 		return
 	}
@@ -54,7 +53,7 @@ func CreateGitlabConfig(c *gin.Context) {
 		IsHTTPS: input.IsHTTPS,
 	}
 
-	if err := db.DB.Create(&config).Error; err != nil {
+	if err := models.DB.Create(&config).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create config"})
 		return
 	}
@@ -89,14 +88,14 @@ func UpdateGitlabConfig(c *gin.Context) {
 	}
 
 	var config models.GitlabConfig
-	if err := db.DB.Where("id = ? AND user_id = ?", id, user.ID).First(&config).Error; err != nil {
+	if err := models.DB.Where("id = ? AND user_id = ?", id, user.ID).First(&config).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "config not found"})
 		return
 	}
 
 	config.Token = input.Token
 	config.IsValidated = false // Reset validation status on token change
-	if err := db.DB.Save(&config).Error; err != nil {
+	if err := models.DB.Save(&config).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update config"})
 		return
 	}
@@ -121,7 +120,7 @@ func DeleteGitlabConfig(c *gin.Context) {
 		return
 	}
 
-	result := db.DB.Where("id = ? AND user_id = ?", id, user.ID).Delete(&models.GitlabConfig{})
+	result := models.DB.Where("id = ? AND user_id = ?", id, user.ID).Delete(&models.GitlabConfig{})
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete config"})
 		return
@@ -152,7 +151,7 @@ func ValidateGitlabConfig(c *gin.Context) {
 	}
 
 	var config models.GitlabConfig
-	if err := db.DB.Where("id = ? AND user_id = ?", id, user.ID).First(&config).Error; err != nil {
+	if err := models.DB.Where("id = ? AND user_id = ?", id, user.ID).First(&config).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "config not found"})
 		return
 	}
@@ -183,7 +182,7 @@ func ValidateGitlabConfig(c *gin.Context) {
 
 	// Validation success: persist to DB
 	config.IsValidated = true
-	if err := db.DB.Save(&config).Error; err != nil {
+	if err := models.DB.Save(&config).Error; err != nil {
 		log.Printf("Failed to update validation status in DB: %v", err)
 		// We still return success to the user as the CLI check passed
 	}
