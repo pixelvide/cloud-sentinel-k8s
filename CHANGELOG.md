@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.9.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v1.8.0...v1.9.0) (2026-01-17)
+
+
+### Features
+
+* implement initialization flow and oauth providers api ([f280178](https://github.com/pixelvide/cloud-sentinel-k8s/commit/f280178e2e6a4d566b24d81eeb186d03613a6d5c))
+* implement klog/flag, refactor models to pkg/models, and remove DeletedAt ([307ee8e](https://github.com/pixelvide/cloud-sentinel-k8s/commit/307ee8e3efe511bfbb6876733f5bec609a3afb2b))
+* implement password login and persistent auth config ([aeaed5d](https://github.com/pixelvide/cloud-sentinel-k8s/commit/aeaed5dd031243a340495d939b2219e184fc13c0))
+* implement subpath hosting, refactor models with base struct, and add Apps table ([aa23a27](https://github.com/pixelvide/cloud-sentinel-k8s/commit/aa23a27ec9189776bdbd57854b740dbd33931861))
+* refactor database initialization and add app access control ([db163ac](https://github.com/pixelvide/cloud-sentinel-k8s/commit/db163ac33d9281b00c0eb986b9cc493881dfa5cf))
+* refactor k8s api context, add eks support, and metrics ([49b8ff9](https://github.com/pixelvide/cloud-sentinel-k8s/commit/49b8ff95f2c5340b589956b97a37ea5d15206329))
+* **ui:** restructure folder hierarchy, implement multi-theming and i18n ([6b59ce0](https://github.com/pixelvide/cloud-sentinel-k8s/commit/6b59ce0c96a056cf464f4d9fbdda455d206868ef))
+
+
+### Bug Fixes
+
+* **frontend:** update auth API routes to /api/auth ([b39ccbe](https://github.com/pixelvide/cloud-sentinel-k8s/commit/b39ccbebbfde92318eaacbf44773c7e2f8a35d52))
+
 ## [1.8.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v1.7.0...v1.8.0) (2026-01-17)
 
 

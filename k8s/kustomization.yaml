@@ -8,5 +8,5 @@ images:
   - name: ghcr.io/pixcorp/cloud-sentinel-k8s-backend
     newName: ghcr.io/pixcorp/cloud-sentinel-k8s
     # x-release-please-start-version
-    newTag: 1.8.0
+    newTag: 1.9.0
     # x-release-please-end
