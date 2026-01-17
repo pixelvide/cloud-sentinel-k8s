@@ -64,6 +64,9 @@ export async function get<T>(path: string, options: ApiFetchOptions = {}): Promi
         }
         throw new Error(errorMessage);
     }
+    if (response.status === 204) {
+        return null as unknown as T;
+    }
     return response.json();
 }
 
@@ -84,6 +87,9 @@ export async function post<T>(path: string, body?: any, options: ApiFetchOptions
             // Ignore JSON parse error, use default message
         }
         throw new Error(errorMessage);
+    }
+    if (response.status === 204) {
+        return null as unknown as T;
     }
     return response.json();
 }
@@ -131,6 +137,9 @@ export async function put<T>(path: string, body?: any, options: RequestInit = {}
         }
         throw new Error(errorMessage);
     }
+    if (response.status === 204) {
+        return null as unknown as T;
+    }
     return response.json();
 }
 
@@ -147,6 +156,9 @@ export async function del<T>(path: string, options: RequestInit = {}): Promise<T
             // Ignore JSON parse error, use default message
         }
         throw new Error(errorMessage);
+    }
+    if (response.status === 204) {
+        return null as unknown as T;
     }
     return response.json();
 }

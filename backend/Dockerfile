@@ -19,7 +19,7 @@ RUN go mod download
 COPY backend/ .
 COPY version.txt .
 RUN VERSION=$(cat version.txt | tr -d '\n\r') && \
-    go build -ldflags="-X main.Version=$VERSION" -o server main.go
+    CGO_ENABLED=0 go build -ldflags="-X main.Version=$VERSION -w -s" -o cloud-sentinel-k8s main.go
 
 # Stage 3: Final Image
 FROM public.ecr.aws/docker/library/alpine:latest
@@ -33,8 +33,8 @@ RUN mkdir -p /opt/homebrew/bin /usr/local/bin && \
     ln -sf /usr/bin/aws /usr/local/bin/aws
 
 WORKDIR /app
-COPY --from=backend-builder /app/server .
+COPY --from=backend-builder /app/cloud-sentinel-k8s .
 COPY --from=frontend-builder /app/dist ./static
 
 EXPOSE 8080
-CMD ["./server"]
+CMD ["./cloud-sentinel-k8s"]
