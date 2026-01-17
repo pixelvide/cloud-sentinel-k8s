@@ -1,13 +1,14 @@
 package main
 
 import (
-	"log"
+	"flag"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"k8s.io/klog/v2"
 
 	"cloud-sentinel-k8s/api"
 	"cloud-sentinel-k8s/auth"
@@ -17,6 +18,15 @@ import (
 var Version = "dev"
 
 func main() {
+	klog.InitFlags(nil)
+	flag.Parse()
+
+	if klog.V(1).Enabled() {
+		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	// Initialize services
 	db.InitDB()
 	auth.InitOIDC()
@@ -215,6 +225,6 @@ func main() {
 		}
 	}
 
-	log.Println("Server running on :8080")
+	klog.Infof("Server running on :8080")
 	r.Run(":8080")
 }

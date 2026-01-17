@@ -1,7 +1,7 @@
 package analyzers
 
 import (
-	"cloud-sentinel-k8s/models"
+	"cloud-sentinel-k8s/pkg/models"
 	"context"
 	"fmt"
 

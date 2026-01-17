@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"cloud-sentinel-k8s/db"
-	"cloud-sentinel-k8s/models"
+	"cloud-sentinel-k8s/pkg/models"
 )
 
 // ReconfigureAllAgentsOnStartup iterates over all GitLab agent configs and reconfigures them.

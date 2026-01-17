@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"cloud-sentinel-k8s/models"
+	"cloud-sentinel-k8s/pkg/models"
 
 	"github.com/gin-gonic/gin"
 	batchv1 "k8s.io/api/batch/v1"

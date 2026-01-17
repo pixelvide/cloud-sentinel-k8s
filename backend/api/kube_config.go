@@ -2,7 +2,7 @@ package api
 
 import (
 	"cloud-sentinel-k8s/db"
-	"cloud-sentinel-k8s/models"
+	"cloud-sentinel-k8s/pkg/models"
 	"net/http"
 	"os"
 	"strconv"

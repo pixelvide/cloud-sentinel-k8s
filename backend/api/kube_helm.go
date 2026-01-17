@@ -1,7 +1,7 @@
 package api
 
 import (
-	"cloud-sentinel-k8s/models"
+	"cloud-sentinel-k8s/pkg/models"
 	"log"
 	"net/http"
 	"os"

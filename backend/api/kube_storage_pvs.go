@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"cloud-sentinel-k8s/models"
+	"cloud-sentinel-k8s/pkg/models"
 
 	"github.com/gin-gonic/gin"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

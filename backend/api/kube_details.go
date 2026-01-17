@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"cloud-sentinel-k8s/analyzers"
-	"cloud-sentinel-k8s/models"
+	"cloud-sentinel-k8s/pkg/models"
 
 	"github.com/gin-gonic/gin"
 	"k8s.io/apimachinery/pkg/api/meta"

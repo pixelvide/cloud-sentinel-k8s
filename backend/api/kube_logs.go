@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"cloud-sentinel-k8s/models"
+	"cloud-sentinel-k8s/pkg/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"

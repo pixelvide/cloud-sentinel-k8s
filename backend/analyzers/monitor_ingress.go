@@ -1,7 +1,7 @@
 package analyzers
 
 import (
-	"cloud-sentinel-k8s/models"
+	"cloud-sentinel-k8s/pkg/models"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"

@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"cloud-sentinel-k8s/db"
-	"cloud-sentinel-k8s/models"
+	"cloud-sentinel-k8s/pkg/models"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"

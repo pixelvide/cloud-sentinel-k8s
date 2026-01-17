@@ -9,7 +9,7 @@ import (
 	metricsclientset "k8s.io/metrics/pkg/client/clientset/versioned"
 
 	"cloud-sentinel-k8s/metrics"
-	"cloud-sentinel-k8s/models"
+	"cloud-sentinel-k8s/pkg/models"
 )
 
 // GetPodMetrics returns CPU/Memory usage history for a pod.

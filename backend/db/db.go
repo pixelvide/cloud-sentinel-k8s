@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"cloud-sentinel-k8s/models"
+	"cloud-sentinel-k8s/pkg/models"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
