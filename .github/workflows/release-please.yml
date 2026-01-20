@@ -18,8 +18,7 @@ jobs:
         id: release
 
       - name: Debug Outputs
-        if: ${{ steps.release.outputs.release_created }}
-        run: echo '${{ toJSON(steps.release.outputs) }}'
+        run: echo '${{ toJSON(steps.release) }}'
 
       # Step 2: Run custom script ONLY if a release was created to update chart and other files
       - name: Run my script with the new version
