@@ -26,6 +26,10 @@ jobs:
           CLOUD_SENTINEL_K8S_HOST: ${{ secrets.CLOUD_SENTINEL_K8S_TEST_HOST }}
           CLOUD_SENTINEL_K8S_AUTH: ${{ secrets.CLOUD_SENTINEL_K8S_TEST_AUTH }}
         run: |
+          if [ -z "$CLOUD_SENTINEL_K8S_HOST" ] || [ -z "$CLOUD_SENTINEL_K8S_AUTH" ]; then
+            echo "CLOUD_SENTINEL_K8S_HOST or CLOUD_SENTINEL_K8S_AUTH is not set. Skipping deployment."
+            exit 0
+          fi
           RESTART_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           curl -X PATCH "$CLOUD_SENTINEL_K8S_HOST/api/v1/deployments/cloud-sentinel-k8s/cloud-sentinel-k8s" \
             -H "Authorization: $CLOUD_SENTINEL_K8S_AUTH" \
