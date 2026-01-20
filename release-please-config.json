@@ -15,6 +15,7 @@
         },
         "charts/cloud-sentinel-k8s": {
             "release-type": "helm",
+            "changelog-path": "CHANGELOG.md",
             "extra-files": [
                 "charts/cloud-sentinel-k8s/values.yaml",
                 "charts/cloud-sentinel-k8s/README.md"
