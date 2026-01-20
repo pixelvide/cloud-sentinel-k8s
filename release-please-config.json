@@ -11,8 +11,17 @@
                     "path": "ui/package.json",
                     "jsonpath": "$.version"
                 },
-                "README.md",
-                "charts/cloud-sentinel-k8s/values.yaml"
+                {
+                    "type": "yaml",
+                    "path": "charts/cloud-sentinel-k8s/values.yaml",
+                    "jsonpath": "$.image.tag"
+                },
+                {
+                    "type": "yaml",
+                    "path": "charts/cloud-sentinel-k8s/Chart.yaml",
+                    "jsonpath": "$.version"
+                },
+                "README.md"
             ]
         }
     }
