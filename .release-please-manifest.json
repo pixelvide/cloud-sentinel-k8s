@@ -1,4 +1,4 @@
 {
-    ".": "0.0.0",
-    "charts/cloud-sentinel-k8s": "0.0.0"
+    ".": "0.1.0",
+    "charts/cloud-sentinel-k8s": "1.0.0"
 }
