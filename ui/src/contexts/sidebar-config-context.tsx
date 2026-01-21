@@ -14,8 +14,10 @@ import {
   IconBell,
   IconBox,
   IconBoxMultiple,
+  IconClock,
   IconClockHour4,
   IconCode,
+  IconCpu,
   IconDatabase,
   IconFileDatabase,
   IconKey,
@@ -33,6 +35,7 @@ import {
   IconServer2,
   IconShield,
   IconShieldCheck,
+  IconSortDescending,
   IconStack2,
   IconTopologyBus,
   IconUser,
@@ -77,6 +80,9 @@ const iconMap = {
   IconAnchor,
   IconPackage,
   IconPercentage,
+  IconSortDescending,
+  IconCpu,
+  IconClock,
 }
 
 const getIconName = (iconComponent: React.ComponentType): string => {
@@ -178,6 +184,21 @@ const defaultMenus: DefaultMenus = {
       titleKey: 'nav.poddisruptionbudgets',
       url: '/poddisruptionbudgets',
       icon: IconPercentage,
+    },
+    {
+      titleKey: 'nav.priorityclasses',
+      url: '/priorityclasses',
+      icon: IconSortDescending,
+    },
+    {
+      titleKey: 'nav.runtimeclasses',
+      url: '/runtimeclasses',
+      icon: IconCpu,
+    },
+    {
+      titleKey: 'nav.leases',
+      url: '/leases',
+      icon: IconClock,
     },
   ],
   'sidebar.groups.helm': [

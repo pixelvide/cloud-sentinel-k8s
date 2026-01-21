@@ -9,11 +9,14 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	batchv1 "k8s.io/api/batch/v1"
+	coordinationv1 "k8s.io/api/coordination/v1"
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	nodev1 "k8s.io/api/node/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	schedulingv1 "k8s.io/api/scheduling/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -83,6 +86,9 @@ func RegisterRoutes(group *gin.RouterGroup) {
 		"httproutes":               NewGenericResourceHandler[*gatewayapiv1.HTTPRoute, *gatewayapiv1.HTTPRouteList]("httproutes", false, false),
 		"horizontalpodautoscalers": NewGenericResourceHandler[*autoscalingv2.HorizontalPodAutoscaler, *autoscalingv2.HorizontalPodAutoscalerList]("horizontalpodautoscalers", false, true),
 		"poddisruptionbudgets":     NewGenericResourceHandler[*policyv1.PodDisruptionBudget, *policyv1.PodDisruptionBudgetList]("poddisruptionbudgets", false, true),
+		"priorityclasses":          NewGenericResourceHandler[*schedulingv1.PriorityClass, *schedulingv1.PriorityClassList]("priorityclasses", true, false),
+		"runtimeclasses":           NewGenericResourceHandler[*nodev1.RuntimeClass, *nodev1.RuntimeClassList]("runtimeclasses", true, false),
+		"leases":                   NewGenericResourceHandler[*coordinationv1.Lease, *coordinationv1.LeaseList]("leases", false, false),
 	}
 
 	for name, handler := range handlers {

@@ -54,6 +54,12 @@ import {
   PodDisruptionBudget,
   PodDisruptionBudgetList,
 } from 'kubernetes-types/policy/v1'
+import {
+  PriorityClass,
+  PriorityClassList,
+} from 'kubernetes-types/scheduling/v1'
+import { RuntimeClass, RuntimeClassList } from 'kubernetes-types/node/v1'
+import { Lease, LeaseList } from 'kubernetes-types/coordination/v1'
 import { StorageClass, StorageClassList } from 'kubernetes-types/storage/v1'
 
 export interface CustomResource {
@@ -117,6 +123,9 @@ export type ResourceType =
   | 'clusterrolebindings'
   | 'horizontalpodautoscalers'
   | 'poddisruptionbudgets'
+  | 'priorityclasses'
+  | 'runtimeclasses'
+  | 'leases'
   | 'helmreleases'
 
 export const clusterScopeResources: ResourceType[] = [
@@ -127,6 +136,8 @@ export const clusterScopeResources: ResourceType[] = [
   'storageclasses',
   'clusterroles',
   'clusterrolebindings',
+  'priorityclasses',
+  'runtimeclasses',
 ]
 
 type listMetadataType = {
@@ -175,6 +186,9 @@ export interface ResourcesTypeMap {
   clusterrolebindings: ClusterRoleBindingList
   horizontalpodautoscalers: HorizontalPodAutoscalerList
   poddisruptionbudgets: PodDisruptionBudgetList
+  priorityclasses: PriorityClassList
+  runtimeclasses: RuntimeClassList
+  leases: LeaseList
   helmreleases: {
     items: HelmRelease[]
   }
@@ -246,6 +260,9 @@ export interface ResourceTypeMap {
   clusterrolebindings: ClusterRoleBinding
   horizontalpodautoscalers: HorizontalPodAutoscaler
   poddisruptionbudgets: PodDisruptionBudget
+  priorityclasses: PriorityClass
+  runtimeclasses: RuntimeClass
+  leases: Lease
   helmreleases: HelmRelease
 }
 

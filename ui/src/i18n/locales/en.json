@@ -93,6 +93,9 @@
     "clusterrolebindings": "Cluster Role Bindings",
     "horizontalpodautoscalers": "HPA",
     "poddisruptionbudgets": "Pod Disruption Budgets",
+    "priorityclasses": "Priority Classes",
+    "runtimeclasses": "Runtime Classes",
+    "leases": "Leases",
     "helm_releases": "Helm Releases",
     "helm_charts": "Helm Charts"
   },
