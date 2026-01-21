@@ -11,7 +11,7 @@ image:
   # This sets the pull policy for images.
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: 0.6.2
+  tag: 0.7.0
 
 # This will set the deployment strategy. More information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
 #
