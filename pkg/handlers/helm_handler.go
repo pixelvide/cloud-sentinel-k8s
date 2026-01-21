@@ -19,7 +19,7 @@ func ListHelmReleases(c *gin.Context) {
 	cs := c.MustGet("cluster").(*cluster.ClientSet)
 
 	// Determine the namespace to query Helm with.
-	// If single namespace, query efficienty.
+	// If single namespace, query efficiently.
 	// If multiple or all, query all and filter.
 	queryNamespace := ""
 	if len(namespaces) == 1 {

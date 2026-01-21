@@ -28,6 +28,9 @@ features:
   - icon: 🔍
     title: Comprehensive Resource Management
     details: Full resource coverage with live YAML editing, detailed views, and resource relationships
+  - icon: ☸️
+    title: Helm Release Management
+    details: View and list Helm releases deployed in your cluster
   - icon: 📈
     title: Monitoring & Observability
     details: Logs, web terminal, monitoring, and complete resource update history and audit
