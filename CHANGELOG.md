@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v0.4.0...v0.5.0) (2026-01-21)
+
+
+### Features
+
+* Add Helm section ([#29](https://github.com/pixelvide/cloud-sentinel-k8s/issues/29)) ([9e6d9e9](https://github.com/pixelvide/cloud-sentinel-k8s/commit/9e6d9e9a28f885a1272b9a18c133e59b65235ce2))
+* Implement Helm Release Delete API ([#31](https://github.com/pixelvide/cloud-sentinel-k8s/issues/31)) ([a79e471](https://github.com/pixelvide/cloud-sentinel-k8s/commit/a79e4718d44f1b8299c0efd2ade1fd982343a57f))
+
 ## [0.4.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v0.3.1...v0.4.0) (2026-01-21)
 
 
