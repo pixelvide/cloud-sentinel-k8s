@@ -72,3 +72,22 @@ func ListHelmReleases(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"items": response})
 }
+
+func DeleteHelmRelease(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+
+	if namespace == "" || name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "namespace and name are required"})
+		return
+	}
+
+	cs := c.MustGet("cluster").(*cluster.ClientSet)
+
+	if err := helm.UninstallRelease(cs.Configuration, namespace, name); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Release deleted"})
+}

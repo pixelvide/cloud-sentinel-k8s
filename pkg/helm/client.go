@@ -80,3 +80,19 @@ func ListReleases(config *rest.Config, namespace string) ([]*release.Release, er
 
 	return results, nil
 }
+
+func UninstallRelease(config *rest.Config, namespace, releaseName string) error {
+	actionConfig := new(action.Configuration)
+	clientGetter := &simpleRESTClientGetter{config: config}
+
+	if err := actionConfig.Init(clientGetter, namespace, os.Getenv("HELM_DRIVER"), log.Printf); err != nil {
+		return err
+	}
+
+	client := action.NewUninstall(actionConfig)
+	_, err := client.Run(releaseName)
+	if err != nil {
+		return err
+	}
+	return nil
+}

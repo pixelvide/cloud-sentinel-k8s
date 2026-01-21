@@ -213,6 +213,7 @@ func setupAPIRouter(r *gin.RouterGroup, cm *cluster.ClusterManager, authHandler 
 
 		api.GET("/helm/releases/:namespace", handlers.ListHelmReleases)
 		api.GET("/helm/releases", handlers.ListHelmReleases)
+		api.DELETE("/helm/releases/:namespace/:name", handlers.DeleteHelmRelease)
 
 		proxyHandler := handlers.NewProxyHandler()
 		proxyHandler.RegisterRoutes(api)
