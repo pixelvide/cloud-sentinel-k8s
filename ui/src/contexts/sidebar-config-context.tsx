@@ -21,6 +21,7 @@ import {
   IconCpu,
   IconDatabase,
   IconFileDatabase,
+  IconHierarchy,
   IconKey,
   IconLoadBalancer,
   IconLock,
@@ -29,6 +30,7 @@ import {
   IconPackage,
   IconPercentage,
   IconPlayerPlay,
+  IconPoint,
   IconProps,
   IconRocket,
   IconRoute,
@@ -37,6 +39,7 @@ import {
   IconServer2,
   IconShield,
   IconShieldCheck,
+  IconShieldLock,
   IconSortDescending,
   IconStack2,
   IconTopologyBus,
@@ -89,6 +92,9 @@ const iconMap = {
   IconCpu,
   IconClock,
   IconWebhook,
+  IconPoint,
+  IconHierarchy,
+  IconShieldLock,
 }
 
 const getIconName = (iconComponent: React.ComponentType): string => {
@@ -158,8 +164,19 @@ const defaultMenus: DefaultMenus = {
   'sidebar.groups.traffic': [
     { titleKey: 'nav.ingresses', url: '/ingresses', icon: IconRouter },
     { titleKey: 'nav.services', url: '/services', icon: IconNetwork },
+    { titleKey: 'nav.endpoints', url: '/endpoints', icon: IconPoint },
     { titleKey: 'nav.gateways', url: '/gateways', icon: IconLoadBalancer },
     { titleKey: 'nav.httproutes', url: '/httproutes', icon: IconRoute },
+    {
+      titleKey: 'nav.ingressclasses',
+      url: '/ingressclasses',
+      icon: IconHierarchy,
+    },
+    {
+      titleKey: 'nav.networkpolicies',
+      url: '/networkpolicies',
+      icon: IconShieldLock,
+    },
   ],
   'sidebar.groups.storage': [
     {

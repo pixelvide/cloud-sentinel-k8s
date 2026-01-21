@@ -1,6 +1,12 @@
 // API types for Custom Resources
 
 import {
+  MutatingWebhookConfiguration,
+  MutatingWebhookConfigurationList,
+  ValidatingWebhookConfiguration,
+  ValidatingWebhookConfigurationList,
+} from 'kubernetes-types/admissionregistration/v1'
+import {
   CustomResourceDefinition,
   CustomResourceDefinitionList,
 } from 'kubernetes-types/apiextensions/v1'
@@ -15,12 +21,6 @@ import {
   StatefulSetList,
 } from 'kubernetes-types/apps/v1'
 import {
-  MutatingWebhookConfiguration,
-  MutatingWebhookConfigurationList,
-  ValidatingWebhookConfiguration,
-  ValidatingWebhookConfigurationList,
-} from 'kubernetes-types/admissionregistration/v1'
-import {
   HorizontalPodAutoscaler,
   HorizontalPodAutoscalerList,
 } from 'kubernetes-types/autoscaling/v2'
@@ -29,6 +29,8 @@ import { Lease, LeaseList } from 'kubernetes-types/coordination/v1'
 import {
   ConfigMap,
   ConfigMapList,
+  Endpoints,
+  EndpointsList,
   Event,
   EventList,
   LimitRange,
@@ -50,7 +52,14 @@ import {
   ServiceAccountList,
   ServiceList,
 } from 'kubernetes-types/core/v1'
-import { Ingress, IngressList } from 'kubernetes-types/networking/v1'
+import {
+  Ingress,
+  IngressClass,
+  IngressClassList,
+  IngressList,
+  NetworkPolicy,
+  NetworkPolicyList,
+} from 'kubernetes-types/networking/v1'
 import { RuntimeClass, RuntimeClassList } from 'kubernetes-types/node/v1'
 import {
   PodDisruptionBudget,
@@ -113,9 +122,12 @@ export type ResourceType =
   | 'jobs'
   | 'cronjobs'
   | 'services'
+  | 'endpoints'
   | 'configmaps'
   | 'secrets'
   | 'ingresses'
+  | 'ingressclasses'
+  | 'networkpolicies'
   | 'namespaces'
   | 'crds'
   | 'crs'
@@ -154,6 +166,7 @@ export const clusterScopeResources: ResourceType[] = [
   'runtimeclasses',
   'mutatingwebhookconfigurations',
   'validatingwebhookconfigurations',
+  'ingressclasses',
 ]
 
 type listMetadataType = {
@@ -173,10 +186,13 @@ export interface ResourcesTypeMap {
   jobs: JobList
   cronjobs: CronJobList
   services: ServiceList
+  endpoints: EndpointsList
   configmaps: ConfigMapList
   secrets: SecretList
   persistentvolumeclaims: PersistentVolumeClaimList
   ingresses: IngressList
+  ingressclasses: IngressClassList
+  networkpolicies: NetworkPolicyList
   namespaces: NamespaceList
   crds: CustomResourceDefinitionList
   crs: {
@@ -260,10 +276,13 @@ export interface ResourceTypeMap {
   jobs: Job
   cronjobs: CronJob
   services: Service
+  endpoints: Endpoints
   configmaps: ConfigMap
   secrets: Secret
   persistentvolumeclaims: PersistentVolumeClaim
   ingresses: Ingress
+  ingressclasses: IngressClass
+  networkpolicies: NetworkPolicy
   namespaces: Namespace
   crds: CustomResourceDefinition
   crs: CustomResource
