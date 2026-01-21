@@ -13,9 +13,11 @@ fi
 echo "🚀 Syncing version $VERSION..."
 
 if command -v gsed >/dev/null 2>&1; then
-  SED_CMD=gsed
+  SED_CMD="gsed -i -E"
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+  SED_CMD="sed -i '' -E"
 else
-  SED_CMD=sed
+  SED_CMD="sed -i -E"
 fi
 
 CHART_DIR="charts/cloud-sentinel-k8s"
@@ -34,7 +36,7 @@ update_file() {
     
     if [ -f "$file" ]; then
         echo "Updating $file..."
-        $SED_CMD -i -E "s/$search_pattern/$replace_pattern/g" "$file"
+        $SED_CMD "s|$search_pattern|$replace_pattern|g" "$file"
     else
         echo "⚠️  $file not found"
     fi
@@ -42,35 +44,35 @@ update_file() {
 
 # Update Root README
 # Replace docker tag: ghcr.io/pixelvide/cloud-sentinel-k8s:0.0.0
-$SED_CMD -i -E "s|(ghcr.io/pixelvide/cloud-sentinel-k8s:)[0-9]+\.[0-9]+\.[0-9]+|\1$VERSION|g" README.md
+$SED_CMD "s|(ghcr.io/pixelvide/cloud-sentinel-k8s:)[0-9]+\.[0-9]+\.[0-9]+|\1$VERSION|g" README.md
 # Replace helm install URL version: refs/tags/v0.0.0
-$SED_CMD -i -E "s|(refs/tags/v)[0-9]+\.[0-9]+\.[0-9]+|\1$VERSION|g" README.md
+$SED_CMD "s|(refs/tags/v)[0-9]+\.[0-9]+\.[0-9]+|\1$VERSION|g" README.md
 
 # Update Chart README
 # Update app version mentions if any? Or usually just keep in sync.
 # Previous script did a simple replace. Let's try to be specific for App Version or Image Tag.
-$SED_CMD -i -E "s|(ghcr.io/pixelvide/cloud-sentinel-k8s:)[0-9]+\.[0-9]+\.[0-9]+|\1$VERSION|g" "$CHART_DIR/README.md"
+$SED_CMD "s|(ghcr.io/pixelvide/cloud-sentinel-k8s:)[0-9]+\.[0-9]+\.[0-9]+|\1$VERSION|g" "$CHART_DIR/README.md"
 # Update Version badge: ![Version: v0.0.0] -> ![Version: v1.0.0]
-$SED_CMD -i -E "s|(Version: v)[0-9]+\.[0-9]+\.[0-9]+|\1$VERSION|g" "$CHART_DIR/README.md"
+$SED_CMD "s|(Version: v)[0-9]+\.[0-9]+\.[0-9]+|\1$VERSION|g" "$CHART_DIR/README.md"
 # Update Version link: Version-v0.0.0 -> Version-v1.0.0
-$SED_CMD -i -E "s|(Version-v)[0-9]+\.[0-9]+\.[0-9]+|\1$VERSION|g" "$CHART_DIR/README.md"
+$SED_CMD "s|(Version-v)[0-9]+\.[0-9]+\.[0-9]+|\1$VERSION|g" "$CHART_DIR/README.md"
 # Update AppVersion badge/link
-$SED_CMD -i -E "s|(AppVersion: v?)[0-9]+\.[0-9]+\.[0-9]+|\1$VERSION|g" "$CHART_DIR/README.md"
-$SED_CMD -i -E "s|(AppVersion-v?)[0-9]+\.[0-9]+\.[0-9]+|\1$VERSION|g" "$CHART_DIR/README.md"
+$SED_CMD "s|(AppVersion: v?)[0-9]+\.[0-9]+\.[0-9]+|\1$VERSION|g" "$CHART_DIR/README.md"
+$SED_CMD "s|(AppVersion-v?)[0-9]+\.[0-9]+\.[0-9]+|\1$VERSION|g" "$CHART_DIR/README.md"
 
 # Update Chart Values
 # tag: 0.0.0
-$SED_CMD -i -E "s|(tag: )\"?[0-9]+\.[0-9]+\.[0-9]+\"?|\1$VERSION|g" "$CHART_DIR/values.yaml"
+$SED_CMD "s|(tag: )\"?[0-9]+\.[0-9]+\.[0-9]+\"?|\1$VERSION|g" "$CHART_DIR/values.yaml"
 
 # Update Chart.yaml
 # version: 0.0.0 -> version: 1.2.3 (Strict SemVer, no v)
-$SED_CMD -i -E "s|(version: )\"?[0-9]+\.[0-9]+\.[0-9]+\"?|\1$VERSION|g" "$CHART_DIR/Chart.yaml"
+$SED_CMD "s|(version: )\"?[0-9]+\.[0-9]+\.[0-9]+\"?|\1$VERSION|g" "$CHART_DIR/Chart.yaml"
 
 # appVersion: "v0.0.0" -> appVersion: "v1.2.3"
 # Note: User wanted to strip v in some places, but Chart.yaml appVersion usually keeps v if that's the convention.
 # User config had `include-v-in-tag: true`. The previous `release-please` setup with `simple` updater handles this.
 # If this script is run INSTEAD or ALONGSIDE, we should match that.
 # Matches: appVersion: "v0.0.0" or appVersion: v0.0.0
-$SED_CMD -i -E "s|(appVersion: \"?v?)[0-9]+\.[0-9]+\.[0-9]+\"?|\1$VERSION\"|g" "$CHART_DIR/Chart.yaml"
+$SED_CMD "s|(appVersion: \"?v?)[0-9]+\.[0-9]+\.[0-9]+\"?|\1$VERSION\"|g" "$CHART_DIR/Chart.yaml"
 
 echo "✅ Version sync complete!"
