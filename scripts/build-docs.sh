@@ -7,7 +7,7 @@ git fetch --tags
 
 # Get all semantic version tags (v*), sort them (version sort), and take the last 5 relevant ones
 # You can adjust the grep/sort logic to fit your tagging scheme
-VERSIONS=($(git tag -l "v*" | sort -V | tail -n 20))
+VERSIONS=($(git tag -l "v*" | grep -v "v0.0.0" | sort -V | tail -n 20))
 echo "Detected versions to build: ${VERSIONS[*]}"
 BASE_URL="/cloud-sentinel-k8s"
 
