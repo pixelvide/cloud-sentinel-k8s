@@ -38,8 +38,9 @@ func (cm *ClusterManager) GetClusters(c *gin.Context) {
 		}
 
 		info := common.ClusterInfo{
-			Name:      cluster.Name,
-			IsDefault: cluster.Name == cm.defaultContext,
+			Name:           cluster.Name,
+			IsDefault:      cluster.Name == cm.defaultContext,
+			SkipSystemSync: cluster.SkipSystemSync,
 		}
 
 		// Check shared client
@@ -93,14 +94,15 @@ func (cm *ClusterManager) GetClusterList(c *gin.Context) {
 		}
 
 		clusterInfo := gin.H{
-			"id":            cluster.ID,
-			"name":          cluster.Name,
-			"description":   cluster.Description,
-			"enabled":       cluster.Enable,
-			"inCluster":     cluster.InCluster,
-			"isDefault":     cluster.IsDefault,
-			"prometheusURL": cluster.PrometheusURL,
-			"config":        config,
+			"id":             cluster.ID,
+			"name":           cluster.Name,
+			"description":    cluster.Description,
+			"enabled":        cluster.Enable,
+			"inCluster":      cluster.InCluster,
+			"isDefault":      cluster.IsDefault,
+			"prometheusURL":  cluster.PrometheusURL,
+			"config":         config,
+			"skipSystemSync": cluster.SkipSystemSync,
 		}
 
 		if clientSet, exists := cm.clusters[cluster.Name]; exists {
@@ -130,12 +132,13 @@ func (cm *ClusterManager) GetClusterList(c *gin.Context) {
 
 func (cm *ClusterManager) CreateCluster(c *gin.Context) {
 	var req struct {
-		Name          string `json:"name" binding:"required"`
-		Description   string `json:"description"`
-		Config        string `json:"config"`
-		PrometheusURL string `json:"prometheusURL"`
-		InCluster     bool   `json:"inCluster"`
-		IsDefault     bool   `json:"isDefault"`
+		Name           string `json:"name" binding:"required"`
+		Description    string `json:"description"`
+		Config         string `json:"config"`
+		PrometheusURL  string `json:"prometheusURL"`
+		InCluster      bool   `json:"inCluster"`
+		IsDefault      bool   `json:"isDefault"`
+		SkipSystemSync bool   `json:"skipSystemSync"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -159,13 +162,14 @@ func (cm *ClusterManager) CreateCluster(c *gin.Context) {
 	}
 
 	cluster := &model.Cluster{
-		Name:          req.Name,
-		Description:   req.Description,
-		Config:        model.SecretString(req.Config),
-		PrometheusURL: req.PrometheusURL,
-		InCluster:     req.InCluster,
-		IsDefault:     req.IsDefault,
-		Enable:        true,
+		Name:           req.Name,
+		Description:    req.Description,
+		Config:         model.SecretString(req.Config),
+		PrometheusURL:  req.PrometheusURL,
+		InCluster:      req.InCluster,
+		IsDefault:      req.IsDefault,
+		SkipSystemSync: req.SkipSystemSync,
+		Enable:         true,
 	}
 
 	if err := model.AddCluster(cluster); err != nil {
@@ -190,13 +194,14 @@ func (cm *ClusterManager) UpdateCluster(c *gin.Context) {
 	}
 
 	var req struct {
-		Name          string `json:"name"`
-		Description   string `json:"description"`
-		Config        string `json:"config"`
-		PrometheusURL string `json:"prometheusURL"`
-		InCluster     bool   `json:"inCluster"`
-		IsDefault     bool   `json:"isDefault"`
-		Enabled       bool   `json:"enabled"`
+		Name           string `json:"name"`
+		Description    string `json:"description"`
+		Config         string `json:"config"`
+		PrometheusURL  string `json:"prometheusURL"`
+		InCluster      bool   `json:"inCluster"`
+		IsDefault      bool   `json:"isDefault"`
+		Enabled        bool   `json:"enabled"`
+		SkipSystemSync bool   `json:"skipSystemSync"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -222,11 +227,12 @@ func (cm *ClusterManager) UpdateCluster(c *gin.Context) {
 	}
 
 	updates := map[string]interface{}{
-		"description":    req.Description,
-		"prometheus_url": req.PrometheusURL,
-		"in_cluster":     req.InCluster,
-		"is_default":     req.IsDefault,
-		"enable":         req.Enabled,
+		"description":      req.Description,
+		"prometheus_url":   req.PrometheusURL,
+		"in_cluster":       req.InCluster,
+		"is_default":       req.IsDefault,
+		"enable":           req.Enabled,
+		"skip_system_sync": req.SkipSystemSync,
 	}
 
 	if req.Name != "" && req.Name != cluster.Name {

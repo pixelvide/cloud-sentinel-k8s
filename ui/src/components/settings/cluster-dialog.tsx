@@ -50,7 +50,7 @@ export function ClusterDialog({
     enabled: true,
     isDefault: false,
     inCluster: false,
-    skip_system_sync: false,
+    skipSystemSync: false,
   })
 
   useEffect(() => {
@@ -63,7 +63,7 @@ export function ClusterDialog({
         enabled: cluster.enabled,
         isDefault: cluster.isDefault,
         inCluster: cluster.inCluster,
-        skip_system_sync: cluster.skip_system_sync || false,
+        skipSystemSync: cluster.skipSystemSync || false,
       })
     }
   }, [cluster, open])
@@ -105,7 +105,7 @@ export function ClusterDialog({
       enabled: true,
       isDefault: false,
       inCluster: false,
-      skip_system_sync: false,
+      skipSystemSync: false,
     })
   }
 
@@ -334,9 +334,9 @@ export function ClusterDialog({
                 </div>
                 <Switch
                   id="cluster-skip-sync"
-                  checked={formData.skip_system_sync}
+                  checked={formData.skipSystemSync}
                   onCheckedChange={(checked) =>
-                    handleChange('skip_system_sync', checked)
+                    handleChange('skipSystemSync', checked)
                   }
                 />
               </div>

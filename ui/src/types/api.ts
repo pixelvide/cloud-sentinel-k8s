@@ -354,7 +354,7 @@ export interface Cluster {
   updatedAt: string
   prometheusURL?: string
   error?: string
-  skip_system_sync?: boolean
+  skipSystemSync?: boolean
 }
 
 export interface OAuthProvider {
