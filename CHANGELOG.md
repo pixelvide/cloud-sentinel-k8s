@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v0.3.1...v0.4.0) (2026-01-21)
+
+
+### Features
+
+* Add manual trigger for the release workflow via `workflow_dispatch`. ([2f553e9](https://github.com/pixelvide/cloud-sentinel-k8s/commit/2f553e91b0d45e521eab954aabf6e4d639478b38))
+
 ## [0.3.1](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v0.3.0...v0.3.1) (2026-01-21)
 
 
