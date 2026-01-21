@@ -17,12 +17,19 @@ jobs:
       - uses: googleapis/release-please-action@v4
         id: release
 
-      - name: Debug Outputs
-        run: echo '${{ toJSON(steps.release) }}'
-
       # Step 2: Run custom script ONLY if a release was created to update chart and other files
-      - name: Run my script with the new version
+      # Step 2: Run custom script ONLY if a release was created to update chart and other files
+      - name: Run release script
         if: ${{ steps.release.outputs.release_created }}
         run: |
-          echo "The new version is: ${{ steps.release.outputs.version }}"
-          echo "The git tag is: ${{ steps.release.outputs.tag_name }}"
+          chmod +x scripts/release.sh
+          ./scripts/release.sh
+          
+      - name: Commit and Push Changes
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .
+          git commit -m "chore: update versions after release ${{ steps.release.outputs.version }}" || echo "No changes to commit"
+          git push
