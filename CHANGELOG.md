@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.2](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v0.6.1...v0.6.2) (2026-01-21)
+
+
+### Bug Fixes
+
+* **ui:** enable password reset for admin users ([#34](https://github.com/pixelvide/cloud-sentinel-k8s/issues/34)) ([#37](https://github.com/pixelvide/cloud-sentinel-k8s/issues/37)) ([376052b](https://github.com/pixelvide/cloud-sentinel-k8s/commit/376052bdcb12485544a5ab7f35248085bfa870e9))
+
 ## [0.6.1](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v0.6.0...v0.6.1) (2026-01-21)
 
 
