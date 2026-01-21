@@ -72,10 +72,22 @@ export function ResourceDetail() {
       return <NodeDetail name={name} />
     case 'services':
       return <ServiceDetail namespace={namespace!} name={name} />
+    case 'helmreleases':
+      return (
+        <div className="p-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center text-muted-foreground">
+                Helm release details are not yet supported.
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )
     default:
       return (
         <SimpleResourceDetail
-          resourceType={resource as ResourceType}
+          resourceType={resource as Exclude<ResourceType, 'helmreleases'>}
           namespace={namespace}
           name={name}
         />

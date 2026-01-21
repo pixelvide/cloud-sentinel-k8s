@@ -25,7 +25,9 @@ import { YamlEditor } from '@/components/yaml-editor'
 import { ResourceAnomalies } from '@/components/anomaly-table'
 
 
-export function SimpleResourceDetail<T extends ResourceType>(props: {
+export function SimpleResourceDetail<
+  T extends Exclude<ResourceType, 'helmreleases'>,
+>(props: {
   resourceType: T
   name: string
   namespace?: string

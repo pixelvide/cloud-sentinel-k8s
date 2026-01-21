@@ -11,10 +11,12 @@ import { formatDate } from '@/lib/utils'
 import { ResourceTable } from '@/components/resource-table'
 
 export interface ResourceTableProps {
-  resourceType?: ResourceType
+  resourceType: Exclude<ResourceType, 'helmreleases'>
 }
 
-export function SimpleListPage<T extends keyof ResourceTypeMap>({
+export function SimpleListPage<
+  T extends Exclude<keyof ResourceTypeMap, 'helmreleases'>,
+>({
   resourceType,
 }: ResourceTableProps) {
   // Define column helper outside of any hooks

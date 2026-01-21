@@ -295,6 +295,11 @@ export function ResourceTable<T>({
             // Try to get namespace from metadata.namespace
             const metadata = (row as { metadata?: { namespace?: string } })
               ?.metadata
+            // Fallback for resources like HelmRelease
+            if (!metadata) {
+              const flatNamespace = (row as { namespace?: string })?.namespace
+              return flatNamespace || '-'
+            }
             return metadata?.namespace || '-'
           },
           cell: ({ getValue }: { getValue: () => string }) => (
@@ -352,6 +357,15 @@ export function ResourceTable<T>({
           metadata?: { name?: string; namespace?: string; uid?: string }
         }
       )?.metadata
+
+      if (!metadata) {
+        // Fallback for HelmRelease
+        const flat = row as { name?: string; namespace?: string }
+        if (flat.name) {
+          return flat.namespace ? `${flat.namespace}/${flat.name}` : flat.name
+        }
+      }
+
       if (!metadata?.name) {
         return `row-${Math.random()}`
       }
@@ -402,8 +416,17 @@ export function ResourceTable<T>({
       const metadata = (
         row as { metadata?: { name?: string; namespace?: string } }
       )?.metadata
-      const name = metadata?.name
-      const namespace = clusterScope ? undefined : metadata?.namespace
+
+      let name = metadata?.name
+      let namespace = clusterScope ? undefined : metadata?.namespace
+
+      if (!metadata) {
+        const flat = row as { name?: string; namespace?: string }
+        name = flat.name
+        if (!clusterScope) {
+          namespace = flat.namespace
+        }
+      }
 
       if (!name) {
         return Promise.resolve()

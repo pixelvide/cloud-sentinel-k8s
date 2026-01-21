@@ -1,153 +1,61 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
+import { createColumnHelper } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
-import {
-  ColumnDef,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getFilteredRowModel,
-  useReactTable,
-} from '@tanstack/react-table'
-import { Search } from 'lucide-react'
 
-import { HelmRelease, useHelmReleases } from '@/lib/api'
+import { HelmRelease } from '@/types/api'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { ResourceTableView } from '@/components/resource-table-view'
-import { ErrorMessage } from '@/components/error-message'
-import { NamespaceSelector } from '@/components/selector/namespace-selector'
+import { ResourceTable } from '@/components/resource-table'
 
 export function HelmReleaseListPage() {
   const { t } = useTranslation()
-  const [selectedNamespace, setSelectedNamespace] = useState<string | undefined>('_all')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [pagination, setPagination] = useState({
-    pageIndex: 0,
-    pageSize: 10,
-  })
 
-  const { data: releases = [], isLoading, error, refetch } = useHelmReleases(
-    selectedNamespace
-  )
+  // Define column helper
+  const columnHelper = createColumnHelper<HelmRelease>()
 
-  const columns = useMemo<ColumnDef<HelmRelease>[]>(
+  const columns = useMemo(
     () => [
-      {
-        accessorKey: 'name',
+      columnHelper.accessor('name', {
         header: t('common.name'),
-        cell: (info) => <div className="font-medium">{info.getValue() as string}</div>,
-      },
-      {
-        accessorKey: 'namespace',
-        header: t('common.namespace'),
-        cell: (info) => (
-          <Badge variant="outline" className="ml-2">
-            {info.getValue() as string}
-          </Badge>
-        ),
-      },
-      {
-        accessorKey: 'revision',
+        cell: (info) => <div className="font-medium">{info.getValue()}</div>,
+      }),
+      columnHelper.accessor('revision', {
         header: 'Revision',
-      },
-      {
-        accessorKey: 'status',
+      }),
+      columnHelper.accessor('status', {
         header: t('common.status'),
         cell: (info) => (
-          <Badge variant={info.getValue() === 'deployed' ? 'default' : 'secondary'}>
-            {info.getValue() as string}
+          <Badge
+            variant={info.getValue() === 'deployed' ? 'default' : 'secondary'}
+          >
+            {info.getValue()}
           </Badge>
         ),
-      },
-      {
-        accessorKey: 'chart',
+      }),
+      columnHelper.accessor('chart', {
         header: 'Chart',
-      },
-      {
-        accessorKey: 'app_version',
+      }),
+      columnHelper.accessor('app_version', {
         header: 'App Version',
-      },
-      {
-        accessorKey: 'updated',
+      }),
+      columnHelper.accessor('updated', {
         header: 'Updated',
-      },
+      }),
     ],
-    [t]
+    [columnHelper, t]
   )
 
-  const filteredData = useMemo(() => {
-    if (!searchQuery) return releases
-    return releases.filter(
-      (item) =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.chart.toLowerCase().includes(searchQuery.toLowerCase())
+  const searchFilter = useCallback((item: HelmRelease, query: string) => {
+    return (
+      item.name.toLowerCase().includes(query) ||
+      item.chart.toLowerCase().includes(query)
     )
-  }, [releases, searchQuery])
-
-  const table = useReactTable({
-    data: filteredData,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    state: {
-      pagination,
-    },
-    onPaginationChange: setPagination,
-  })
-
-  const handleNamespaceChange = (value: string) => {
-    setSelectedNamespace(value)
-  }
-
-  if (error) {
-    return <ErrorMessage error={error} refetch={refetch} resourceName="Helm Releases" />
-  }
+  }, [])
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Helm Releases</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <NamespaceSelector
-            selectedNamespace={selectedNamespace}
-            handleNamespaceChange={handleNamespaceChange}
-            showAll={true}
-          />
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search releases..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 w-[200px]"
-            />
-          </div>
-          <Button variant="outline" onClick={() => refetch()}>
-            {t('common.refresh')}
-          </Button>
-        </div>
-      </div>
-
-      <ResourceTableView
-        table={table}
-        columnCount={columns.length}
-        isLoading={isLoading}
-        data={filteredData}
-        emptyState={
-          <div className="text-center p-8 text-muted-foreground">
-            No releases found
-          </div>
-        }
-        hasActiveFilters={!!searchQuery}
-        filteredRowCount={filteredData.length}
-        totalRowCount={releases.length}
-        searchQuery={searchQuery}
-        pagination={pagination}
-        setPagination={setPagination}
-      />
-    </div>
+    <ResourceTable
+      resourceName="HelmReleases"
+      columns={columns}
+      searchQueryFilter={searchFilter}
+    />
   )
 }

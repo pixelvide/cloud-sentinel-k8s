@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pixelvide/cloud-sentinel-k8s/pkg/cluster"
 	"github.com/pixelvide/cloud-sentinel-k8s/pkg/helm"
 )
 
@@ -13,7 +14,9 @@ func ListHelmReleases(c *gin.Context) {
 		namespace = ""
 	}
 
-	releases, err := helm.ListReleases(namespace)
+	cs := c.MustGet("cluster").(*cluster.ClientSet)
+
+	releases, err := helm.ListReleases(cs.Configuration, namespace)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -112,6 +112,7 @@ export type ResourceType =
   | 'clusterroles'
   | 'clusterrolebindings'
   | 'horizontalpodautoscalers'
+  | 'helmreleases'
 
 export const clusterScopeResources: ResourceType[] = [
   'crds',
@@ -168,6 +169,9 @@ export interface ResourcesTypeMap {
   clusterroles: ClusterRoleList
   clusterrolebindings: ClusterRoleBindingList
   horizontalpodautoscalers: HorizontalPodAutoscalerList
+  helmreleases: {
+    items: HelmRelease[]
+  }
 }
 
 export interface PodMetrics {
@@ -235,6 +239,17 @@ export interface ResourceTypeMap {
   clusterroles: ClusterRole
   clusterrolebindings: ClusterRoleBinding
   horizontalpodautoscalers: HorizontalPodAutoscaler
+  helmreleases: HelmRelease
+}
+
+export interface HelmRelease {
+  name: string
+  namespace: string
+  revision: number
+  status: string
+  chart: string
+  app_version: string
+  updated: string
 }
 
 export interface RecentEvent {

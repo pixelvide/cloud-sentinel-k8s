@@ -12,6 +12,7 @@ import { EventListPage } from './event-list-page'
 import { GatewayListPage } from './gateway-list-page'
 import { HorizontalPodAutoscalerListPage } from './horizontalpodautoscaler-list-page'
 import { HTTPRouteListPage } from './httproute-list-page'
+import { HelmReleaseListPage } from './helm-release-list-page'
 import { IngressListPage } from './ingress-list-page'
 import { JobListPage } from './job-list-page'
 import { NamespaceListPage } from './namespace-list-page'
@@ -72,7 +73,13 @@ export function ResourceList() {
       return <HorizontalPodAutoscalerListPage />
     case 'events':
       return <EventListPage />
+    case 'helmreleases':
+      return <HelmReleaseListPage />
     default:
-      return <SimpleListPage resourceType={resource as ResourceType} />
+      return (
+        <SimpleListPage
+          resourceType={resource as Exclude<ResourceType, 'helmreleases'>}
+        />
+      )
   }
 }

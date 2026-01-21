@@ -65,6 +65,14 @@ export const fetchResources = <T>(
   }
 ): Promise<T> => {
   let endpoint = namespace ? `/${resource}/${namespace}` : `/${resource}`
+
+  // Special handling for Helm releases
+  if (resource === 'helmreleases') {
+    endpoint =
+      namespace && namespace !== '_all'
+        ? `/helm/releases/${namespace}`
+        : '/helm/releases'
+  }
   const params = new URLSearchParams()
 
   if (opts?.limit) {
@@ -435,6 +443,15 @@ export function useResourcesWatch<T extends ResourceType>(
       }
 
       const getKey = (obj: ResourceTypeMap[T]) => {
+        // Handle HelmRelease which maps properties directly
+        if ('chart' in obj) {
+          const helmRelease = obj as unknown as {
+            name: string
+            namespace: string
+          }
+          return (helmRelease.namespace || '') + '/' + (helmRelease.name || '')
+        }
+
         return (
           (obj.metadata?.namespace || '') + '/' + (obj.metadata?.name || '')
         )
@@ -1871,36 +1888,3 @@ export const updateUserAWSConfig = async (data: {
   return await apiClient.post<UserAWSConfig>('/settings/aws-config/', data)
 }
 
-// Helm API
-export interface HelmRelease {
-  name: string
-  namespace: string
-  revision: number
-  status: string
-  chart: string
-  app_version: string
-  updated: string
-}
-
-export interface HelmReleaseListResponse {
-  items: HelmRelease[]
-}
-
-export const fetchHelmReleases = async (
-  namespace: string = ''
-): Promise<HelmRelease[]> => {
-  const endpoint = `/helm/releases${namespace ? `/${namespace}` : ''}`
-  return fetchAPI<{ items: HelmRelease[] }>(endpoint).then((res) => res.items)
-}
-
-export const useHelmReleases = (
-  namespace: string = '',
-  options?: { enabled?: boolean; staleTime?: number }
-) => {
-  return useQuery({
-    queryKey: ['helm-releases', namespace],
-    queryFn: () => fetchHelmReleases(namespace),
-    enabled: options?.enabled ?? true,
-    staleTime: options?.staleTime || 30000,
-  })
-}
