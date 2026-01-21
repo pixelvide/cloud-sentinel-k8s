@@ -75,6 +75,8 @@ export default defineConfig({
           text: "Usage",
           items: [
             { text: "Global Search", link: "/guide/global-search" },
+            { text: "Resource Management", link: "/guide/resource-management" },
+            { text: "Helm Management", link: "/guide/helm" },
             { text: "Related Resources", link: "/guide/related-resources" },
             { text: "Logs", link: "/guide/logs" },
             { text: "Monitor", link: "/guide/monitoring" },
