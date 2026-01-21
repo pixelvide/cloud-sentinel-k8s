@@ -14,6 +14,7 @@ import {
   IconBell,
   IconBox,
   IconBoxMultiple,
+  IconChartPie,
   IconClock,
   IconClockHour4,
   IconCode,
@@ -32,6 +33,7 @@ import {
   IconRocket,
   IconRoute,
   IconRouter,
+  IconRuler2,
   IconServer2,
   IconShield,
   IconShieldCheck,
@@ -77,6 +79,8 @@ const iconMap = {
   IconServer2,
   IconBell,
   IconCode,
+  IconChartPie,
+  IconRuler2,
   IconArrowsHorizontal,
   IconAnchor,
   IconPackage,
@@ -177,6 +181,16 @@ const defaultMenus: DefaultMenus = {
   'sidebar.groups.config': [
     { titleKey: 'nav.configMaps', url: '/configmaps', icon: IconMap },
     { titleKey: 'nav.secrets', url: '/secrets', icon: IconLock },
+    {
+      titleKey: 'nav.resourcequotas',
+      url: '/resourcequotas',
+      icon: IconChartPie,
+    },
+    {
+      titleKey: 'nav.limitranges',
+      url: '/limitranges',
+      icon: IconRuler2,
+    },
     {
       titleKey: 'nav.horizontalpodautoscalers',
       url: '/horizontalpodautoscalers',

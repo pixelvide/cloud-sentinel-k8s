@@ -85,6 +85,8 @@ func RegisterRoutes(group *gin.RouterGroup) {
 		"nodemetrics":                     NewGenericResourceHandler[*metricsv1.NodeMetrics, *metricsv1.NodeMetricsList]("metrics.k8s.io", false, false),
 		"gateways":                        NewGenericResourceHandler[*gatewayapiv1.Gateway, *gatewayapiv1.GatewayList]("gateways", false, false),
 		"httproutes":                      NewGenericResourceHandler[*gatewayapiv1.HTTPRoute, *gatewayapiv1.HTTPRouteList]("httproutes", false, false),
+		"resourcequotas":                  NewGenericResourceHandler[*corev1.ResourceQuota, *corev1.ResourceQuotaList]("resourcequotas", false, true),
+		"limitranges":                     NewGenericResourceHandler[*corev1.LimitRange, *corev1.LimitRangeList]("limitranges", false, true),
 		"horizontalpodautoscalers":        NewGenericResourceHandler[*autoscalingv2.HorizontalPodAutoscaler, *autoscalingv2.HorizontalPodAutoscalerList]("horizontalpodautoscalers", false, true),
 		"poddisruptionbudgets":            NewGenericResourceHandler[*policyv1.PodDisruptionBudget, *policyv1.PodDisruptionBudgetList]("poddisruptionbudgets", false, true),
 		"priorityclasses":                 NewGenericResourceHandler[*schedulingv1.PriorityClass, *schedulingv1.PriorityClassList]("priorityclasses", true, false),
