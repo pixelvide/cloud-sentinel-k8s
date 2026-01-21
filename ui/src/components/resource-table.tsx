@@ -526,7 +526,7 @@ export function ResourceTable<T>({
               ? `No results match your search query: "${searchQuery}"`
               : clusterScope
                 ? `There are no ${resourceName.toLowerCase()} found`
-                : `There are no ${resourceName.toLowerCase()} in the ${selectedNamespace} namespace`}
+                : `There are no ${resourceName.toLowerCase()} ${selectedNamespace === '_all' ? 'in All Namespaces' : `in the ${selectedNamespace} namespace`}`}
           </p>
           {searchQuery && (
             <Button
