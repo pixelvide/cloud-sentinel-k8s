@@ -31,6 +31,8 @@ import {
   ConfigMapList,
   Event,
   EventList,
+  LimitRange,
+  LimitRangeList,
   Namespace,
   NamespaceList,
   Node,
@@ -39,6 +41,8 @@ import {
   PersistentVolumeClaimList,
   PersistentVolumeList,
   Pod,
+  ResourceQuota,
+  ResourceQuotaList,
   Secret,
   SecretList,
   Service,
@@ -135,6 +139,8 @@ export type ResourceType =
   | 'helmreleases'
   | 'mutatingwebhookconfigurations'
   | 'validatingwebhookconfigurations'
+  | 'resourcequotas'
+  | 'limitranges'
 
 export const clusterScopeResources: ResourceType[] = [
   'crds',
@@ -199,6 +205,8 @@ export interface ResourcesTypeMap {
   priorityclasses: PriorityClassList
   runtimeclasses: RuntimeClassList
   leases: LeaseList
+  resourcequotas: ResourceQuotaList
+  limitranges: LimitRangeList
   helmreleases: {
     items: HelmRelease[]
   }
@@ -275,6 +283,8 @@ export interface ResourceTypeMap {
   priorityclasses: PriorityClass
   runtimeclasses: RuntimeClass
   leases: Lease
+  resourcequotas: ResourceQuota
+  limitranges: LimitRange
   helmreleases: HelmRelease
   mutatingwebhookconfigurations: MutatingWebhookConfiguration
   validatingwebhookconfigurations: ValidatingWebhookConfiguration

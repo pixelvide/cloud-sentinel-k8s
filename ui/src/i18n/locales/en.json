@@ -75,6 +75,8 @@
     "httproutes": "HTTP Routes",
     "configMaps": "ConfigMaps",
     "secrets": "Secrets",
+    "resourcequotas": "Resource Quotas",
+    "limitranges": "Limit Ranges",
     "persistentvolumeclaims": "Persistent Volume Claims",
     "persistentvolumes": "Persistent Volumes",
     "nodes": "Nodes",
