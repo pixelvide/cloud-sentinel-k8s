@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.7.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v0.6.2...v0.7.0) (2026-01-21)
+
+
+### Features
+
+* Add Mutating and Validating Webhook menus ([#42](https://github.com/pixelvide/cloud-sentinel-k8s/issues/42)) ([c0439b9](https://github.com/pixelvide/cloud-sentinel-k8s/commit/c0439b98207e7a766a812dc4bdba428774081e84))
+* Add Pod Disruption Budgets menu item ([#39](https://github.com/pixelvide/cloud-sentinel-k8s/issues/39)) ([196f520](https://github.com/pixelvide/cloud-sentinel-k8s/commit/196f520fdf7f0a5d18673199f00829f9769d9f35))
+* Add PriorityClasses, RuntimeClasses, and Leases to sidebar ([#41](https://github.com/pixelvide/cloud-sentinel-k8s/issues/41)) ([a2e0331](https://github.com/pixelvide/cloud-sentinel-k8s/commit/a2e0331092ad43f510c13e807cde3908afe167bd))
+
+
+### Performance Improvements
+
+* Debounce user activity updates to prevent writes more frequently than every 5 minutes. ([d21afdf](https://github.com/pixelvide/cloud-sentinel-k8s/commit/d21afdfd4c43e31680f3ffd2dbf011a2a0fa4e6c))
+
 ## [0.6.2](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v0.6.1...v0.6.2) (2026-01-21)
 
 
