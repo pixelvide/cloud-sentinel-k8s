@@ -31,6 +31,10 @@ type RoleAssignment struct {
 	Subject     string `json:"subject" gorm:"type:varchar(255);not null;index:idx_role_assignments_subject,priority:1"`
 }
 
+func (RoleAssignment) TableName() string {
+	return "k8s_role_assignments"
+}
+
 // Convenience constants for SubjectType
 const (
 	SubjectTypeUser  = "user"

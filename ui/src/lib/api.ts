@@ -292,7 +292,13 @@ export const deleteResource = async <T extends ResourceType>(
   if (opts?.wait === false) {
     params.append('wait', 'false')
   }
-  const endpoint = `/${resource}/${namespace || '_all'}/${name}?${params.toString()}`
+  let endpoint = `/${resource}/${namespace || '_all'}/${name}?${params.toString()}`
+
+  // Special handling for Helm releases
+  if (resource === 'helmreleases') {
+    endpoint = `/helm/releases/${namespace || '_all'}/${name}?${params.toString()}`
+  }
+
   await apiClient.delete(endpoint)
 }
 
@@ -538,9 +544,15 @@ export const fetchResource = <T>(
   name: string,
   namespace?: string
 ): Promise<T> => {
-  const endpoint = namespace
+  let endpoint = namespace
     ? `/${resource}/${namespace}/${name}`
     : `/${resource}/${name}`
+
+  // Special handling for Helm releases
+  if (resource === 'helmreleases') {
+    endpoint = `/helm/releases/${namespace || '_all'}/${name}`
+  }
+
   return fetchAPI<T>(endpoint)
 }
 export const useResource = <T extends keyof ResourceTypeMap>(
