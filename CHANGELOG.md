@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v0.6.0...v0.6.1) (2026-01-21)
+
+
+### Bug Fixes
+
+* update SkipSystemSync via API and UI (Fixes [#33](https://github.com/pixelvide/cloud-sentinel-k8s/issues/33)) ([#35](https://github.com/pixelvide/cloud-sentinel-k8s/issues/35)) ([0cfd7dc](https://github.com/pixelvide/cloud-sentinel-k8s/commit/0cfd7dc732277912a5bd4daa76336db8dd32efb5))
+
 ## [0.6.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v0.5.0...v0.6.0) (2026-01-21)
 
 
