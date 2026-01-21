@@ -96,6 +96,8 @@
     "priorityclasses": "Priority Classes",
     "runtimeclasses": "Runtime Classes",
     "leases": "Leases",
+    "mutatingwebhookconfigurations": "Mutating Webhooks",
+    "validatingwebhookconfigurations": "Validating Webhooks",
     "helm_releases": "Helm Releases",
     "helm_charts": "Helm Charts"
   },

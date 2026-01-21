@@ -15,6 +15,12 @@ import {
   StatefulSetList,
 } from 'kubernetes-types/apps/v1'
 import {
+  MutatingWebhookConfiguration,
+  MutatingWebhookConfigurationList,
+  ValidatingWebhookConfiguration,
+  ValidatingWebhookConfigurationList,
+} from 'kubernetes-types/admissionregistration/v1'
+import {
   HorizontalPodAutoscaler,
   HorizontalPodAutoscalerList,
 } from 'kubernetes-types/autoscaling/v2'
@@ -127,6 +133,8 @@ export type ResourceType =
   | 'runtimeclasses'
   | 'leases'
   | 'helmreleases'
+  | 'mutatingwebhookconfigurations'
+  | 'validatingwebhookconfigurations'
 
 export const clusterScopeResources: ResourceType[] = [
   'crds',
@@ -138,6 +146,8 @@ export const clusterScopeResources: ResourceType[] = [
   'clusterrolebindings',
   'priorityclasses',
   'runtimeclasses',
+  'mutatingwebhookconfigurations',
+  'validatingwebhookconfigurations',
 ]
 
 type listMetadataType = {
@@ -192,6 +202,8 @@ export interface ResourcesTypeMap {
   helmreleases: {
     items: HelmRelease[]
   }
+  mutatingwebhookconfigurations: MutatingWebhookConfigurationList
+  validatingwebhookconfigurations: ValidatingWebhookConfigurationList
 }
 
 export interface PodMetrics {
@@ -264,6 +276,8 @@ export interface ResourceTypeMap {
   runtimeclasses: RuntimeClass
   leases: Lease
   helmreleases: HelmRelease
+  mutatingwebhookconfigurations: MutatingWebhookConfiguration
+  validatingwebhookconfigurations: ValidatingWebhookConfiguration
 }
 
 export interface HelmRelease {

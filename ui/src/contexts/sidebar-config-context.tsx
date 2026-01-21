@@ -40,6 +40,7 @@ import {
   IconTopologyBus,
   IconUser,
   IconUsers,
+  IconWebhook,
 } from '@tabler/icons-react'
 
 import {
@@ -83,6 +84,7 @@ const iconMap = {
   IconSortDescending,
   IconCpu,
   IconClock,
+  IconWebhook,
 }
 
 const getIconName = (iconComponent: React.ComponentType): string => {
@@ -199,6 +201,16 @@ const defaultMenus: DefaultMenus = {
       titleKey: 'nav.leases',
       url: '/leases',
       icon: IconClock,
+    },
+    {
+      titleKey: 'nav.mutatingwebhookconfigurations',
+      url: '/mutatingwebhookconfigurations',
+      icon: IconWebhook,
+    },
+    {
+      titleKey: 'nav.validatingwebhookconfigurations',
+      url: '/validatingwebhookconfigurations',
+      icon: IconShieldCheck,
     },
   ],
   'sidebar.groups.helm': [
