@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.8.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v0.7.0...v0.8.0) (2026-01-21)
+
+
+### Features
+
+* add Endpoints, IngressClasses, and NetworkPolicies to Traffic menu ([#46](https://github.com/pixelvide/cloud-sentinel-k8s/issues/46)) ([528ddc4](https://github.com/pixelvide/cloud-sentinel-k8s/commit/528ddc42bb5cf8a18e88b6f5fe8b8513dd549cff))
+* add ReplicaSets and ReplicationControllers to Workloads menu ([#48](https://github.com/pixelvide/cloud-sentinel-k8s/issues/48)) ([d182af4](https://github.com/pixelvide/cloud-sentinel-k8s/commit/d182af40508acba01d942d7b3e0826ffafd9d700))
+* add Resource Quotas and Limit Ranges menus ([#44](https://github.com/pixelvide/cloud-sentinel-k8s/issues/44)) ([58a6f10](https://github.com/pixelvide/cloud-sentinel-k8s/commit/58a6f10b1cdbfdd09042a78c5f83cc82d8d37750))
+
+
+### Bug Fixes
+
+* **ui:** correct empty state message for all namespaces ([ac9e15d](https://github.com/pixelvide/cloud-sentinel-k8s/commit/ac9e15dc03d6c0427f586eaa137b7c15cf6d44f9))
+
 ## [0.7.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v0.6.2...v0.7.0) (2026-01-21)
 
 
