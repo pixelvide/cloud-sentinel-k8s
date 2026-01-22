@@ -66,10 +66,10 @@ func (h *HelmHandler) List(c *gin.Context) {
 		})
 	}
 
-    // If items is nil, return empty array
-    if items == nil {
-        items = []v3.HelmRelease{}
-    }
+	// If items is nil, return empty array
+	if items == nil {
+		items = []v3.HelmRelease{}
+	}
 
 	c.JSON(http.StatusOK, gin.H{"items": items})
 }
@@ -198,15 +198,15 @@ func (h *HelmHandler) ListHistory(c *gin.Context) {
 			Chart:      r.Chart.Metadata.Name + "-" + r.Chart.Metadata.Version,
 			AppVersion: r.Chart.Metadata.AppVersion,
 			Updated:    r.Info.LastDeployed.Time,
-            // History doesn't typically need values/manifest for the list view
+			// History doesn't typically need values/manifest for the list view
 		})
 	}
 
-    // Sort logic could be added here (Helm typically returns sorted by revision)
-    // Reverse order (newest first)
-    for i, j := 0, len(items)-1; i < j; i, j = i+1, j-1 {
-        items[i], items[j] = items[j], items[i]
-    }
+	// Sort logic could be added here (Helm typically returns sorted by revision)
+	// Reverse order (newest first)
+	for i, j := 0, len(items)-1; i < j; i, j = i+1, j-1 {
+		items[i], items[j] = items[j], items[i]
+	}
 
 	c.JSON(http.StatusOK, gin.H{"items": items})
 }

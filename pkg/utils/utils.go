@@ -45,10 +45,12 @@ func GetImageRegistryAndRepo(image string) (string, string) {
 	return "", image
 }
 
+var DataDir = "/data"
+
 // GetUserGlabConfigDir returns the directory path for a user's glab configuration.
 // It ensures the directory exists and has 0777 permissions.
 func GetUserGlabConfigDir(storageNamespace string) (string, error) {
-	path := filepath.Join("/data", storageNamespace, ".config", "glab-cli")
+	path := filepath.Join(DataDir, storageNamespace, ".config", "glab-cli")
 	if err := os.MkdirAll(path, 0777); err != nil {
 		return "", fmt.Errorf("failed to create glab config directory: %w", err)
 	}
@@ -70,7 +72,7 @@ func GlabAuthLogin(host, token, configDir string) error {
 
 // GetUserAWSCredentialsPath returns the path to the user's AWS credentials file.
 func GetUserAWSCredentialsPath(storageNamespace string) string {
-	return filepath.Join("/data", storageNamespace, ".config", "aws", "credentials")
+	return filepath.Join(DataDir, storageNamespace, ".config", "aws", "credentials")
 }
 
 // WriteUserAWSCredentials writes the AWS credentials content to the user's specific path.

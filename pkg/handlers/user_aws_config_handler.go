@@ -100,11 +100,33 @@ func RestoreAWSConfigs() {
 		return
 	}
 
+	userIDs := make([]uint, 0, len(configs))
 	for _, config := range configs {
-		userConfig, err := model.GetUserConfig(config.UserID)
-		if err != nil {
-			klog.Errorf("Failed to get user config for user %d during AWS config restoration: %v", config.UserID, err)
-			continue
+		userIDs = append(userIDs, config.UserID)
+	}
+
+	var userConfigs []model.UserConfig
+	if err := model.DB.Where("user_id IN ?", userIDs).Find(&userConfigs).Error; err != nil {
+		klog.Errorf("Failed to fetch user configs for restoration: %v", err)
+	}
+
+	userConfigMap := make(map[uint]model.UserConfig)
+	for _, uc := range userConfigs {
+		userConfigMap[uc.UserID] = uc
+	}
+
+	for _, config := range configs {
+		var userConfig *model.UserConfig
+
+		if uc, ok := userConfigMap[config.UserID]; ok {
+			userConfig = &uc
+		} else {
+			var err error
+			userConfig, err = model.GetUserConfig(config.UserID)
+			if err != nil {
+				klog.Errorf("Failed to get user config for user %d during AWS config restoration: %v", config.UserID, err)
+				continue
+			}
 		}
 
 		if err := utils.WriteUserAWSCredentials(userConfig.StorageNamespace, string(config.CredentialsContent)); err != nil {
