@@ -10,7 +10,7 @@ type HelmRelease struct {
 	Chart      string    `json:"chart"`
 	AppVersion string    `json:"app_version"`
 	Updated    time.Time `json:"updated"`
-    Values     string    `json:"values,omitempty"`
-    Notes      string    `json:"notes,omitempty"`
-    Manifest   string    `json:"manifest,omitempty"`
+	Values     string    `json:"values,omitempty"`
+	Notes      string    `json:"notes,omitempty"`
+	Manifest   string    `json:"manifest,omitempty"`
 }

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Pod } from 'kubernetes-types/core/v1'
 
+import { AISettings, ChatRequest, ChatResponse, ChatSession } from '@/types/ai'
 // Resource Analysis API
 import {
   AuditLogResponse,
@@ -1885,4 +1886,38 @@ export const updateUserAWSConfig = async (data: {
   credentials_content: string
 }): Promise<UserAWSConfig> => {
   return await apiClient.post<UserAWSConfig>('/settings/aws-config/', data)
+}
+
+// AI API
+export const getAIConfig = async (): Promise<AISettings> => {
+  return fetchAPI<AISettings>('/ai/config')
+}
+
+export const updateAIConfig = async (
+  data: Partial<AISettings>
+): Promise<AISettings> => {
+  return apiClient.post<AISettings>('/ai/config', data)
+}
+
+export const listChatSessions = async (): Promise<ChatSession[]> => {
+  return fetchAPI<ChatSession[]>('/ai/sessions')
+}
+
+export const getChatSession = async (id: string): Promise<ChatSession> => {
+  return fetchAPI<ChatSession>(`/ai/sessions/${id}`)
+}
+
+export const deleteChatSession = async (id: string): Promise<void> => {
+  return apiClient.delete(`/ai/sessions/${id}`)
+}
+
+export const sendChatMessage = async (
+  data: ChatRequest,
+  clusterName?: string
+): Promise<ChatResponse> => {
+  let endpoint = '/ai/chat'
+  if (clusterName) {
+    endpoint += `?x-cluster-name=${encodeURIComponent(clusterName)}`
+  }
+  return apiClient.post<ChatResponse>(endpoint, data)
 }

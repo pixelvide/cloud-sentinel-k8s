@@ -1,9 +1,9 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { IconRotateClockwise } from '@tabler/icons-react'
 import { createColumnHelper } from '@tanstack/react-table'
 import { Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { IconRotateClockwise } from '@tabler/icons-react'
 
 import { HelmRelease } from '@/types/api'
 import { withSubPath } from '@/lib/subpath'
@@ -80,7 +80,9 @@ export function HelmReleaseHistoryTable({
         throw new Error(errorData.error || 'Failed to rollback')
       }
 
-      toast.success(t('helm_release.rollback_success', { revision: rollbackRevision }))
+      toast.success(
+        t('helm_release.rollback_success', { revision: rollbackRevision })
+      )
       setRollbackRevision(null)
       setRefreshKey((k) => k + 1)
     } catch (error) {
@@ -166,11 +168,17 @@ export function HelmReleaseHistoryTable({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('helm_release.rollback_title', 'Rollback Release')}</DialogTitle>
+            <DialogTitle>
+              {t('helm_release.rollback_title', 'Rollback Release')}
+            </DialogTitle>
             <DialogDescription>
-              {t('helm_release.rollback_description', 'Are you sure you want to rollback to revision {{revision}}?', {
-                revision: rollbackRevision,
-              })}
+              {t(
+                'helm_release.rollback_description',
+                'Are you sure you want to rollback to revision {{revision}}?',
+                {
+                  revision: rollbackRevision,
+                }
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

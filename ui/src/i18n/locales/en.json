@@ -105,7 +105,8 @@
     "mutatingwebhookconfigurations": "Mutating Webhooks",
     "validatingwebhookconfigurations": "Validating Webhooks",
     "helm_releases": "Helm Releases",
-    "helm_charts": "Helm Charts"
+    "helm_charts": "Helm Charts",
+    "ai_chat": "AI Assistant"
   },
   "helm_release": {
     "revision": "Revision",
@@ -297,7 +298,8 @@
       "rbac": "RBAC",
       "users": "User",
       "gitlab": "GitLab",
-      "aws": "AWS"
+      "aws": "AWS",
+      "ai": "AI Assistant"
     },
     "aws": {
       "title": "AWS Credentials",
@@ -654,5 +656,25 @@
     "forceDelete": "Force delete (set grace period to 0)",
     "finalizerNote": "If finalizers exist and resource is not deleted after 3 seconds, finalizers will be removed automatically",
     "deleting": "Deleting..."
+  },
+  "aiChat": {
+    "newChat": "New Chat",
+    "empty": "Start a conversation with the AI Assistant",
+    "placeholder": "Ask about your cluster...",
+    "errors": {
+      "loadSessions": "Failed to load sessions",
+      "loadSession": "Failed to load session",
+      "send": "Failed to send message"
+    }
+  },
+  "aiConfig": {
+    "title": "AI Assistant Configuration",
+    "saved": "AI configuration saved successfully",
+    "saveError": "Failed to save configuration",
+    "provider": "Provider",
+    "model": "Model Name",
+    "apiKey": "API Key",
+    "baseUrl": "Base URL (Optional)",
+    "baseUrlHelp": "Required for Azure or LocalAI. Leave empty for standard OpenAI."
   }
 }

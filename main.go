@@ -184,6 +184,15 @@ func setupAPIRouter(r *gin.RouterGroup, cm *cluster.ClusterManager, authHandler 
 		}
 
 		api.GET("/settings/gitlab-hosts", handlers.ListGitlabHosts)
+
+		aiGroup := api.Group("/ai")
+		{
+			aiGroup.GET("/config", handlers.GetAIConfig)
+			aiGroup.POST("/config", handlers.UpdateAIConfig)
+			aiGroup.GET("/sessions", handlers.ListSessions)
+			aiGroup.GET("/sessions/:id", handlers.GetSession)
+			aiGroup.DELETE("/sessions/:id", handlers.DeleteSession)
+		}
 	}
 
 	api.Use(authHandler.RequireAuth(), middleware.ClusterMiddleware(cm))
@@ -210,6 +219,8 @@ func setupAPIRouter(r *gin.RouterGroup, cm *cluster.ClusterManager, authHandler 
 		api.POST("/resources/apply", resourceApplyHandler.ApplyResource)
 
 		api.GET("/image/tags", handlers.GetImageTags)
+
+		api.POST("/ai/chat", handlers.Chat)
 
 		proxyHandler := handlers.NewProxyHandler()
 		proxyHandler.RegisterRoutes(api)

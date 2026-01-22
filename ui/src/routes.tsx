@@ -8,6 +8,7 @@ import {
   RootRedirector,
 } from './components/route-redirectors'
 import { getSubPath } from './lib/subpath'
+import { AIChatPage } from './pages/ai/chat'
 import { CRListPage } from './pages/cr-list-page'
 import { HelmChartListPage } from './pages/helm-chart-list-page'
 import { HelmReleaseListPage } from './pages/helm-release-list-page'
@@ -51,6 +52,14 @@ export const router = createBrowserRouter(
         {
           path: 'settings',
           element: <SettingsPage />,
+        },
+        {
+          path: 'ai/chat',
+          element: <AIChatPage />,
+        },
+        {
+          path: 'ai/chat/:id',
+          element: <AIChatPage />,
         },
         {
           path: 'c/:cluster',

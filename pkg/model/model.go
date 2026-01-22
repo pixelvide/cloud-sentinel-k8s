@@ -114,6 +114,9 @@ func InitDB() {
 		ResourceTemplate{},
 
 		AuditLog{},
+		AISettings{},
+		ChatSession{},
+		ChatMessage{},
 	}
 	for _, model := range models {
 		err = DB.AutoMigrate(model)

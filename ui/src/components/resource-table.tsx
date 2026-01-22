@@ -346,11 +346,7 @@ export function ResourceTable<T>({
     : useSSE
       ? (watchError as Error | null)
       : (queryError as unknown as Error | null)
-  const refetch = externalData
-    ? () => {}
-    : useSSE
-      ? reconnectSSE
-      : queryRefetch
+  const refetch = externalData ? () => {} : useSSE ? reconnectSSE : queryRefetch
 
   const memoizedData = useMemo(() => (data || []) as T[], [data])
 

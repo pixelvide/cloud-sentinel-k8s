@@ -1,0 +1,203 @@
+package tools
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"strings"
+
+	openai "github.com/sashabaranov/go-openai"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
+)
+
+// --- Scale Deployment Tool ---
+
+type ScaleDeploymentTool struct{}
+
+func (t *ScaleDeploymentTool) Name() string { return "scale_deployment" }
+
+func (t *ScaleDeploymentTool) Definition() openai.Tool {
+	return openai.Tool{
+		Type: openai.ToolTypeFunction,
+		Function: &openai.FunctionDefinition{
+			Name:        "scale_deployment",
+			Description: "Scale a deployment to a specified number of replicas. Requires confirmation.",
+			Parameters: json.RawMessage(`{
+				"type": "object",
+				"properties": {
+					"namespace": {
+						"type": "string",
+						"description": "The namespace of the deployment."
+					},
+					"name": {
+						"type": "string",
+						"description": "The name of the deployment."
+					},
+					"replicas": {
+						"type": "integer",
+						"description": "The target number of replicas."
+					},
+					"confirm": {
+						"type": "boolean",
+						"description": "Set to true to actually execute the scaling. Defaults to false (dry-run)."
+					}
+				},
+				"required": ["namespace", "name", "replicas"]
+			}`),
+		},
+	}
+}
+
+func (t *ScaleDeploymentTool) Execute(ctx context.Context, args string) (string, error) {
+	var params struct {
+		Namespace string `json:"namespace"`
+		Name      string `json:"name"`
+		Replicas  int32  `json:"replicas"`
+		Confirm   bool   `json:"confirm"`
+	}
+	if err := json.Unmarshal([]byte(args), &params); err != nil {
+		return "", err
+	}
+	if params.Replicas < 0 {
+		return "", fmt.Errorf("replicas cannot be negative")
+	}
+
+	cs, err := GetClientSet(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	deployClient := cs.K8sClient.ClientSet.AppsV1().Deployments(params.Namespace)
+
+	// Always get first to check existence
+	deploy, err := deployClient.Get(ctx, params.Name, metav1.GetOptions{})
+	if err != nil {
+		return "", fmt.Errorf("failed to get deployment: %v", err)
+	}
+
+	currentReplicas := int32(0)
+	if deploy.Spec.Replicas != nil {
+		currentReplicas = *deploy.Spec.Replicas
+	}
+
+	if !params.Confirm {
+		return fmt.Sprintf("Dry run: Deployment '%s/%s' currently has %d replicas. Would scale to %d. To execute, call this tool again with 'confirm' set to true.",
+			params.Namespace, params.Name, currentReplicas, params.Replicas), nil
+	}
+
+	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		d, err := deployClient.Get(ctx, params.Name, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		d.Spec.Replicas = &params.Replicas
+		_, err = deployClient.Update(ctx, d, metav1.UpdateOptions{})
+		return err
+	})
+
+	if retryErr != nil {
+		return "", fmt.Errorf("failed to update deployment: %v", retryErr)
+	}
+
+	return fmt.Sprintf("Successfully scaled deployment '%s/%s' from %d to %d replicas.",
+		params.Namespace, params.Name, currentReplicas, params.Replicas), nil
+}
+
+// --- Analyze Security Tool ---
+
+type AnalyzeSecurityTool struct{}
+
+func (t *AnalyzeSecurityTool) Name() string { return "analyze_security" }
+
+func (t *AnalyzeSecurityTool) Definition() openai.Tool {
+	return openai.Tool{
+		Type: openai.ToolTypeFunction,
+		Function: &openai.FunctionDefinition{
+			Name:        "analyze_security",
+			Description: "Analyze the security context of a resource (Pod or Deployment) and report potential issues.",
+			Parameters: json.RawMessage(`{
+				"type": "object",
+				"properties": {
+					"namespace": {
+						"type": "string",
+						"description": "The namespace of the resource."
+					},
+					"kind": {
+						"type": "string",
+						"enum": ["Pod", "Deployment"],
+						"description": "The kind of resource."
+					},
+					"name": {
+						"type": "string",
+						"description": "The name of the resource."
+					}
+				},
+				"required": ["namespace", "kind", "name"]
+			}`),
+		},
+	}
+}
+
+func (t *AnalyzeSecurityTool) Execute(ctx context.Context, args string) (string, error) {
+	var params struct {
+		Namespace string `json:"namespace"`
+		Kind      string `json:"kind"`
+		Name      string `json:"name"`
+	}
+	if err := json.Unmarshal([]byte(args), &params); err != nil {
+		return "", err
+	}
+
+	cs, err := GetClientSet(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	var findings []string
+	var podSpec *corev1.PodSpec
+
+	switch params.Kind {
+	case "Pod":
+		pod, err := cs.K8sClient.ClientSet.CoreV1().Pods(params.Namespace).Get(ctx, params.Name, metav1.GetOptions{})
+		if err != nil {
+			return "", err
+		}
+		podSpec = &pod.Spec
+	case "Deployment":
+		deploy, err := cs.K8sClient.ClientSet.AppsV1().Deployments(params.Namespace).Get(ctx, params.Name, metav1.GetOptions{})
+		if err != nil {
+			return "", err
+		}
+		podSpec = &deploy.Spec.Template.Spec
+	default:
+		return "", fmt.Errorf("unsupported kind: %s", params.Kind)
+	}
+
+	// Simple analysis logic
+	for _, container := range podSpec.Containers {
+		if container.SecurityContext != nil {
+			if container.SecurityContext.Privileged != nil && *container.SecurityContext.Privileged {
+				findings = append(findings, fmt.Sprintf("Container '%s' is running as Privileged.", container.Name))
+			}
+			if container.SecurityContext.RunAsNonRoot != nil && !*container.SecurityContext.RunAsNonRoot {
+				findings = append(findings, fmt.Sprintf("Container '%s' allows running as root.", container.Name))
+			}
+		} else {
+			findings = append(findings, fmt.Sprintf("Container '%s' has no SecurityContext defined.", container.Name))
+		}
+	}
+
+	if podSpec.HostNetwork {
+		findings = append(findings, "Pod is using HostNetwork.")
+	}
+	if podSpec.HostPID {
+		findings = append(findings, "Pod is using HostPID.")
+	}
+
+	if len(findings) == 0 {
+		return "No obvious security issues found in basic scan.", nil
+	}
+	return "Security Analysis Findings:\n- " + strings.Join(findings, "\n- "), nil
+}

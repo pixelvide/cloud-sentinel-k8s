@@ -10,9 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { ResponsiveTabs } from '@/components/ui/responsive-tabs'
 import { ErrorMessage } from '@/components/error-message'
+import { HelmReleaseHistoryTable } from '@/components/helm-release-history-table'
 import { ResourceDeleteConfirmationDialog } from '@/components/resource-delete-confirmation-dialog'
 import { YamlEditor } from '@/components/yaml-editor'
-import { HelmReleaseHistoryTable } from '@/components/helm-release-history-table'
 
 export function HelmReleaseDetail() {
   const { namespace, name } = useParams()
@@ -185,10 +185,7 @@ export function HelmReleaseDetail() {
             value: 'history',
             label: 'History',
             content: (
-              <HelmReleaseHistoryTable
-                namespace={namespace!}
-                name={name!}
-              />
+              <HelmReleaseHistoryTable namespace={namespace!} name={name!} />
             ),
           },
           {
