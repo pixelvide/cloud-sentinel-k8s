@@ -25,7 +25,9 @@ func setupBenchmarkDB() {
 	model.DB = db
 
 	// Drop tables to ensure clean state
-	model.DB.Migrator().DropTable(&model.User{}, &model.UserAWSConfig{}, &model.UserConfig{})
+	if err := model.DB.Migrator().DropTable(&model.User{}, &model.UserAWSConfig{}, &model.UserConfig{}); err != nil {
+		panic("failed to drop tables: " + err.Error())
+	}
 
 	err = model.DB.AutoMigrate(&model.User{}, &model.UserAWSConfig{}, &model.UserConfig{})
 	if err != nil {
@@ -42,7 +44,7 @@ func BenchmarkRestoreAWSConfigs(b *testing.B) {
 	if err != nil {
 		b.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// Override DataDir
 	utils.DataDir = tmpDir
