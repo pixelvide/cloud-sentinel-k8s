@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -139,22 +140,12 @@ func sortResults(results []common.SearchResult, query string) {
 		return getResourceOrder(a.ResourceType) < getResourceOrder(b.ResourceType)
 	}
 
-	// Simple bubble sort for demonstration
-	for i := 0; i < len(exactMatches)-1; i++ {
-		for j := 0; j < len(exactMatches)-i-1; j++ {
-			if !sortByResources(exactMatches[j], exactMatches[j+1]) {
-				exactMatches[j], exactMatches[j+1] = exactMatches[j+1], exactMatches[j]
-			}
-		}
-	}
-
-	for i := 0; i < len(partialMatches)-1; i++ {
-		for j := 0; j < len(partialMatches)-i-1; j++ {
-			if !sortByResources(partialMatches[j], partialMatches[j+1]) {
-				partialMatches[j], partialMatches[j+1] = partialMatches[j+1], partialMatches[j]
-			}
-		}
-	}
+	sort.Slice(exactMatches, func(i, j int) bool {
+		return sortByResources(exactMatches[i], exactMatches[j])
+	})
+	sort.Slice(partialMatches, func(i, j int) bool {
+		return sortByResources(partialMatches[i], partialMatches[j])
+	})
 
 	// Combine results
 	copy(results, append(exactMatches, partialMatches...))
