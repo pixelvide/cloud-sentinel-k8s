@@ -1,9 +1,11 @@
 import { useCallback, useMemo } from 'react'
 import { createColumnHelper } from '@tanstack/react-table'
 import { Event } from 'kubernetes-types/core/v1'
+import pluralize from 'pluralize'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
+import { isStandardK8sResource } from '@/lib/k8s'
 import { formatDate } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { ResourceTable } from '@/components/resource-table'
@@ -29,10 +31,22 @@ export function EventListPage() {
             const name = obj.name || ''
             const namespace = obj.namespace
 
-            const resourcePath = kind.toLowerCase() + 's'
-            const link = namespace
-              ? `/${resourcePath}/${namespace}/${name}`
-              : `/${resourcePath}/${name}`
+            const resourcePath = pluralize(kind.toLowerCase())
+            let link = ''
+
+            if (isStandardK8sResource(kind)) {
+              link = namespace
+                ? `/${resourcePath}/${namespace}/${name}`
+                : `/${resourcePath}/${name}`
+            } else {
+              const apiVersion = obj.apiVersion || ''
+              const group = apiVersion.includes('/')
+                ? apiVersion.split('/')[0]
+                : ''
+              link = namespace
+                ? `/crds/${resourcePath}.${group}/${namespace}/${name}`
+                : `/crds/${resourcePath}.${group}/${name}`
+            }
 
             return (
               <div className="flex flex-col gap-0.5">

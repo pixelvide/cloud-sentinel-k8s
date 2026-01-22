@@ -1,6 +1,7 @@
 import { Deployment } from 'kubernetes-types/apps/v1'
 import { Container, Pod, Service } from 'kubernetes-types/core/v1'
 import { ObjectMeta } from 'kubernetes-types/meta/v1'
+import pluralize from 'pluralize'
 
 import { clusterScopeResources, ResourceType } from '@/types/api'
 import { DeploymentStatusType, PodStatus, SimpleContainer } from '@/types/k8s'
@@ -292,7 +293,7 @@ export function isStandardK8sResource(kind: string): boolean {
     'events',
     'storageclasses',
   ]
-  const resourcePath = kind.toLowerCase() + 's'
+  const resourcePath = pluralize(kind.toLowerCase())
   return (
     standardK8sResources.includes(kind) ||
     standardK8sResources.includes(resourcePath)
@@ -321,7 +322,7 @@ export function getOwnerInfo(metadata?: ObjectMeta) {
 
   const ownerRef = ownerRefs[0]
 
-  const resourcePath = ownerRef.kind.toLowerCase() + 's'
+  const resourcePath = pluralize(ownerRef.kind.toLowerCase())
   if (isStandardK8sResource(ownerRef.kind)) {
     const clusterScope = clusterScopeResources.includes(
       resourcePath as ResourceType
@@ -338,7 +339,7 @@ export function getOwnerInfo(metadata?: ObjectMeta) {
     return {
       kind: ownerRef.kind,
       name: ownerRef.name,
-      path: `/crds/${ownerRef.kind.toLowerCase()}s.${group}/${metadata.namespace}/${ownerRef.name}`,
+      path: `/crds/${resourcePath}.${group}/${metadata.namespace}/${ownerRef.name}`,
       controller: ownerRef.controller || false,
     }
   }
