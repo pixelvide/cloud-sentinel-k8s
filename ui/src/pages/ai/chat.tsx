@@ -30,8 +30,6 @@ export function AIChatPage() {
   const navigate = useNavigate()
 
   const [sessions, setSessions] = useState<ChatSession[]>([])
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [currentSession, setCurrentSession] = useState<ChatSession | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputValue, setInputValue] = useState('')
   const [loading, setLoading] = useState(false)
@@ -58,7 +56,6 @@ export function AIChatPage() {
       setLoading(true)
       getChatSession(id)
         .then((session) => {
-          setCurrentSession(session)
           setMessages(session.messages || [])
         })
         .catch((err) => {
@@ -68,7 +65,6 @@ export function AIChatPage() {
         })
         .finally(() => setLoading(false))
     } else {
-      setCurrentSession(null)
       setMessages([])
     }
   }, [id, navigate, t])
