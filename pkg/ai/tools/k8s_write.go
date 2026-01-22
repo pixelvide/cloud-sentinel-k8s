@@ -74,7 +74,7 @@ func (t *ScaleDeploymentTool) Execute(ctx context.Context, args string) (string,
 	// Always get first to check existence
 	deploy, err := deployClient.Get(ctx, params.Name, metav1.GetOptions{})
 	if err != nil {
-		return "", fmt.Errorf("failed to get deployment: %v", err)
+		return "", fmt.Errorf("failed to get deployment: %w", err)
 	}
 
 	currentReplicas := int32(0)
@@ -98,7 +98,7 @@ func (t *ScaleDeploymentTool) Execute(ctx context.Context, args string) (string,
 	})
 
 	if retryErr != nil {
-		return "", fmt.Errorf("failed to update deployment: %v", retryErr)
+		return "", fmt.Errorf("failed to update deployment: %w", retryErr)
 	}
 
 	return fmt.Sprintf("Successfully scaled deployment '%s/%s' from %d to %d replicas.",

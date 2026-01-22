@@ -78,6 +78,7 @@ export function AIConfigManagement() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="openai">OpenAI</SelectItem>
+              <SelectItem value="google">Google Gemini</SelectItem>
               <SelectItem value="azure">Azure OpenAI</SelectItem>
               <SelectItem value="custom">Custom (LocalAI/vLLM)</SelectItem>
             </SelectContent>
@@ -88,7 +89,11 @@ export function AIConfigManagement() {
           <Label htmlFor="model">{t('aiConfig.model', 'Model Name')}</Label>
           <Input
             id="model"
-            placeholder="e.g. gpt-4, gpt-3.5-turbo"
+            placeholder={
+              config.provider === 'google'
+                ? 'e.g. gemini-1.5-flash'
+                : 'e.g. gpt-4, gpt-3.5-turbo'
+            }
             value={config.model}
             onChange={(e) => setConfig({ ...config, model: e.target.value })}
           />

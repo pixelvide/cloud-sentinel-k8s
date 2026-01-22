@@ -170,8 +170,10 @@ func Chat(c *gin.Context) {
 			CreatedAt: time.Now(),
 		}
 		if len(msg.ToolCalls) > 0 {
-			tcBytes, _ := json.Marshal(msg.ToolCalls)
-			dbMsg.ToolCalls = string(tcBytes)
+			tcBytes, err := json.Marshal(msg.ToolCalls)
+			if err == nil {
+				dbMsg.ToolCalls = string(tcBytes)
+			}
 		}
 		model.DB.Create(&dbMsg)
 

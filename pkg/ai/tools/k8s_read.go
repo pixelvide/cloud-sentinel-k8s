@@ -172,7 +172,7 @@ func (t *GetPodLogsTool) Execute(ctx context.Context, args string) (string, erro
 	req := cs.K8sClient.ClientSet.CoreV1().Pods(params.Namespace).GetLogs(params.PodName, opts)
 	logs, err := req.DoRaw(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to get logs: %v", err)
+		return "", fmt.Errorf("failed to get logs: %w", err)
 	}
 
 	return string(logs), nil

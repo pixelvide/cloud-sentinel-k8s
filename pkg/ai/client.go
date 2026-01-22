@@ -8,37 +8,43 @@ import (
 	openai "github.com/sashabaranov/go-openai"
 )
 
-type Client struct {
+type OpenAIAdapter struct {
 	client *openai.Client
 	model  string
 }
 
-func NewClient(settings *model.AISettings) (*Client, error) {
+// NewClient returns an AIClient based on the provider in settings
+func NewClient(settings *model.AISettings) (AIClient, error) {
 	if settings.APIKey == "" {
 		return nil, fmt.Errorf("API key is required")
 	}
 
+	if settings.Provider == "google" {
+		return NewGeminiAdapter(settings)
+	}
+
+	// Default to OpenAI / Custom OpenAI-compatible
 	config := openai.DefaultConfig(settings.APIKey)
 	if settings.BaseURL != "" {
 		config.BaseURL = settings.BaseURL
 	}
 
-	// Default to gpt-4o-mini if not specified, but usually the UI will send it
 	modelName := settings.Model
 	if modelName == "" {
 		modelName = openai.GPT3Dot5Turbo
 	}
 
-	return &Client{
+	return &OpenAIAdapter{
 		client: openai.NewClientWithConfig(config),
 		model:  modelName,
 	}, nil
 }
 
-func (c *Client) ChatCompletion(ctx context.Context, messages []openai.ChatCompletionMessage, tools []openai.Tool) (openai.ChatCompletionResponse, error) {
-	return c.client.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
+func (c *OpenAIAdapter) ChatCompletion(ctx context.Context, messages []openai.ChatCompletionMessage, tools []openai.Tool) (openai.ChatCompletionResponse, error) {
+	req := openai.ChatCompletionRequest{
 		Model:    c.model,
 		Messages: messages,
 		Tools:    tools,
-	})
+	}
+	return c.client.CreateChatCompletion(ctx, req)
 }
