@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v0.8.0...v0.9.0) (2026-01-22)
+
+
+### Features
+
+* upgrade helm release UI and backend ([#54](https://github.com/pixelvide/cloud-sentinel-k8s/issues/54)) ([f1f9402](https://github.com/pixelvide/cloud-sentinel-k8s/commit/f1f9402cd005bbc01b5c0a519980b2b264677086))
+
+
+### Bug Fixes
+
+* **ui:** correct pluralization for k8s resources using pluralize library ([#50](https://github.com/pixelvide/cloud-sentinel-k8s/issues/50)) ([f8dcc1a](https://github.com/pixelvide/cloud-sentinel-k8s/commit/f8dcc1af1849fcd3a4ad51d294e9be731d90147b))
+
 ## [0.8.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v0.7.0...v0.8.0) (2026-01-21)
 
 
