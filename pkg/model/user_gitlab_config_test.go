@@ -82,7 +82,7 @@ func TestUserGitlabConfig(t *testing.T) {
 		db.Create(&config)
 
 		// Delete user
-		err := db.Delete(&user).Error
+		err := db.Delete(&user, user.ID).Error
 		assert.NoError(t, err)
 
 		// Config should be gone
@@ -103,7 +103,7 @@ func TestUserGitlabConfig(t *testing.T) {
 		db.Create(&config)
 
 		// Delete host
-		err := db.Delete(&host).Error
+		err := db.Delete(&host, host.ID).Error
 		assert.NoError(t, err)
 
 		// Config should be gone

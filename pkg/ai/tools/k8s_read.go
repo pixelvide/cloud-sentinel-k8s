@@ -633,7 +633,7 @@ func (t *GetClusterInfoTool) Execute(ctx context.Context, args string) (string, 
 		return "", fmt.Errorf("failed to get cluster version: %w", err)
 	}
 
-	// 2. Get Nodes for Capacity
+	// 2. Get Nodes for detailed info
 	nodes, err := cs.K8sClient.ClientSet.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return "", fmt.Errorf("failed to list nodes: %w", err)
@@ -641,23 +641,82 @@ func (t *GetClusterInfoTool) Execute(ctx context.Context, args string) (string, 
 
 	var totalCPU int64
 	var totalMem int64
-	nodeCount := len(nodes.Items)
+	var controlPlaneCount int
+	var workerCount int
+	var readyCount int
+	var notReadyCount int
+	var platform string
 
 	for _, node := range nodes.Items {
 		totalCPU += node.Status.Capacity.Cpu().MilliValue()
 		totalMem += node.Status.Capacity.Memory().Value()
+
+		// Check if control plane node (either label indicates control plane)
+		_, isControlPlane := node.Labels["node-role.kubernetes.io/control-plane"]
+		_, isMaster := node.Labels["node-role.kubernetes.io/master"]
+		if isControlPlane || isMaster {
+			controlPlaneCount++
+		} else {
+			workerCount++
+		}
+
+		// Check node readiness
+		isReady := false
+		for _, cond := range node.Status.Conditions {
+			if cond.Type == corev1.NodeReady && cond.Status == corev1.ConditionTrue {
+				isReady = true
+				break
+			}
+		}
+		if isReady {
+			readyCount++
+		} else {
+			notReadyCount++
+		}
+
+		// Capture platform info from first node
+		if platform == "" {
+			platform = fmt.Sprintf("%s/%s", node.Status.NodeInfo.OperatingSystem, node.Status.NodeInfo.Architecture)
+		}
 	}
 
-	info := fmt.Sprintf("Cluster Information:\n"+
-		"- Kubernetes Version: %s\n"+
-		"- Node Count: %d\n"+
-		"- Total CPU Capacity: %dm\n"+
-		"- Total Memory Capacity: %d MiB",
-		version.GitVersion,
-		nodeCount,
-		totalCPU,
-		totalMem/(1024*1024),
-	)
+	// 3. Get Namespace count
+	namespaces, err := cs.K8sClient.ClientSet.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+	namespaceCount := 0
+	if err == nil {
+		namespaceCount = len(namespaces.Items)
+	}
 
-	return info, nil
+	// 4. Get Pod summary
+	pods, err := cs.K8sClient.ClientSet.CoreV1().Pods("").List(ctx, metav1.ListOptions{})
+	podStats := make(map[string]int)
+	totalPods := 0
+	if err == nil {
+		totalPods = len(pods.Items)
+		for _, pod := range pods.Items {
+			podStats[string(pod.Status.Phase)]++
+		}
+	}
+
+	// Build the info string
+	var sb strings.Builder
+	sb.WriteString("Cluster Information:\n")
+	sb.WriteString(fmt.Sprintf("- Kubernetes Version: %s\n", version.GitVersion))
+	sb.WriteString(fmt.Sprintf("- Platform: %s\n", platform))
+	sb.WriteString("\nNode Summary:\n")
+	sb.WriteString(fmt.Sprintf("- Total Nodes: %d\n", len(nodes.Items)))
+	sb.WriteString(fmt.Sprintf("- Control Plane Nodes: %d\n", controlPlaneCount))
+	sb.WriteString(fmt.Sprintf("- Worker Nodes: %d\n", workerCount))
+	sb.WriteString(fmt.Sprintf("- Ready Nodes: %d\n", readyCount))
+	sb.WriteString(fmt.Sprintf("- Not Ready Nodes: %d\n", notReadyCount))
+	sb.WriteString("\nCapacity:\n")
+	sb.WriteString(fmt.Sprintf("- Total CPU: %dm\n", totalCPU))
+	sb.WriteString(fmt.Sprintf("- Total Memory: %d MiB\n", totalMem/(1024*1024)))
+	sb.WriteString(fmt.Sprintf("\nNamespaces: %d\n", namespaceCount))
+	sb.WriteString(fmt.Sprintf("\nPod Summary (Total: %d):\n", totalPods))
+	for phase, count := range podStats {
+		sb.WriteString(fmt.Sprintf("- %s: %d\n", phase, count))
+	}
+
+	return sb.String(), nil
 }

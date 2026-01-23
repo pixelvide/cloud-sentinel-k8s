@@ -216,9 +216,13 @@ func TestCheckOrInitializeUserAccess(t *testing.T) {
 	// and InitDB (singelton) reuses the same DB instance.
 	_ = model.SetAppConfig(model.CurrentApp.ID, model.DefaultUserAccessKey, "true")
 
-	// Helper to create a user
-	createUser := func(username string) uint {
-		user := model.User{Username: username, Provider: "password"}
+	// Clean up any existing test data from shared DB
+	model.DB.Exec("DELETE FROM app_users WHERE user_id IN (SELECT id FROM users WHERE username LIKE 'test_access_user%')")
+	model.DB.Exec("DELETE FROM users WHERE username LIKE 'test_access_user%'")
+
+	// Helper to create a user with unique name
+	createUser := func(suffix string) uint {
+		user := model.User{Username: "test_access_user_" + suffix, Provider: "password"}
 		model.DB.Create(&user)
 		return user.ID
 	}
