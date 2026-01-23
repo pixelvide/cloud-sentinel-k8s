@@ -60,7 +60,10 @@ func (m *MCPServer) registerTools() {
 
 func (m *MCPServer) handleListClusters(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	clusters := m.cm.GetActiveClusters()
-	data, _ := json.Marshal(clusters)
+	data, err := json.Marshal(clusters)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal clusters: %w", err)
+	}
 	return mcp.NewToolResultText(string(data)), nil
 }
 
@@ -71,7 +74,7 @@ func (m *MCPServer) handleListResources(ctx context.Context, request mcp.CallToo
 
 	cs, err := m.cm.GetCluster(clusterName)
 	if err != nil {
-		return mcp.NewToolResultText(fmt.Sprintf("Error: cluster %s not found", clusterName)), nil
+		return mcp.NewToolResultText(fmt.Sprintf("Error: cluster %s not found", clusterName)), err
 	}
 
 	gvr := getGVR(resourceType)
@@ -111,7 +114,7 @@ func (m *MCPServer) handleGetResourceYAML(ctx context.Context, request mcp.CallT
 
 	cs, err := m.cm.GetCluster(clusterName)
 	if err != nil {
-		return mcp.NewToolResultText(fmt.Sprintf("Error: cluster %s not found", clusterName)), nil
+		return mcp.NewToolResultText(fmt.Sprintf("Error: cluster %s not found", clusterName)), err
 	}
 
 	gvr := getGVR(resourceType)
@@ -127,7 +130,10 @@ func (m *MCPServer) handleGetResourceYAML(ctx context.Context, request mcp.CallT
 		return mcp.NewToolResultText(fmt.Sprintf("Error fetching resource: %v", err)), nil
 	}
 
-	y, _ := yaml.Marshal(obj)
+	y, err := yaml.Marshal(obj)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal resource to YAML: %w", err)
+	}
 	return mcp.NewToolResultText(string(y)), nil
 }
 
@@ -139,7 +145,7 @@ func (m *MCPServer) handleGetPodLogs(ctx context.Context, request mcp.CallToolRe
 
 	cs, err := m.cm.GetCluster(clusterName)
 	if err != nil {
-		return mcp.NewToolResultText(fmt.Sprintf("Error: cluster %s not found", clusterName)), nil
+		return mcp.NewToolResultText(fmt.Sprintf("Error: cluster %s not found", clusterName)), err
 	}
 
 	opts := &corev1.PodLogOptions{
@@ -163,7 +169,7 @@ func (m *MCPServer) handleRunSecurityScan(ctx context.Context, request mcp.CallT
 
 	cs, err := m.cm.GetCluster(clusterName)
 	if err != nil {
-		return mcp.NewToolResultText(fmt.Sprintf("Error: cluster %s not found", clusterName)), nil
+		return mcp.NewToolResultText(fmt.Sprintf("Error: cluster %s not found", clusterName)), err
 	}
 
 	gvr := getGVR(resourceType)
@@ -180,7 +186,10 @@ func (m *MCPServer) handleRunSecurityScan(ctx context.Context, request mcp.CallT
 	}
 
 	results := analyzer.Analyze(ctx, cs.K8sClient, obj)
-	data, _ := json.MarshalIndent(results, "", "  ")
+	data, err := json.MarshalIndent(results, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal security results: %w", err)
+	}
 	return mcp.NewToolResultText(string(data)), nil
 }
 
