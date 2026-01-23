@@ -350,79 +350,186 @@ func (t *ListResourcesTool) Execute(ctx context.Context, args string) (string, e
 	return strings.Join(results, "\n"), nil
 }
 
+// Define a common function signature that fits the 'superset' of arguments
+type listFunc func(tx context.Context, cs *cluster.ClientSet, ns, filter string, opts metav1.ListOptions) ([]string, error)
+
+func (t *ListResourcesTool) getListHandler(kind string) listFunc {
+	handlers := map[string]listFunc{
+		// pods
+		"pod":  t.listPods,
+		"pods": t.listPods,
+
+		// services
+		"service":  t.listServices,
+		"services": t.listServices,
+		"svc":      t.listServices,
+
+		// deployments
+		"deployment":  t.listDeployments,
+		"deployments": t.listDeployments,
+		"deploy":      t.listDeployments,
+
+		// replica sets
+		"replicaset":  t.listReplicaSets,
+		"replicasets": t.listReplicaSets,
+		"rs":          t.listReplicaSets,
+
+		// stateful sets
+		"statefulset":  t.listStatefulSets,
+		"statefulsets": t.listStatefulSets,
+		"sts":          t.listStatefulSets,
+
+		// daemon sets
+		"daemonset":  t.listDaemonSets,
+		"daemonsets": t.listDaemonSets,
+		"ds":         t.listDaemonSets,
+
+		// jobs
+		"job":  t.listJobs,
+		"jobs": t.listJobs,
+
+		// cron jobs
+		"cronjob":  t.listCronJobs,
+		"cronjobs": t.listCronJobs,
+		"cj":       t.listCronJobs,
+
+		// config maps
+		"configmap":  t.listConfigMaps,
+		"configmaps": t.listConfigMaps,
+		"cm":         t.listConfigMaps,
+
+		// secrets
+		"secret":  t.listSecrets,
+		"secrets": t.listSecrets,
+		"sec":     t.listSecrets,
+
+		// ingress
+		"ingress":   t.listIngresses,
+		"ingresses": t.listIngresses,
+		"ing":       t.listIngresses,
+
+		// events
+		"event":  t.listEvents,
+		"events": t.listEvents,
+		"ev":     t.listEvents,
+
+		// nodes
+		"node":  t.listNodes,
+		"nodes": t.listNodes,
+		"no":    t.listNodes,
+
+		// namespaces
+		"namespace":  t.listNamespaces,
+		"namespaces": t.listNamespaces,
+		"ns":         t.listNamespaces,
+
+		// persistent volumes
+		"persistentvolume":  t.listPersistentVolumes,
+		"persistentvolumes": t.listPersistentVolumes,
+		"pv":                t.listPersistentVolumes,
+
+		// persistent volume claims
+		"persistentvolumeclaim":  t.listPersistentVolumeClaims,
+		"persistentvolumeclaims": t.listPersistentVolumeClaims,
+		"pvc":                    t.listPersistentVolumeClaims,
+
+		// service accounts
+		"serviceaccount":  t.listServiceAccounts,
+		"serviceaccounts": t.listServiceAccounts,
+		"sa":              t.listServiceAccounts,
+
+		// endpoints
+		"endpoint":  t.listEndpoints,
+		"endpoints": t.listEndpoints,
+		"ep":        t.listEndpoints,
+
+		// endpointslices
+		"endpointslice":  t.listEndpointSlices,
+		"endpointslices": t.listEndpointSlices,
+
+		// resource quotas
+		"resourcequota":  t.listResourceQuotas,
+		"resourcequotas": t.listResourceQuotas,
+		"quota":          t.listResourceQuotas,
+
+		// limit ranges
+		"limitrange":  t.listLimitRanges,
+		"limitranges": t.listLimitRanges,
+		"limits":      t.listLimitRanges,
+
+		// storage classes
+		"storageclass":   t.listStorageClasses,
+		"storageclasses": t.listStorageClasses,
+		"sc":             t.listStorageClasses,
+
+		// cluster roles
+		"clusterrole":  t.listClusterRoles,
+		"clusterroles": t.listClusterRoles,
+		"cr":           t.listClusterRoles,
+
+		// cluster role bindings
+		"clusterrolebinding":  t.listClusterRoleBindings,
+		"clusterrolebindings": t.listClusterRoleBindings,
+		"crb":                 t.listClusterRoleBindings,
+
+		// roles
+		"role":  t.listRoles,
+		"roles": t.listRoles,
+
+		// role bindings
+		"rolebinding":  t.listRoleBindings,
+		"rolebindings": t.listRoleBindings,
+
+		// gateway
+		"gateway":  t.listGateways,
+		"gateways": t.listGateways,
+		"gw":       t.listGateways,
+
+		// http route
+		"httproute":  t.listHTTPRoutes,
+		"httproutes": t.listHTTPRoutes,
+
+		// horizontal pod autoscaler
+		"horizontalpodautoscaler":  t.listHorizontalPodAutoscalers,
+		"horizontalpodautoscalers": t.listHorizontalPodAutoscalers,
+		"hpa":                      t.listHorizontalPodAutoscalers,
+
+		// pod disruption budget
+		"poddisruptionbudget":  t.listPodDisruptionBudgets,
+		"poddisruptionbudgets": t.listPodDisruptionBudgets,
+		"pdb":                  t.listPodDisruptionBudgets,
+
+		// network policy
+		"networkpolicy":   t.listNetworkPolicies,
+		"networkpolicies": t.listNetworkPolicies,
+		"netpol":          t.listNetworkPolicies,
+
+		// helm release
+		"helmrelease":  t.listHelmReleases,
+		"helmreleases": t.listHelmReleases,
+		"hr":           t.listHelmReleases,
+	}
+
+	return handlers[kind]
+}
+
 func (t *ListResourcesTool) listByKind(ctx context.Context, cs *cluster.ClientSet, kind, ns, filter string, opts metav1.ListOptions) ([]string, error) {
 	var results []string
 	var err error
 
-	switch kind {
-	case "pod", "pods":
-		results, err = t.listPods(ctx, cs, ns, filter, opts)
-	case "service", "services", "svc":
-		results, err = t.listServices(ctx, cs, ns, filter, opts)
-	case "deployment", "deployments", "deploy":
-		results, err = t.listDeployments(ctx, cs, ns, filter, opts)
-	case "replicaset", "replicasets", "rs":
-		results, err = t.listReplicaSets(ctx, cs, ns, filter, opts)
-	case "statefulset", "statefulsets", "sts":
-		results, err = t.listStatefulSets(ctx, cs, ns, filter, opts)
-	case "daemonset", "daemonsets", "ds":
-		results, err = t.listDaemonSets(ctx, cs, ns, filter, opts)
-	case "job", "jobs":
-		results, err = t.listJobs(ctx, cs, ns, filter, opts)
-	case "cronjob", "cronjobs":
-		results, err = t.listCronJobs(ctx, cs, ns, filter, opts)
-	case "configmap", "configmaps", "cm":
-		results, err = t.listConfigMaps(ctx, cs, ns, filter, opts)
-	case "secret", "secrets":
-		results, err = t.listSecrets(ctx, cs, ns, filter, opts)
-	case "namespace", "namespaces", "ns":
-		results, err = t.listNamespaces(ctx, cs, filter, opts)
-	case "node", "nodes", "no":
-		results, err = t.listNodes(ctx, cs, filter, opts)
-	case "ingress", "ingresses", "ing":
-		results, err = t.listIngresses(ctx, cs, ns, filter, opts)
-	case "event", "events", "ev":
-		results, err = t.listEvents(ctx, cs, ns, filter, opts)
-	case "helmrelease", "helmreleases", "hr":
-		results, err = t.listHelmReleases(ctx, cs, ns, filter)
-	case "persistentvolume", "persistentvolumes", "pv":
-		results, err = t.listPersistentVolumes(ctx, cs, filter, opts)
-	case "persistentvolumeclaim", "persistentvolumeclaims", "pvc":
-		results, err = t.listPersistentVolumeClaims(ctx, cs, ns, filter, opts)
-	case "serviceaccount", "serviceaccounts", "sa":
-		results, err = t.listServiceAccounts(ctx, cs, ns, filter, opts)
-	case "endpoint", "endpoints", "ep":
-		results, err = t.listEndpoints(ctx, cs, ns, filter, opts)
-	case "endpointslice", "endpointslices":
-		results, err = t.listEndpointSlices(ctx, cs, ns, filter, opts)
-	case "resourcequota", "resourcequotas", "quota":
-		results, err = t.listResourceQuotas(ctx, cs, ns, filter, opts)
-	case "limitrange", "limitranges", "limits":
-		results, err = t.listLimitRanges(ctx, cs, ns, filter, opts)
-	case "horizontalpodautoscaler", "horizontalpodautoscalers", "hpa":
-		results, err = t.listHorizontalPodAutoscalers(ctx, cs, ns, filter, opts)
-	case "poddisruptionbudget", "poddisruptionbudgets", "pdb":
-		results, err = t.listPodDisruptionBudgets(ctx, cs, ns, filter, opts)
-	case "networkpolicy", "networkpolicies", "netpol":
-		results, err = t.listNetworkPolicies(ctx, cs, ns, filter, opts)
-	case "storageclass", "storageclasses", "sc":
-		results, err = t.listStorageClasses(ctx, cs, filter, opts)
-	case "role", "roles":
-		results, err = t.listRoles(ctx, cs, ns, filter, opts)
-	case "rolebinding", "rolebindings":
-		results, err = t.listRoleBindings(ctx, cs, ns, filter, opts)
-	case "clusterrole", "clusterroles":
-		results, err = t.listClusterRoles(ctx, cs, filter, opts)
-	case "clusterrolebinding", "clusterrolebindings":
-		results, err = t.listClusterRoleBindings(ctx, cs, filter, opts)
-	case "gateway", "gateways", "gw":
-		results, err = t.listGateways(ctx, cs, ns, filter, opts)
-	case "httproute", "httproutes":
-		results, err = t.listHTTPRoutes(ctx, cs, ns, filter, opts)
-	default:
+	// 1. Look up the handler
+	handler := t.getListHandler(kind)
+	if handler == nil {
 		return nil, fmt.Errorf("unsupported resource kind: %s", kind)
 	}
-	return results, err
+
+	// 2. Call the handler
+	results, err = handler(ctx, cs, ns, filter, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }
 
 func (t *ListResourcesTool) listPods(ctx context.Context, cs *cluster.ClientSet, ns, filter string, opts metav1.ListOptions) ([]string, error) {
@@ -575,7 +682,7 @@ func (t *ListResourcesTool) listSecrets(ctx context.Context, cs *cluster.ClientS
 	return results, nil
 }
 
-func (t *ListResourcesTool) listNamespaces(ctx context.Context, cs *cluster.ClientSet, filter string, opts metav1.ListOptions) ([]string, error) {
+func (t *ListResourcesTool) listNamespaces(ctx context.Context, cs *cluster.ClientSet, _ string, filter string, opts metav1.ListOptions) ([]string, error) {
 	list, err := cs.K8sClient.ClientSet.CoreV1().Namespaces().List(ctx, opts)
 	if err != nil {
 		return nil, err
@@ -590,7 +697,7 @@ func (t *ListResourcesTool) listNamespaces(ctx context.Context, cs *cluster.Clie
 	return results, nil
 }
 
-func (t *ListResourcesTool) listNodes(ctx context.Context, cs *cluster.ClientSet, filter string, opts metav1.ListOptions) ([]string, error) {
+func (t *ListResourcesTool) listNodes(ctx context.Context, cs *cluster.ClientSet, _ string, filter string, opts metav1.ListOptions) ([]string, error) {
 	list, err := cs.K8sClient.ClientSet.CoreV1().Nodes().List(ctx, opts)
 	if err != nil {
 		return nil, err
@@ -642,9 +749,7 @@ func (t *ListResourcesTool) listEvents(ctx context.Context, cs *cluster.ClientSe
 	return results, nil
 }
 
-// --- New Resource Listing Helper Methods ---
-
-func (t *ListResourcesTool) listHelmReleases(ctx context.Context, cs *cluster.ClientSet, ns, filter string) ([]string, error) {
+func (t *ListResourcesTool) listHelmReleases(ctx context.Context, cs *cluster.ClientSet, ns, filter string, _ metav1.ListOptions) ([]string, error) {
 	releases, err := helm.ListReleases(cs.Configuration, ns)
 	if err != nil {
 		return nil, err
@@ -660,7 +765,7 @@ func (t *ListResourcesTool) listHelmReleases(ctx context.Context, cs *cluster.Cl
 	return results, nil
 }
 
-func (t *ListResourcesTool) listPersistentVolumes(ctx context.Context, cs *cluster.ClientSet, filter string, opts metav1.ListOptions) ([]string, error) {
+func (t *ListResourcesTool) listPersistentVolumes(ctx context.Context, cs *cluster.ClientSet, _ string, filter string, opts metav1.ListOptions) ([]string, error) {
 	list, err := cs.K8sClient.ClientSet.CoreV1().PersistentVolumes().List(ctx, opts)
 	if err != nil {
 		return nil, err
@@ -850,7 +955,7 @@ func (t *ListResourcesTool) listNetworkPolicies(ctx context.Context, cs *cluster
 	return results, nil
 }
 
-func (t *ListResourcesTool) listStorageClasses(ctx context.Context, cs *cluster.ClientSet, filter string, opts metav1.ListOptions) ([]string, error) {
+func (t *ListResourcesTool) listStorageClasses(ctx context.Context, cs *cluster.ClientSet, _ string, filter string, opts metav1.ListOptions) ([]string, error) {
 	list, err := cs.K8sClient.ClientSet.StorageV1().StorageClasses().List(ctx, opts)
 	if err != nil {
 		return nil, err
@@ -900,7 +1005,7 @@ func (t *ListResourcesTool) listRoleBindings(ctx context.Context, cs *cluster.Cl
 	return results, nil
 }
 
-func (t *ListResourcesTool) listClusterRoles(ctx context.Context, cs *cluster.ClientSet, filter string, opts metav1.ListOptions) ([]string, error) {
+func (t *ListResourcesTool) listClusterRoles(ctx context.Context, cs *cluster.ClientSet, _ string, filter string, opts metav1.ListOptions) ([]string, error) {
 	list, err := cs.K8sClient.ClientSet.RbacV1().ClusterRoles().List(ctx, opts)
 	if err != nil {
 		return nil, err
@@ -915,7 +1020,7 @@ func (t *ListResourcesTool) listClusterRoles(ctx context.Context, cs *cluster.Cl
 	return results, nil
 }
 
-func (t *ListResourcesTool) listClusterRoleBindings(ctx context.Context, cs *cluster.ClientSet, filter string, opts metav1.ListOptions) ([]string, error) {
+func (t *ListResourcesTool) listClusterRoleBindings(ctx context.Context, cs *cluster.ClientSet, _ string, filter string, opts metav1.ListOptions) ([]string, error) {
 	list, err := cs.K8sClient.ClientSet.RbacV1().ClusterRoleBindings().List(ctx, opts)
 	if err != nil {
 		return nil, err
