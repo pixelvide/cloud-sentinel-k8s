@@ -48,6 +48,20 @@ These options enable Write-Ahead Logging (WAL) mode and increase the busy timeou
 
 For more details, see [Issue #204](https://github.com/pixelvide/cloud-sentinel-k8s/issues/204).
 
+## AI Features
+
+### Which AI providers are supported?
+Cloud Sentinel K8s currently supports Google Gemini and OpenAI. More providers can be added through the AI administration interface if they follow a compatible API structure.
+
+### How do I configure my own API key?
+If your administrator allows it, you can provide your own API key in **Settings > AI Configuration**. This allows you to use your personal quota and specific models.
+
+### Is my cluster data sent to AI providers?
+Data is only sent to the configured AI provider when you explicitly interact with the AI assistant (e.g., asking a question about a resource). Only the necessary context (like resource YAML or logs) is sent to provide accurate answers.
+
+### How can I disable AI chat?
+Administrators can disable AI chat for individual users in the **User Management** settings.
+
 ## How to Change Font
 
 By default, Cloud Sentinel K8s provides three fonts: system default, `Maple Mono`, and `JetBrains Mono`.

@@ -20,6 +20,7 @@ In this interface, you can:
 - Add new users (only password users are supported)
 - Disable or delete accounts that are no longer needed
 - Modify user role assignments to achieve permission adjustments
+- Enable or disable AI chat access for specific users
 
 ![User Management](../screenshots/user-m.png)
 

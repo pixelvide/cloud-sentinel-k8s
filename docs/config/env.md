@@ -27,6 +27,11 @@ Cloud Sentinel K8s supports several environment variables to customize its behav
 
 - **GITLAB_HOSTS**: Comma-separated list of GitLab hosts to pre-configure (e.g., `https://gitlab.com,http://my-gitlab.local`). These will be seeded into the database on startup.
 
+## AI & LLM Configuration
+
+- **AI_ALLOW_USER_KEYS**: Allow users to provide their own API keys for AI services. Default is `true`.
+- **AI_FORCE_USER_KEYS**: Force users to provide their own API keys; system-wide keys will not be used. Default is `false`.
+
 ## Specialized Settings
 
 - **NODE_TERMINAL_IMAGE**: Docker image used for the Node Terminal Agent. Default is `busybox:latest`.

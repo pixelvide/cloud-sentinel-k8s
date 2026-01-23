@@ -37,6 +37,9 @@ features:
   - icon: 🔐
     title: Advanced Authentication
     details: Password login or custom OIDC integration, user management, role-based access control
+  - icon: 🤖
+    title: AI Assistant & LLM Integration
+    details: Built-in AI assistant to explain resources, troubleshoot issues, and generate manifests using Gemini or OpenAI
   - icon: 🚀
     title: Lightweight & Fast & Minimal Dependencies
     details: Extremely fast response, minimal dependencies, just one binary

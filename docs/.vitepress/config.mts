@@ -80,6 +80,7 @@ export default defineConfig({
             { text: "Related Resources", link: "/guide/related-resources" },
             { text: "Logs", link: "/guide/logs" },
             { text: "Monitor", link: "/guide/monitoring" },
+            { text: "AI Features", link: "/guide/ai" },
             { text: "Web Terminal", link: "/guide/web-terminal" },
             { text: "Resource History", link: "/guide/resource-history" },
             { text: "Custom Sidebar", link: "/guide/custom-sidebar" },
