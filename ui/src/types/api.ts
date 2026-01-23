@@ -480,6 +480,7 @@ export interface UserItem {
   avatar_url?: string
   name?: string
   roles?: Role[]
+  config?: UserConfig
 }
 
 export interface FetchUserListResponse {
@@ -595,6 +596,15 @@ export interface WithAnalysis {
 export interface UserAWSConfig {
   user_id: number
   credentials_content: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface UserConfig {
+  id: number
+  user_id: number
+  storage_namespace: string
+  is_ai_chat_enabled: boolean
   createdAt: string
   updatedAt: string
 }

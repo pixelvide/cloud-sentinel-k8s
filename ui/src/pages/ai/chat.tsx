@@ -13,12 +13,12 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { ChatMessage, ChatSession } from '@/types/ai'
+import { AIChatMessage, AIChatSession } from '@/types/ai'
 import {
-  deleteChatSession,
-  getChatSession,
-  listChatSessions,
-  sendChatMessage,
+  deleteAIChatSession,
+  getAIChatSession,
+  listAIChatSessions,
+  sendAIChatMessage,
 } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -29,8 +29,8 @@ export function AIChatPage() {
   const { id } = useParams()
   const navigate = useNavigate()
 
-  const [sessions, setSessions] = useState<ChatSession[]>([])
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [sessions, setSessions] = useState<AIChatSession[]>([])
+  const [messages, setMessages] = useState<AIChatMessage[]>([])
   const [inputValue, setInputValue] = useState('')
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
@@ -39,7 +39,7 @@ export function AIChatPage() {
 
   const fetchSessions = useCallback(async () => {
     try {
-      const data = await listChatSessions()
+      const data = await listAIChatSessions()
       setSessions(data)
     } catch (error) {
       console.error(error)
@@ -54,11 +54,11 @@ export function AIChatPage() {
   useEffect(() => {
     if (id) {
       setLoading(true)
-      getChatSession(id)
-        .then((session) => {
+      getAIChatSession(id)
+        .then((session: AIChatSession) => {
           setMessages(session.messages || [])
         })
-        .catch((err) => {
+        .catch((err: any) => {
           console.error(err)
           toast.error(t('aiChat.errors.loadSession', 'Failed to load session'))
           navigate('/ai/chat')
@@ -85,7 +85,7 @@ export function AIChatPage() {
     if (!confirm(t('common.confirmDelete', 'Are you sure?'))) return
 
     try {
-      await deleteChatSession(sessionId)
+      await deleteAIChatSession(sessionId)
       setSessions((prev) => prev.filter((s) => s.id !== sessionId))
       if (id === sessionId) {
         navigate('/ai/chat')
@@ -100,7 +100,7 @@ export function AIChatPage() {
   const handleSend = async () => {
     if (!inputValue.trim() || sending) return
 
-    const userMsg: ChatMessage = {
+    const userMsg: AIChatMessage = {
       role: 'user',
       content: inputValue,
       createdAt: new Date().toISOString(),
@@ -112,7 +112,7 @@ export function AIChatPage() {
 
     try {
       const clusterName = localStorage.getItem('current-cluster') || undefined
-      const response = await sendChatMessage(
+      const response = await sendAIChatMessage(
         {
           sessionID: id || '',
           message: userMsg.content,
@@ -128,7 +128,7 @@ export function AIChatPage() {
       }
 
       // Append assistant response
-      const assistantMsg: ChatMessage = {
+      const assistantMsg: AIChatMessage = {
         role: 'assistant',
         content: response.message,
         createdAt: new Date().toISOString(),

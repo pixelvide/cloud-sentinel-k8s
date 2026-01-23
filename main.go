@@ -22,6 +22,7 @@ import (
 	"github.com/pixelvide/cloud-sentinel-k8s/pkg/common"
 	"github.com/pixelvide/cloud-sentinel-k8s/pkg/handlers"
 	"github.com/pixelvide/cloud-sentinel-k8s/pkg/handlers/resources"
+	"github.com/pixelvide/cloud-sentinel-k8s/pkg/mcp"
 	"github.com/pixelvide/cloud-sentinel-k8s/pkg/middleware"
 	"github.com/pixelvide/cloud-sentinel-k8s/pkg/model"
 	"github.com/pixelvide/cloud-sentinel-k8s/pkg/rbac"
@@ -69,7 +70,7 @@ func setupStatic(r *gin.Engine) {
 	})
 }
 
-func setupAPIRouter(r *gin.RouterGroup, cm *cluster.ClusterManager, authHandler *auth.AuthHandler) {
+func setupAPIRouter(r *gin.RouterGroup, cm *cluster.ClusterManager, authHandler *auth.AuthHandler, mcpServer *mcp.MCPServer) {
 	r.GET("/metrics", gin.WrapH(promhttp.HandlerFor(prometheus.Gatherers{
 		prometheus.DefaultGatherer,
 		ctrlmetrics.Registry,
@@ -97,6 +98,7 @@ func setupAPIRouter(r *gin.RouterGroup, cm *cluster.ClusterManager, authHandler 
 	userGroup := r.Group("/api/users")
 	{
 		userGroup.POST("/sidebar_preference", authHandler.RequireAuth(), handlers.UpdateSidebarPreference)
+		userGroup.POST("/config", authHandler.RequireAuth(), handlers.UpdateUserConfig)
 	}
 
 	// admin apis
@@ -145,13 +147,22 @@ func setupAPIRouter(r *gin.RouterGroup, cm *cluster.ClusterManager, authHandler 
 			userAPI.DELETE(":id", handlers.DeleteUser)
 			userAPI.POST(":id/reset_password", handlers.ResetPassword)
 			userAPI.POST(":id/enable", handlers.SetUserEnabled)
+			userAPI.PUT(":id/ai-chat", handlers.ToggleUserAIChat)
 		}
 
 		templateAPI := adminAPI.Group("/templates")
 		{
-			templateAPI.POST("/", handlers.CreateTemplate)
-			templateAPI.PUT("/:id", handlers.UpdateTemplate)
 			templateAPI.DELETE("/:id", handlers.DeleteTemplate)
+		}
+
+		adminAIGenericAPI := adminAPI.Group("/ai")
+		{
+			adminAIGenericAPI.POST("/profiles", handlers.CreateAIProfile)
+			adminAIGenericAPI.PUT("/profiles/:id", handlers.UpdateAIProfile)
+			adminAIGenericAPI.PUT("/profiles/:id/toggle", handlers.ToggleAIProfile)
+			adminAIGenericAPI.DELETE("/profiles/:id", handlers.DeleteAIProfile)
+			adminAIGenericAPI.GET("/config", handlers.GetAdminAIConfig)
+			adminAIGenericAPI.POST("/governance", handlers.UpdateAIGovernance)
 		}
 	}
 
@@ -187,17 +198,34 @@ func setupAPIRouter(r *gin.RouterGroup, cm *cluster.ClusterManager, authHandler 
 
 		aiGroup := api.Group("/ai")
 		{
+			aiGroup.GET("/profiles", handlers.ListAIProfiles)
+			aiGroup.GET("/models", handlers.GetAvailableModels)
 			aiGroup.GET("/config", handlers.GetAIConfig)
+			aiGroup.GET("/configs", handlers.ListAIConfigs)
 			aiGroup.POST("/config", handlers.UpdateAIConfig)
-			aiGroup.GET("/sessions", handlers.ListSessions)
-			aiGroup.GET("/sessions/:id", handlers.GetSession)
-			aiGroup.DELETE("/sessions/:id", handlers.DeleteSession)
+			aiGroup.DELETE("/config/:id", handlers.DeleteAIConfig)
+			aiGroup.GET("/sessions", handlers.ListAIChatSessions)
+			aiGroup.GET("/sessions/:id", handlers.GetAIChatSession)
+			aiGroup.DELETE("/sessions/:id", handlers.DeleteAIChatSession)
+		}
+
+		mcpGroup := api.Group("/mcp")
+		{
+			baseURL := common.Base
+			if baseURL == "" {
+				baseURL = "http://localhost:" + common.Port
+			}
+			sseHandler := mcpServer.SSEHandler(baseURL)
+			mcpGroup.GET("/sse", gin.WrapH(sseHandler))
+			mcpGroup.POST("/message", gin.WrapH(sseHandler))
 		}
 	}
 
 	api.Use(authHandler.RequireAuth(), middleware.ClusterMiddleware(cm))
 	{
 		api.GET("/overview", handlers.GetOverview)
+
+		api.POST("/ai/chat", handlers.AIChat)
 
 		promHandler := handlers.NewPromHandler()
 		api.GET("/prometheus/resource-usage-history", promHandler.GetResourceUsageHistory)
@@ -219,8 +247,6 @@ func setupAPIRouter(r *gin.RouterGroup, cm *cluster.ClusterManager, authHandler 
 		api.POST("/resources/apply", resourceApplyHandler.ApplyResource)
 
 		api.GET("/image/tags", handlers.GetImageTags)
-
-		api.POST("/ai/chat", handlers.Chat)
 
 		proxyHandler := handlers.NewProxyHandler()
 		proxyHandler.RegisterRoutes(api)
@@ -252,6 +278,7 @@ func main() {
 	r.Use(middleware.Logger())
 	r.Use(middleware.CORS())
 	model.InitDB()
+	model.StartAppConfigRefresher()
 	rbac.InitRBAC()
 	handlers.InitTemplates()
 	internal.LoadConfigFromEnv()
@@ -263,10 +290,12 @@ func main() {
 		log.Fatalf("Failed to create ClusterManager: %v", err)
 	}
 
+	mcpServer := mcp.NewMCPServer(cm)
+
 	base := r.Group(common.Base)
 	// Setup router
 	authHandler := auth.NewAuthHandler(cm)
-	setupAPIRouter(base, cm, authHandler)
+	setupAPIRouter(base, cm, authHandler, mcpServer)
 	setupStatic(r)
 
 	srv := &http.Server{

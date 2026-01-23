@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/google/generative-ai-go/genai"
-	"github.com/pixelvide/cloud-sentinel-k8s/pkg/model"
 	openai "github.com/sashabaranov/go-openai"
 	"google.golang.org/api/option"
+	"k8s.io/klog/v2"
 )
 
 type GeminiAdapter struct {
@@ -17,14 +17,17 @@ type GeminiAdapter struct {
 	model  string
 }
 
-func NewGeminiAdapter(settings *model.AISettings) (*GeminiAdapter, error) {
+func NewGeminiAdapter(config *AIConfig) (*GeminiAdapter, error) {
 	ctx := context.Background()
-	client, err := genai.NewClient(ctx, option.WithAPIKey(settings.APIKey))
+	client, err := genai.NewClient(ctx, option.WithAPIKey(config.APIKey))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gemini client: %w", err)
 	}
 
-	modelName := settings.Model
+	modelName := config.Model
+	if modelName == "" {
+		modelName = config.DefaultModel
+	}
 	if modelName == "" {
 		modelName = "gemini-1.5-flash"
 	}
@@ -37,6 +40,7 @@ func NewGeminiAdapter(settings *model.AISettings) (*GeminiAdapter, error) {
 
 func (g *GeminiAdapter) ChatCompletion(ctx context.Context, messages []openai.ChatCompletionMessage, tools []openai.Tool) (openai.ChatCompletionResponse, error) {
 	gm := g.client.GenerativeModel(g.model)
+	klog.Infof("Gemini: ChatCompletion items: %d, tools: %d", len(messages), len(tools))
 
 	// Map Tools
 	if len(tools) > 0 {
@@ -87,27 +91,24 @@ func (g *GeminiAdapter) ChatCompletion(ctx context.Context, messages []openai.Ch
 	var history []*genai.Content
 
 	for _, m := range messages {
-		role := ""
-		switch m.Role {
-		case openai.ChatMessageRoleSystem:
+		if m.Role == openai.ChatMessageRoleSystem {
 			systemInstruction = &genai.Content{
 				Parts: []genai.Part{genai.Text(m.Content)},
 			}
 			continue // System prompt is handled separately in Gemini
-		case openai.ChatMessageRoleUser:
-			role = "user"
-		case openai.ChatMessageRoleAssistant:
+		}
+
+		role := "user"
+		if m.Role == openai.ChatMessageRoleAssistant {
 			role = "model"
-		case openai.ChatMessageRoleTool:
-			role = "function" // Gemini uses 'function' role for tool outputs
-		default:
-			role = "user"
+		} else if m.Role == openai.ChatMessageRoleTool {
+			role = "user" // Tool responses must come from 'user' role in Gemini SDK
 		}
 
 		parts := []genai.Part{}
 
-		// Text Content
-		if m.Content != "" {
+		// Text Content (Only if not a tool response, as tool responses use FunctionResponse parts)
+		if m.Content != "" && m.Role != openai.ChatMessageRoleTool {
 			parts = append(parts, genai.Text(m.Content))
 		}
 
@@ -128,37 +129,12 @@ func (g *GeminiAdapter) ChatCompletion(ctx context.Context, messages []openai.Ch
 
 		// Tool Responses (Tool -> Assistant)
 		if m.Role == openai.ChatMessageRoleTool {
-			// In OpenAI, ToolCallID links the response.
-			// In Gemini, we need to wrap it in FunctionResponse.
-			// We need to assume the previous message was the call, OR just send the response.
-			// Gemini expects FunctionResponse parts.
-
-			// We don't have the function name in the openai.ChatMessageRoleTool message struct directly
-			// (it's usually in the ToolCallID mapping), but for simplicity here we might need to look it up
-			// or rely on implicit ordering.
-			// However, OpenAI's ChatMessage struct usually has ToolCallID.
-
-			// Problem: OpenAI message doesn't store the function name in the Tool role message, only the content and ToolCallID.
-			// Gemini NEEDS the function name in FunctionResponse.
-			// We have to scan backwards to find the tool call name?
-			// This is expensive.
-
-			// Alternative: We store tool name in our DB? No we don't.
-			// Let's try to infer or carry it.
-			// Actually, in the Chat Loop (handlers/ai_chat.go), we know the tool name when we create the tool response message.
-			// But here we are reconstructing from DB history.
-
-			// Hack: In `pkg/model/ai.go`, we have `ToolID`.
-			// We need the Name.
-			// We will look back in the messages slice to find the assistant message with the matching ToolCallID.
 			name := findToolName(messages, m.ToolCallID)
-
 			var response map[string]interface{}
 			// Try to parse content as JSON, otherwise wrap string
 			if err := json.Unmarshal([]byte(m.Content), &response); err != nil {
 				response = map[string]interface{}{"result": m.Content}
 			}
-
 			parts = append(parts, genai.FunctionResponse{
 				Name:     name,
 				Response: response,
@@ -166,10 +142,15 @@ func (g *GeminiAdapter) ChatCompletion(ctx context.Context, messages []openai.Ch
 		}
 
 		if len(parts) > 0 {
-			history = append(history, &genai.Content{
-				Role:  role,
-				Parts: parts,
-			})
+			// Merge adjacent messages with the same role into a single Gemini turn
+			if len(history) > 0 && history[len(history)-1].Role == role {
+				history[len(history)-1].Parts = append(history[len(history)-1].Parts, parts...)
+			} else {
+				history = append(history, &genai.Content{
+					Role:  role,
+					Parts: parts,
+				})
+			}
 		}
 	}
 
@@ -178,6 +159,10 @@ func (g *GeminiAdapter) ChatCompletion(ctx context.Context, messages []openai.Ch
 	}
 
 	// Generate Content
+	if len(history) == 0 {
+		return openai.ChatCompletionResponse{}, fmt.Errorf("gemini: no messages to send")
+	}
+
 	// Since we built the full history, we don't use StartChat with history,
 	// because `GenerateContent` is for a single turn unless we manage session.
 	// But `cs := gm.StartChat()` allows setting History.
@@ -186,12 +171,18 @@ func (g *GeminiAdapter) ChatCompletion(ctx context.Context, messages []openai.Ch
 	lastMsg := history[len(history)-1]
 
 	// Send last message
+	klog.V(2).Infof("Gemini: Sending message with %d history items", len(cs.History))
 	resp, err := cs.SendMessage(ctx, lastMsg.Parts...)
 	if err != nil {
+		klog.Errorf("Gemini: SendMessage failed: %v", err)
 		return openai.ChatCompletionResponse{}, fmt.Errorf("gemini request failed: %w", err)
 	}
 
-	return convertGeminiResponseToOpenAI(resp), nil
+	converted := convertGeminiResponseToOpenAI(resp)
+	if len(converted.Choices) > 0 && len(converted.Choices[0].Message.ToolCalls) > 0 {
+		klog.Infof("Gemini: AI returned %d tool calls", len(converted.Choices[0].Message.ToolCalls))
+	}
+	return converted, nil
 }
 
 // Helpers
@@ -302,8 +293,8 @@ func convertGeminiResponseToOpenAI(resp *genai.GenerateContentResponse) openai.C
 		msg.Content = contentBuilder.String()
 
 		choices = append(choices, openai.ChatCompletionChoice{
-			Index:   i,
-			Message: msg,
+			Index:        i,
+			Message:      msg,
 			FinishReason: openai.FinishReasonStop, // Approximate
 		})
 	}

@@ -25,6 +25,7 @@ type User struct {
 
 	Roles             []common.Role `json:"roles,omitempty" gorm:"-"`
 	SidebarPreference string        `json:"sidebar_preference,omitempty" gorm:"type:text"`
+	Config            *UserConfig   `json:"config,omitempty" gorm:"foreignKey:UserID"`
 }
 
 type PersonalAccessToken struct {
@@ -212,7 +213,7 @@ func ListUsers(limit int, offset int, search string, sortBy string, sortOrder st
 		limit = 20
 	}
 	// Users are listed normally, PATs are a separate relationship
-	query := DB.Model(&User{})
+	query := DB.Model(&User{}).Preload("Config")
 	if role != "" {
 		query = query.Joins(
 			"JOIN role_assignments ra ON ra.subject = users.username AND ra.subject_type = ?",
@@ -255,6 +256,7 @@ func ListUsers(limit int, offset int, search string, sortBy string, sortOrder st
 		Limit(limit).
 		Offset(offset)
 	err = DB.
+		Preload("Config").
 		Where("id IN (?)", idsQuery).
 		Order(orderExpr).
 		Find(&users).Error

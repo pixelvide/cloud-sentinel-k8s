@@ -10,15 +10,18 @@ import (
 	openai "github.com/sashabaranov/go-openai"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
 )
 
 type ClientSetKey struct{}
 
 func GetClientSet(ctx context.Context) (*cluster.ClientSet, error) {
-	cs, ok := ctx.Value(ClientSetKey{}).(*cluster.ClientSet)
+	cs, ok := ctx.Value("cluster_client").(*cluster.ClientSet)
 	if !ok || cs == nil {
+		klog.Warningf("K8s Tool: Kubernetes client not found in context (key: cluster_client)")
 		return nil, fmt.Errorf("kubernetes client not found in context")
 	}
+	klog.V(2).Infof("K8s Tool: Found client for cluster %s", cs.Name)
 	return cs, nil
 }
 
@@ -39,7 +42,7 @@ func (t *ListPodsTool) Definition() openai.Tool {
 				"properties": {
 					"namespace": {
 						"type": "string",
-						"description": "The namespace to list pods from. Defaults to 'default'."
+						"description": "The namespace to list pods from. If empty, lists from all namespaces."
 					},
 					"status_filter": {
 						"type": "string",
@@ -59,9 +62,6 @@ func (t *ListPodsTool) Execute(ctx context.Context, args string) (string, error)
 	}
 	if err := json.Unmarshal([]byte(args), &params); err != nil {
 		return "", err
-	}
-	if params.Namespace == "" {
-		params.Namespace = "default"
 	}
 
 	cs, err := GetClientSet(ctx)

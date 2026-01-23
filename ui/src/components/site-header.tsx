@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import { Plus, Settings } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { Plus } from 'lucide-react'
+import { IconRobot } from '@tabler/icons-react'
 
 import { useIsMobile } from '@/hooks/use-mobile'
-import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 
@@ -14,10 +13,12 @@ import { ModeToggle } from './mode-toggle'
 import { Search } from './search'
 import { UserMenu } from './user-menu'
 
+import { useAuth } from '@/contexts/auth-context'
+
 export function SiteHeader() {
   const isMobile = useIsMobile()
-  const navigate = useNavigate()
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const { config } = useAuth()
 
   return (
     <>
@@ -36,21 +37,21 @@ export function SiteHeader() {
               onClick={() => setCreateDialogOpen(true)}
               aria-label="Create new resource"
             />
+            {config?.is_ai_chat_enabled && (
+              <IconRobot
+                className="h-5 w-5 cursor-pointer text-muted-foreground hover:text-foreground"
+                onClick={() =>
+                  window.dispatchEvent(new CustomEvent('toggle-ai-chat'))
+                }
+                aria-label="Toggle AI Chat"
+              />
+            )}
             {!isMobile && (
               <>
                 <Separator
                   orientation="vertical"
                   className="mx-2 data-[orientation=vertical]:h-4"
                 />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate('/settings')}
-                  className="hidden sm:flex"
-                >
-                  <Settings className="h-5 w-5" />
-                  <span className="sr-only">Settings</span>
-                </Button>
                 <LanguageToggle />
                 <ModeToggle />
               </>

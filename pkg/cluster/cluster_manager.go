@@ -195,6 +195,25 @@ func (t *k8sProxyTransport) RoundTrip(req *http.Request) (*http.Response, error)
 	return t.transport.RoundTrip(req)
 }
 
+func (cm *ClusterManager) GetActiveClusters() []string {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+	names := make([]string, 0, len(cm.clusters))
+	for name := range cm.clusters {
+		names = append(names, name)
+	}
+	return names
+}
+
+func (cm *ClusterManager) GetCluster(name string) (*ClientSet, error) {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+	if cs, ok := cm.clusters[name]; ok {
+		return cs, nil
+	}
+	return nil, fmt.Errorf("cluster %s not found", name)
+}
+
 func (cm *ClusterManager) GetClientSet(clusterName string, user *model.User) (*ClientSet, error) {
 	klog.V(2).Infof("GetClientSet called for cluster: %s, user: %v", clusterName, user)
 

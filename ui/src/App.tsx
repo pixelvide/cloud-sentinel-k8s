@@ -11,6 +11,7 @@ import {
   useGlobalSearch,
 } from './components/global-search-provider'
 import { SiteHeader } from './components/site-header'
+import { FloatingAIChat } from './components/floating-ai-chat'
 import { SidebarInset, SidebarProvider } from './components/ui/sidebar'
 import { Toaster } from './components/ui/sonner'
 import { ClusterProvider } from './contexts/cluster-context'
@@ -76,6 +77,7 @@ function AppContent() {
         </SidebarInset>
       </SidebarProvider>
       <GlobalSearch open={isOpen} onOpenChange={closeSearch} />
+      <FloatingAIChat />
       <Toaster />
     </>
   )

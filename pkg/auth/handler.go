@@ -248,7 +248,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 }
 
 func (h *AuthHandler) GetUser(c *gin.Context) {
-	user, exists := c.Get("user")
+	u, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Not authenticated",
@@ -256,8 +256,13 @@ func (h *AuthHandler) GetUser(c *gin.Context) {
 		return
 	}
 
+	user := u.(model.User)
+	// Fetch config separately or preload
+	config, _ := model.GetUserConfig(user.ID)
+
 	c.JSON(http.StatusOK, gin.H{
-		"user": user,
+		"user":   user,
+		"config": config,
 	})
 }
 

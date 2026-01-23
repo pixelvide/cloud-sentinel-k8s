@@ -23,6 +23,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null
+  config: { is_ai_chat_enabled: boolean } | null
   isLoading: boolean
   providers: string[]
   login: (provider?: string) => Promise<void>
@@ -48,6 +49,7 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null)
+  const [config, setConfig] = useState<{ is_ai_chat_enabled: boolean } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [providers, setProviders] = useState<string[]>([])
 
@@ -80,8 +82,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
           )
         }
         setUser(user)
+        setConfig(data.config)
       } else {
         setUser(null)
+        setConfig(null)
       }
     } catch (error) {
       console.error('Auth check failed:', error)
@@ -205,6 +209,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const value = {
     user,
+    config,
     isLoading,
     providers,
     login,

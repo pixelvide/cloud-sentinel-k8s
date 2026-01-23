@@ -27,11 +27,13 @@ import {
   deleteUser,
   resetUserPassword,
   setUserEnabled,
+  toggleUserAIChat,
   updateUser,
   useRoleList,
   useUserList,
 } from '@/lib/api'
 import { formatDate } from '@/lib/utils'
+import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -111,6 +113,19 @@ export function UserManagement() {
       await setUserEnabled(u.id, !u.enabled)
       queryClient.invalidateQueries({ queryKey: ['user-list'] })
       toast.success(t('userManagement.messages.updated', 'User updated'))
+    },
+    [queryClient, t]
+  )
+
+  const handleToggleAIChat = useCallback(
+    async (u: UserItem, enabled: boolean) => {
+      try {
+        await toggleUserAIChat(u.id, enabled)
+        queryClient.invalidateQueries({ queryKey: ['user-list'] })
+        toast.success(t('userManagement.messages.updated', 'User updated'))
+      } catch (err: any) {
+        toast.error(err.message || 'Failed to update AI chat status')
+      }
     },
     [queryClient, t]
   )
@@ -248,6 +263,19 @@ export function UserManagement() {
         ),
       },
       {
+        id: 'aiChat',
+        header: t('userManagement.table.aiChat', 'AI Chat'),
+        enableSorting: false,
+        cell: ({ row: { original: user } }) => (
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={user.config?.is_ai_chat_enabled ?? true}
+              onCheckedChange={(checked) => handleToggleAIChat(user, checked)}
+            />
+          </div>
+        ),
+      },
+      {
         id: 'provider',
         header: t('userManagement.table.provider', 'Provider'),
         accessorFn: (row) => row.provider || '-',
@@ -294,7 +322,7 @@ export function UserManagement() {
         ),
       },
     ],
-    [getStatusBadge, t]
+    [getStatusBadge, handleToggleAIChat, t]
   )
 
   const tableColumns = useMemo<ColumnDef<UserItem>[]>(() => {
@@ -344,6 +372,7 @@ export function UserManagement() {
     manualSorting: true,
     pageCount: Math.ceil((data?.total ?? 0) / pagination.pageSize) || 0,
   })
+
   const [newUser, setNewUser] = useState({
     username: '',
     name: '',
@@ -362,7 +391,7 @@ export function UserManagement() {
     onError: (err: Error) => {
       toast.error(
         err.message ||
-          t('userManagement.messages.deleteError', 'Failed to delete user')
+        t('userManagement.messages.deleteError', 'Failed to delete user')
       )
     },
   })
@@ -378,7 +407,7 @@ export function UserManagement() {
     onError: (err: Error) => {
       toast.error(
         err.message ||
-          t('userManagement.messages.createError', 'Failed to create user')
+        t('userManagement.messages.createError', 'Failed to create user')
       )
     },
   })
@@ -395,10 +424,10 @@ export function UserManagement() {
     onError: (err: Error) => {
       toast.error(
         err.message ||
-          t(
-            'userManagement.messages.resetPasswordError',
-            'Failed to reset password'
-          )
+        t(
+          'userManagement.messages.resetPasswordError',
+          'Failed to reset password'
+        )
       )
     },
   })
@@ -414,7 +443,7 @@ export function UserManagement() {
     onError: (err: Error) => {
       toast.error(
         err.message ||
-          t('userManagement.messages.updateError', 'Failed to update user')
+        t('userManagement.messages.updateError', 'Failed to update user')
       )
     },
   })

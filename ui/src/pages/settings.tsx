@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import { usePageTitle } from '@/hooks/use-page-title'
 import { ResponsiveTabs } from '@/components/ui/responsive-tabs'
+import { AIAdminManagement } from '@/components/settings/ai-admin-management'
 import { AIConfigManagement } from '@/components/settings/ai-config-management'
 import { APIKeyManagement } from '@/components/settings/apikey-management'
 import { AuditLog } from '@/components/settings/audit-log'
@@ -71,6 +72,12 @@ export function SettingsPage() {
         label: t('settings.tabs.ai', 'AI Assistant'),
         content: <AIConfigManagement />,
         adminOnly: false,
+      },
+      {
+        value: 'ai-admin',
+        label: t('settings.tabs.aiAdmin', 'AI Administration'),
+        content: <AIAdminManagement />,
+        adminOnly: true,
       },
       {
         value: 'templates',

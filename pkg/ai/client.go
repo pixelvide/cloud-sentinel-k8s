@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pixelvide/cloud-sentinel-k8s/pkg/model"
 	openai "github.com/sashabaranov/go-openai"
 )
 
@@ -13,29 +12,32 @@ type OpenAIAdapter struct {
 	model  string
 }
 
-// NewClient returns an AIClient based on the provider in settings
-func NewClient(settings *model.AISettings) (AIClient, error) {
-	if settings.APIKey == "" {
+// NewClient returns an AIClient based on the provider in config
+func NewClient(config *AIConfig) (AIClient, error) {
+	if config.APIKey == "" {
 		return nil, fmt.Errorf("API key is required")
 	}
 
-	if settings.Provider == "google" {
-		return NewGeminiAdapter(settings)
+	if config.Provider == "google" || config.Provider == "gemini" {
+		return NewGeminiAdapter(config)
 	}
 
 	// Default to OpenAI / Custom OpenAI-compatible
-	config := openai.DefaultConfig(settings.APIKey)
-	if settings.BaseURL != "" {
-		config.BaseURL = settings.BaseURL
+	oaConfig := openai.DefaultConfig(config.APIKey)
+	if config.BaseURL != "" {
+		oaConfig.BaseURL = config.BaseURL
 	}
 
-	modelName := settings.Model
+	modelName := config.Model
+	if modelName == "" {
+		modelName = config.DefaultModel
+	}
 	if modelName == "" {
 		modelName = openai.GPT3Dot5Turbo
 	}
 
 	return &OpenAIAdapter{
-		client: openai.NewClientWithConfig(config),
+		client: openai.NewClientWithConfig(oaConfig),
 		model:  modelName,
 	}, nil
 }

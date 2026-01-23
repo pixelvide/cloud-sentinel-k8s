@@ -207,6 +207,35 @@ func SetUserEnabled(c *gin.Context) {
 	c.JSON(200, gin.H{"success": true})
 }
 
+func ToggleUserAIChat(c *gin.Context) {
+	var id uint
+	if _, err := fmt.Sscanf(c.Param("id"), "%d", &id); err != nil || id == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+	var req struct {
+		Enabled bool `json:"enabled"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	config, err := model.GetUserConfig(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get user config"})
+		return
+	}
+
+	config.IsAIChatEnabled = req.Enabled
+	if err := model.DB.Save(config).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update user config"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
 func UpdateSidebarPreference(c *gin.Context) {
 	user := c.MustGet("user").(model.User)
 	var req struct {

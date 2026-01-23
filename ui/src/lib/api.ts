@@ -4,7 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Pod } from 'kubernetes-types/core/v1'
 
-import { AISettings, ChatRequest, ChatResponse, ChatSession } from '@/types/ai'
+import {
+  AIProviderProfile,
+  AISettings,
+  AIModelsResponse,
+  ChatRequest,
+  ChatResponse,
+  AIChatSession,
+} from '@/types/ai'
 // Resource Analysis API
 import {
   AuditLogResponse,
@@ -250,8 +257,8 @@ export const resizePod = async (
 
 type DeepPartial<T> = T extends object
   ? {
-      [P in keyof T]?: DeepPartial<T[P]>
-    }
+    [P in keyof T]?: DeepPartial<T[P]>
+  }
   : T
 export const patchResource = async <T extends ResourceType>(
   resource: T,
@@ -1651,6 +1658,12 @@ export const setUserEnabled = async (id: number, enabled: boolean) => {
   })
 }
 
+export const toggleUserAIChat = async (id: number, enabled: boolean) => {
+  return apiClient.put<{ success: boolean }>(`/admin/users/${id}/ai-chat`, {
+    enabled,
+  })
+}
+
 export const useUserList = (
   page = 1,
   size = 20,
@@ -1889,8 +1902,54 @@ export const updateUserAWSConfig = async (data: {
 }
 
 // AI API
+
+export const fetchAIProfiles = (): Promise<AIProviderProfile[]> => {
+  return fetchAPI<AIProviderProfile[]>('/ai/profiles')
+}
+
+export const createAIProfile = (
+  data: Partial<AIProviderProfile>
+): Promise<AIProviderProfile> => {
+  return apiClient.post<AIProviderProfile>('/admin/ai/profiles', data)
+}
+
+export const updateAIProfile = (
+  id: number,
+  data: Partial<AIProviderProfile>
+): Promise<AIProviderProfile> => {
+  return apiClient.put<AIProviderProfile>(`/admin/ai/profiles/${id}`, data)
+}
+
+export const deleteAIProfile = (id: number): Promise<{ status: string }> => {
+  return apiClient.delete<{ status: string }>(`/admin/ai/profiles/${id}`)
+}
+
+export const toggleAIProfile = (id: number): Promise<AIProviderProfile> => {
+  return apiClient.put<AIProviderProfile>(`/admin/ai/profiles/${id}/toggle`, {})
+}
+
+export const fetchAdminAIConfig = (): Promise<{
+  allow_user_keys: string
+  force_user_keys: string
+  system_profile: AIProviderProfile | null
+}> => {
+  return fetchAPI('/admin/ai/config')
+}
+
+
+export const updateAIGovernance = (data: {
+  allow_user_keys: string
+  force_user_keys: string
+}): Promise<{ status: string }> => {
+  return apiClient.post('/admin/ai/governance', data)
+}
+
 export const getAIConfig = async (): Promise<AISettings> => {
   return fetchAPI<AISettings>('/ai/config')
+}
+
+export const listAIConfigs = async (): Promise<AISettings[]> => {
+  return fetchAPI<AISettings[]>('/ai/configs')
 }
 
 export const updateAIConfig = async (
@@ -1899,19 +1958,23 @@ export const updateAIConfig = async (
   return apiClient.post<AISettings>('/ai/config', data)
 }
 
-export const listChatSessions = async (): Promise<ChatSession[]> => {
-  return fetchAPI<ChatSession[]>('/ai/sessions')
+export const deleteAIConfig = async (id: number): Promise<void> => {
+  return apiClient.delete(`/ai/config/${id}`)
 }
 
-export const getChatSession = async (id: string): Promise<ChatSession> => {
-  return fetchAPI<ChatSession>(`/ai/sessions/${id}`)
+export const listAIChatSessions = async (): Promise<AIChatSession[]> => {
+  return fetchAPI<AIChatSession[]>('/ai/sessions')
 }
 
-export const deleteChatSession = async (id: string): Promise<void> => {
+export const getAIChatSession = async (id: string): Promise<AIChatSession> => {
+  return fetchAPI<AIChatSession>(`/ai/sessions/${id}`)
+}
+
+export const deleteAIChatSession = async (id: string): Promise<void> => {
   return apiClient.delete(`/ai/sessions/${id}`)
 }
 
-export const sendChatMessage = async (
+export const sendAIChatMessage = async (
   data: ChatRequest,
   clusterName?: string
 ): Promise<ChatResponse> => {
@@ -1920,4 +1983,14 @@ export const sendChatMessage = async (
     endpoint += `?x-cluster-name=${encodeURIComponent(clusterName)}`
   }
   return apiClient.post<ChatResponse>(endpoint, data)
+}
+
+export const fetchAIModels = async (): Promise<AIModelsResponse> => {
+  return fetchAPI<AIModelsResponse>('/ai/models')
+}
+
+export const updateUserConfig = async (data: {
+  is_ai_chat_enabled: boolean
+}): Promise<{ success: boolean }> => {
+  return apiClient.post<{ success: boolean }>('/users/config', data)
 }

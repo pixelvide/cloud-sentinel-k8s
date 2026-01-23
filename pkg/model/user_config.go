@@ -13,8 +13,11 @@ type UserConfig struct {
 	UserID           uint   `json:"user_id" gorm:"uniqueIndex:idx_user_config_user_id;not null"`
 	StorageNamespace string `json:"storage_namespace" gorm:"uniqueIndex;not null"`
 
+	// Settings
+	IsAIChatEnabled bool `json:"is_ai_chat_enabled" gorm:"default:true"`
+
 	// Relationships
-	User User `json:"user" gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	User User `json:"-" gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 func (UserConfig) TableName() string {
