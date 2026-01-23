@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.10.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v0.9.0...v0.10.0) (2026-01-23)
+
+
+### Features
+
+* ⚡ Optimize AWS config restoration performance ([#58](https://github.com/pixelvide/cloud-sentinel-k8s/issues/58)) ([5b494e3](https://github.com/pixelvide/cloud-sentinel-k8s/commit/5b494e36a294b1b9977f9553fa163cb6682b7ee9))
+* **ai:** integrate AI assistant with chat history and k8s tools ([#59](https://github.com/pixelvide/cloud-sentinel-k8s/issues/59)) ([5a8f4de](https://github.com/pixelvide/cloud-sentinel-k8s/commit/5a8f4decffee77067010a4cffc621c441d137336))
+* Replace Bubble Sort with efficient sort.Slice ([#55](https://github.com/pixelvide/cloud-sentinel-k8s/issues/55)) ([aea4d4f](https://github.com/pixelvide/cloud-sentinel-k8s/commit/aea4d4f41fca9ed5d063d41a514027aff1b7d828))
+
 ## [0.9.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v0.8.0...v0.9.0) (2026-01-22)
 
 
