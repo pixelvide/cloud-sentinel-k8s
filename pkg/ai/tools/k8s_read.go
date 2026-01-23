@@ -7,10 +7,12 @@ import (
 	"strings"
 
 	"github.com/pixelvide/cloud-sentinel-k8s/pkg/cluster"
+	"github.com/pixelvide/cloud-sentinel-k8s/pkg/helm"
 	openai "github.com/sashabaranov/go-openai"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
+	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 type ClientSetKey struct{}
@@ -266,7 +268,7 @@ func (t *ListResourcesTool) Definition() openai.Tool {
 		Type: openai.ToolTypeFunction,
 		Function: &openai.FunctionDefinition{
 			Name:        "list_resources",
-			Description: "List Kubernetes resources of a specific kind in a namespace, optionally filtered by labels.",
+			Description: "List Kubernetes resources of a specific kind in a namespace, optionally filtered by labels. This tool also can be used to list the Helm Release by passing on of helmrelease|helmreleases|hr| as kind.",
 			Parameters: json.RawMessage(`{
 				"type": "object",
 				"properties": {
@@ -381,6 +383,42 @@ func (t *ListResourcesTool) listByKind(ctx context.Context, cs *cluster.ClientSe
 		results, err = t.listIngresses(ctx, cs, ns, filter, opts)
 	case "event", "events", "ev":
 		results, err = t.listEvents(ctx, cs, ns, filter, opts)
+	case "helmrelease", "helmreleases", "hr":
+		results, err = t.listHelmReleases(ctx, cs, ns, filter)
+	case "persistentvolume", "persistentvolumes", "pv":
+		results, err = t.listPersistentVolumes(ctx, cs, filter, opts)
+	case "persistentvolumeclaim", "persistentvolumeclaims", "pvc":
+		results, err = t.listPersistentVolumeClaims(ctx, cs, ns, filter, opts)
+	case "serviceaccount", "serviceaccounts", "sa":
+		results, err = t.listServiceAccounts(ctx, cs, ns, filter, opts)
+	case "endpoint", "endpoints", "ep":
+		results, err = t.listEndpoints(ctx, cs, ns, filter, opts)
+	case "endpointslice", "endpointslices":
+		results, err = t.listEndpointSlices(ctx, cs, ns, filter, opts)
+	case "resourcequota", "resourcequotas", "quota":
+		results, err = t.listResourceQuotas(ctx, cs, ns, filter, opts)
+	case "limitrange", "limitranges", "limits":
+		results, err = t.listLimitRanges(ctx, cs, ns, filter, opts)
+	case "horizontalpodautoscaler", "horizontalpodautoscalers", "hpa":
+		results, err = t.listHorizontalPodAutoscalers(ctx, cs, ns, filter, opts)
+	case "poddisruptionbudget", "poddisruptionbudgets", "pdb":
+		results, err = t.listPodDisruptionBudgets(ctx, cs, ns, filter, opts)
+	case "networkpolicy", "networkpolicies", "netpol":
+		results, err = t.listNetworkPolicies(ctx, cs, ns, filter, opts)
+	case "storageclass", "storageclasses", "sc":
+		results, err = t.listStorageClasses(ctx, cs, filter, opts)
+	case "role", "roles":
+		results, err = t.listRoles(ctx, cs, ns, filter, opts)
+	case "rolebinding", "rolebindings":
+		results, err = t.listRoleBindings(ctx, cs, ns, filter, opts)
+	case "clusterrole", "clusterroles":
+		results, err = t.listClusterRoles(ctx, cs, filter, opts)
+	case "clusterrolebinding", "clusterrolebindings":
+		results, err = t.listClusterRoleBindings(ctx, cs, filter, opts)
+	case "gateway", "gateways", "gw":
+		results, err = t.listGateways(ctx, cs, ns, filter, opts)
+	case "httproute", "httproutes":
+		results, err = t.listHTTPRoutes(ctx, cs, ns, filter, opts)
 	default:
 		return nil, fmt.Errorf("unsupported resource kind: %s", kind)
 	}
@@ -600,6 +638,334 @@ func (t *ListResourcesTool) listEvents(ctx context.Context, cs *cluster.ClientSe
 			continue
 		}
 		results = append(results, fmt.Sprintf("%s/%s (%s: %s)", item.Namespace, item.InvolvedObject.Name, item.Type, item.Message))
+	}
+	return results, nil
+}
+
+// --- New Resource Listing Helper Methods ---
+
+func (t *ListResourcesTool) listHelmReleases(ctx context.Context, cs *cluster.ClientSet, ns, filter string) ([]string, error) {
+	releases, err := helm.ListReleases(cs.Configuration, ns)
+	if err != nil {
+		return nil, err
+	}
+	var results []string
+	for _, r := range releases {
+		if filter != "" && !strings.Contains(strings.ToLower(r.Name), strings.ToLower(filter)) {
+			continue
+		}
+		results = append(results, fmt.Sprintf("%s/%s (Chart: %s-%s, Status: %s)",
+			r.Namespace, r.Name, r.Chart.Metadata.Name, r.Chart.Metadata.Version, r.Info.Status.String()))
+	}
+	return results, nil
+}
+
+func (t *ListResourcesTool) listPersistentVolumes(ctx context.Context, cs *cluster.ClientSet, filter string, opts metav1.ListOptions) ([]string, error) {
+	list, err := cs.K8sClient.ClientSet.CoreV1().PersistentVolumes().List(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	var results []string
+	for _, item := range list.Items {
+		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+			continue
+		}
+		capacity := item.Spec.Capacity.Storage().String()
+		results = append(results, fmt.Sprintf("%s (Capacity: %s, Status: %s, StorageClass: %s)",
+			item.Name, capacity, item.Status.Phase, item.Spec.StorageClassName))
+	}
+	return results, nil
+}
+
+func (t *ListResourcesTool) listPersistentVolumeClaims(ctx context.Context, cs *cluster.ClientSet, ns, filter string, opts metav1.ListOptions) ([]string, error) {
+	list, err := cs.K8sClient.ClientSet.CoreV1().PersistentVolumeClaims(ns).List(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	var results []string
+	for _, item := range list.Items {
+		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+			continue
+		}
+		capacity := ""
+		if item.Spec.Resources.Requests != nil {
+			if storage, ok := item.Spec.Resources.Requests[corev1.ResourceStorage]; ok {
+				capacity = storage.String()
+			}
+		}
+		storageClass := ""
+		if item.Spec.StorageClassName != nil {
+			storageClass = *item.Spec.StorageClassName
+		}
+		results = append(results, fmt.Sprintf("%s/%s (Capacity: %s, Status: %s, StorageClass: %s)",
+			item.Namespace, item.Name, capacity, item.Status.Phase, storageClass))
+	}
+	return results, nil
+}
+
+func (t *ListResourcesTool) listServiceAccounts(ctx context.Context, cs *cluster.ClientSet, ns, filter string, opts metav1.ListOptions) ([]string, error) {
+	list, err := cs.K8sClient.ClientSet.CoreV1().ServiceAccounts(ns).List(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	var results []string
+	for _, item := range list.Items {
+		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+			continue
+		}
+		results = append(results, fmt.Sprintf("%s/%s (Secrets: %d)", item.Namespace, item.Name, len(item.Secrets)))
+	}
+	return results, nil
+}
+
+func (t *ListResourcesTool) listEndpoints(ctx context.Context, cs *cluster.ClientSet, ns, filter string, opts metav1.ListOptions) ([]string, error) {
+	list, err := cs.K8sClient.ClientSet.CoreV1().Endpoints(ns).List(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	var results []string
+	for _, item := range list.Items {
+		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+			continue
+		}
+		addressCount := 0
+		for _, subset := range item.Subsets {
+			addressCount += len(subset.Addresses)
+		}
+		results = append(results, fmt.Sprintf("%s/%s (Addresses: %d)", item.Namespace, item.Name, addressCount))
+	}
+	return results, nil
+}
+
+func (t *ListResourcesTool) listEndpointSlices(ctx context.Context, cs *cluster.ClientSet, ns, filter string, opts metav1.ListOptions) ([]string, error) {
+	list, err := cs.K8sClient.ClientSet.DiscoveryV1().EndpointSlices(ns).List(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	var results []string
+	for _, item := range list.Items {
+		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+			continue
+		}
+		addressType := string(item.AddressType)
+		results = append(results, fmt.Sprintf("%s/%s (AddressType: %s, Endpoints: %d)",
+			item.Namespace, item.Name, addressType, len(item.Endpoints)))
+	}
+	return results, nil
+}
+
+func (t *ListResourcesTool) listResourceQuotas(ctx context.Context, cs *cluster.ClientSet, ns, filter string, opts metav1.ListOptions) ([]string, error) {
+	list, err := cs.K8sClient.ClientSet.CoreV1().ResourceQuotas(ns).List(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	var results []string
+	for _, item := range list.Items {
+		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+			continue
+		}
+		results = append(results, fmt.Sprintf("%s/%s", item.Namespace, item.Name))
+	}
+	return results, nil
+}
+
+func (t *ListResourcesTool) listLimitRanges(ctx context.Context, cs *cluster.ClientSet, ns, filter string, opts metav1.ListOptions) ([]string, error) {
+	list, err := cs.K8sClient.ClientSet.CoreV1().LimitRanges(ns).List(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	var results []string
+	for _, item := range list.Items {
+		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+			continue
+		}
+		results = append(results, fmt.Sprintf("%s/%s", item.Namespace, item.Name))
+	}
+	return results, nil
+}
+
+func (t *ListResourcesTool) listHorizontalPodAutoscalers(ctx context.Context, cs *cluster.ClientSet, ns, filter string, opts metav1.ListOptions) ([]string, error) {
+	list, err := cs.K8sClient.ClientSet.AutoscalingV2().HorizontalPodAutoscalers(ns).List(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	var results []string
+	for _, item := range list.Items {
+		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+			continue
+		}
+		minReplicas := int32(1)
+		if item.Spec.MinReplicas != nil {
+			minReplicas = *item.Spec.MinReplicas
+		}
+		results = append(results, fmt.Sprintf("%s/%s (Target: %s, Min: %d, Max: %d, Current: %d)",
+			item.Namespace, item.Name, item.Spec.ScaleTargetRef.Name, minReplicas, item.Spec.MaxReplicas, item.Status.CurrentReplicas))
+	}
+	return results, nil
+}
+
+func (t *ListResourcesTool) listPodDisruptionBudgets(ctx context.Context, cs *cluster.ClientSet, ns, filter string, opts metav1.ListOptions) ([]string, error) {
+	list, err := cs.K8sClient.ClientSet.PolicyV1().PodDisruptionBudgets(ns).List(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	var results []string
+	for _, item := range list.Items {
+		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+			continue
+		}
+		minAvailable := "N/A"
+		maxUnavailable := "N/A"
+		if item.Spec.MinAvailable != nil {
+			minAvailable = item.Spec.MinAvailable.String()
+		}
+		if item.Spec.MaxUnavailable != nil {
+			maxUnavailable = item.Spec.MaxUnavailable.String()
+		}
+		results = append(results, fmt.Sprintf("%s/%s (MinAvailable: %s, MaxUnavailable: %s)",
+			item.Namespace, item.Name, minAvailable, maxUnavailable))
+	}
+	return results, nil
+}
+
+func (t *ListResourcesTool) listNetworkPolicies(ctx context.Context, cs *cluster.ClientSet, ns, filter string, opts metav1.ListOptions) ([]string, error) {
+	list, err := cs.K8sClient.ClientSet.NetworkingV1().NetworkPolicies(ns).List(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	var results []string
+	for _, item := range list.Items {
+		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+			continue
+		}
+		policyTypes := ""
+		for i, pt := range item.Spec.PolicyTypes {
+			if i > 0 {
+				policyTypes += ","
+			}
+			policyTypes += string(pt)
+		}
+		results = append(results, fmt.Sprintf("%s/%s (PolicyTypes: %s)", item.Namespace, item.Name, policyTypes))
+	}
+	return results, nil
+}
+
+func (t *ListResourcesTool) listStorageClasses(ctx context.Context, cs *cluster.ClientSet, filter string, opts metav1.ListOptions) ([]string, error) {
+	list, err := cs.K8sClient.ClientSet.StorageV1().StorageClasses().List(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	var results []string
+	for _, item := range list.Items {
+		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+			continue
+		}
+		isDefault := ""
+		if item.Annotations["storageclass.kubernetes.io/is-default-class"] == "true" {
+			isDefault = " (default)"
+		}
+		results = append(results, fmt.Sprintf("%s (Provisioner: %s)%s", item.Name, item.Provisioner, isDefault))
+	}
+	return results, nil
+}
+
+func (t *ListResourcesTool) listRoles(ctx context.Context, cs *cluster.ClientSet, ns, filter string, opts metav1.ListOptions) ([]string, error) {
+	list, err := cs.K8sClient.ClientSet.RbacV1().Roles(ns).List(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	var results []string
+	for _, item := range list.Items {
+		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+			continue
+		}
+		results = append(results, fmt.Sprintf("%s/%s (Rules: %d)", item.Namespace, item.Name, len(item.Rules)))
+	}
+	return results, nil
+}
+
+func (t *ListResourcesTool) listRoleBindings(ctx context.Context, cs *cluster.ClientSet, ns, filter string, opts metav1.ListOptions) ([]string, error) {
+	list, err := cs.K8sClient.ClientSet.RbacV1().RoleBindings(ns).List(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	var results []string
+	for _, item := range list.Items {
+		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+			continue
+		}
+		results = append(results, fmt.Sprintf("%s/%s (RoleRef: %s, Subjects: %d)",
+			item.Namespace, item.Name, item.RoleRef.Name, len(item.Subjects)))
+	}
+	return results, nil
+}
+
+func (t *ListResourcesTool) listClusterRoles(ctx context.Context, cs *cluster.ClientSet, filter string, opts metav1.ListOptions) ([]string, error) {
+	list, err := cs.K8sClient.ClientSet.RbacV1().ClusterRoles().List(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	var results []string
+	for _, item := range list.Items {
+		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+			continue
+		}
+		results = append(results, fmt.Sprintf("%s (Rules: %d)", item.Name, len(item.Rules)))
+	}
+	return results, nil
+}
+
+func (t *ListResourcesTool) listClusterRoleBindings(ctx context.Context, cs *cluster.ClientSet, filter string, opts metav1.ListOptions) ([]string, error) {
+	list, err := cs.K8sClient.ClientSet.RbacV1().ClusterRoleBindings().List(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	var results []string
+	for _, item := range list.Items {
+		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+			continue
+		}
+		results = append(results, fmt.Sprintf("%s (RoleRef: %s, Subjects: %d)", item.Name, item.RoleRef.Name, len(item.Subjects)))
+	}
+	return results, nil
+}
+
+func (t *ListResourcesTool) listGateways(ctx context.Context, cs *cluster.ClientSet, ns, filter string, opts metav1.ListOptions) ([]string, error) {
+	var list gatewayapiv1.GatewayList
+	if err := cs.K8sClient.List(ctx, &list); err != nil {
+		return nil, err
+	}
+	var results []string
+	for _, item := range list.Items {
+		if ns != "" && item.Namespace != ns {
+			continue
+		}
+		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+			continue
+		}
+		gatewayClassName := string(item.Spec.GatewayClassName)
+		results = append(results, fmt.Sprintf("%s/%s (GatewayClass: %s, Listeners: %d)",
+			item.Namespace, item.Name, gatewayClassName, len(item.Spec.Listeners)))
+	}
+	return results, nil
+}
+
+func (t *ListResourcesTool) listHTTPRoutes(ctx context.Context, cs *cluster.ClientSet, ns, filter string, opts metav1.ListOptions) ([]string, error) {
+	var list gatewayapiv1.HTTPRouteList
+	if err := cs.K8sClient.List(ctx, &list); err != nil {
+		return nil, err
+	}
+	var results []string
+	for _, item := range list.Items {
+		if ns != "" && item.Namespace != ns {
+			continue
+		}
+		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+			continue
+		}
+		parentRefs := len(item.Spec.ParentRefs)
+		results = append(results, fmt.Sprintf("%s/%s (ParentRefs: %d, Rules: %d)",
+			item.Namespace, item.Name, parentRefs, len(item.Spec.Rules)))
 	}
 	return results, nil
 }
