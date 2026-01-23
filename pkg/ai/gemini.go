@@ -62,7 +62,10 @@ func (g *GeminiAdapter) ChatCompletion(ctx context.Context, messages []openai.Ch
 			// or use a generic "Any" schema if Gemini supports it (it doesn't easily).
 			// A better approach for this adapter is to decode the openai JSON schema.
 
-			rawParams, _ := json.Marshal(t.Function.Parameters)
+			rawParams, err := json.Marshal(t.Function.Parameters)
+			if err != nil {
+				return openai.ChatCompletionResponse{}, fmt.Errorf("failed to marshal tool parameters for %s: %w", t.Function.Name, err)
+			}
 			schema, err := convertJSONSchemaToGenAISchema(rawParams)
 			if err != nil {
 				return openai.ChatCompletionResponse{}, fmt.Errorf("failed to convert tool schema for %s: %w", t.Function.Name, err)
@@ -279,7 +282,11 @@ func convertGeminiResponseToOpenAI(resp *genai.GenerateContentResponse) openai.C
 				contentBuilder.WriteString(string(txt))
 			} else if fnCall, ok := part.(genai.FunctionCall); ok {
 				// Convert FunctionCall to ToolCall
-				argsBytes, _ := json.Marshal(fnCall.Args)
+				argsBytes, err := json.Marshal(fnCall.Args)
+				if err != nil {
+					klog.Errorf("Gemini: failed to marshal function args for %s: %v", fnCall.Name, err)
+					argsBytes = []byte("{}")
+				}
 				msg.ToolCalls = append(msg.ToolCalls, openai.ToolCall{
 					ID:   "call_" + fnCall.Name, // Gemini doesn't give IDs, generate one? Or use Name if unique per turn.
 					Type: openai.ToolTypeFunction,
