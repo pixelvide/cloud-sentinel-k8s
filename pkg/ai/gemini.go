@@ -38,6 +38,181 @@ func NewGeminiAdapter(config *AIConfig) (*GeminiAdapter, error) {
 	}, nil
 }
 
+func (g *GeminiAdapter) ChatCompletionStream(ctx context.Context, messages []openai.ChatCompletionMessage, tools []openai.Tool) (chan openai.ChatCompletionStreamResponse, error) {
+	gm := g.client.GenerativeModel(g.model)
+	klog.Infof("Gemini Stream: ChatCompletion items: %d, tools: %d", len(messages), len(tools))
+
+	// Map Tools
+	if len(tools) > 0 {
+		var genaiTools []*genai.Tool
+		functionDecls := []*genai.FunctionDeclaration{}
+
+		for _, t := range tools {
+			if t.Type != openai.ToolTypeFunction || t.Function == nil {
+				continue
+			}
+
+			rawParams, err := json.Marshal(t.Function.Parameters)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal tool parameters for %s: %w", t.Function.Name, err)
+			}
+			schema, err := convertJSONSchemaToGenAISchema(rawParams)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert tool schema for %s: %w", t.Function.Name, err)
+			}
+
+			functionDecls = append(functionDecls, &genai.FunctionDeclaration{
+				Name:        t.Function.Name,
+				Description: t.Function.Description,
+				Parameters:  schema,
+			})
+		}
+		if len(functionDecls) > 0 {
+			genaiTools = append(genaiTools, &genai.Tool{
+				FunctionDeclarations: functionDecls,
+			})
+			gm.Tools = genaiTools
+		}
+	}
+
+	var systemInstruction *genai.Content
+	var history []*genai.Content
+
+	for _, m := range messages {
+		if m.Role == openai.ChatMessageRoleSystem {
+			systemInstruction = &genai.Content{
+				Parts: []genai.Part{genai.Text(m.Content)},
+			}
+			continue
+		}
+
+		role := "user"
+		switch m.Role {
+		case openai.ChatMessageRoleAssistant:
+			role = "model"
+		case openai.ChatMessageRoleTool:
+			role = "user"
+		}
+
+		parts := []genai.Part{}
+		if m.Content != "" && m.Role != openai.ChatMessageRoleTool {
+			parts = append(parts, genai.Text(m.Content))
+		}
+
+		if len(m.ToolCalls) > 0 {
+			for _, tc := range m.ToolCalls {
+				args := map[string]interface{}{}
+				if err := json.Unmarshal([]byte(tc.Function.Arguments), &args); err != nil {
+					args = map[string]interface{}{"args": tc.Function.Arguments}
+				}
+				parts = append(parts, genai.FunctionCall{
+					Name: tc.Function.Name,
+					Args: args,
+				})
+			}
+		}
+
+		if m.Role == openai.ChatMessageRoleTool {
+			name := findToolName(messages, m.ToolCallID)
+			var response map[string]interface{}
+			if err := json.Unmarshal([]byte(m.Content), &response); err != nil {
+				response = map[string]interface{}{"result": m.Content}
+			}
+			parts = append(parts, genai.FunctionResponse{
+				Name:     name,
+				Response: response,
+			})
+		}
+
+		if len(parts) > 0 {
+			if len(history) > 0 && history[len(history)-1].Role == role {
+				history[len(history)-1].Parts = append(history[len(history)-1].Parts, parts...)
+			} else {
+				history = append(history, &genai.Content{
+					Role:  role,
+					Parts: parts,
+				})
+			}
+		}
+	}
+
+	if systemInstruction != nil {
+		gm.SystemInstruction = systemInstruction
+	}
+
+	if len(history) == 0 {
+		return nil, fmt.Errorf("gemini stream: no messages to send")
+	}
+
+	cs := gm.StartChat()
+	cs.History = history[:len(history)-1]
+	lastMsg := history[len(history)-1]
+
+	streamChan := make(chan openai.ChatCompletionStreamResponse, 100)
+
+	go func() {
+		defer close(streamChan)
+		iter := cs.SendMessageStream(ctx, lastMsg.Parts...)
+		for {
+			resp, err := iter.Next()
+			if err != nil {
+				if err == context.Canceled || strings.Contains(err.Error(), "iterator done") || strings.Contains(err.Error(), "EOF") {
+					break
+				}
+				klog.Errorf("Gemini Stream error: %v", err)
+				return
+			}
+
+			// Convert and send
+			sResp := convertGeminiStreamResponseToOpenAI(resp)
+			streamChan <- sResp
+		}
+	}()
+
+	return streamChan, nil
+}
+
+func convertGeminiStreamResponseToOpenAI(resp *genai.GenerateContentResponse) openai.ChatCompletionStreamResponse {
+	choices := []openai.ChatCompletionStreamChoice{}
+
+	for i, cand := range resp.Candidates {
+		delta := openai.ChatCompletionStreamChoiceDelta{
+			Role: openai.ChatMessageRoleAssistant,
+		}
+
+		var contentBuilder strings.Builder
+		for _, part := range cand.Content.Parts {
+			if txt, ok := part.(genai.Text); ok {
+				contentBuilder.WriteString(string(txt))
+			} else if fnCall, ok := part.(genai.FunctionCall); ok {
+				argsBytes, _ := json.Marshal(fnCall.Args)
+				delta.ToolCalls = append(delta.ToolCalls, openai.ToolCall{
+					ID:   "call_" + fnCall.Name,
+					Type: openai.ToolTypeFunction,
+					Function: openai.FunctionCall{
+						Name:      fnCall.Name,
+						Arguments: string(argsBytes),
+					},
+				})
+			}
+		}
+		delta.Content = contentBuilder.String()
+
+		choices = append(choices, openai.ChatCompletionStreamChoice{
+			Index: i,
+			Delta: delta,
+		})
+	}
+
+	return openai.ChatCompletionStreamResponse{
+		ID:      "gemini-stream-resp",
+		Object:  "chat.completion.chunk",
+		Created: 0,
+		Model:   "gemini",
+		Choices: choices,
+	}
+}
+
 func (g *GeminiAdapter) ChatCompletion(ctx context.Context, messages []openai.ChatCompletionMessage, tools []openai.Tool) (openai.ChatCompletionResponse, error) {
 	gm := g.client.GenerativeModel(g.model)
 	klog.Infof("Gemini: ChatCompletion items: %d, tools: %d", len(messages), len(tools))

@@ -50,3 +50,33 @@ func (c *OpenAIAdapter) ChatCompletion(ctx context.Context, messages []openai.Ch
 	}
 	return c.client.CreateChatCompletion(ctx, req)
 }
+func (c *OpenAIAdapter) ChatCompletionStream(ctx context.Context, messages []openai.ChatCompletionMessage, tools []openai.Tool) (chan openai.ChatCompletionStreamResponse, error) {
+	req := openai.ChatCompletionRequest{
+		Model:    c.model,
+		Messages: messages,
+		Tools:    tools,
+		Stream:   true,
+	}
+
+	stream, err := c.client.CreateChatCompletionStream(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	streamChan := make(chan openai.ChatCompletionStreamResponse, 100)
+
+	go func() {
+		defer close(streamChan)
+		defer stream.Close()
+
+		for {
+			resp, err := stream.Recv()
+			if err != nil {
+				return
+			}
+			streamChan <- resp
+		}
+	}()
+
+	return streamChan, nil
+}

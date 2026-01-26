@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -205,7 +206,7 @@ func buildMessageHistory(session model.AIChatSession, userMessage string) []open
 	// System Prompt
 	messages = append(messages, openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleSystem,
-		Content: "You are a helpful Kubernetes assistant inside the Cloud Sentinel K8s dashboard. You have access to the cluster via tools. You are specifically designed to assist with Kubernetes, DevOps, and cluster management tasks. If a user asks a question that is entirely unrelated to these topics (e.g., general knowledge, weather, personal advice), politely inform them that you are only able to help with cluster management and DevOps related queries within the Cloud Sentinel context. If the user asks for resources but doesn't provide a full name, use the 'list_resources' tool with the 'name_filter' parameter to find what they're looking for. If you need confirmation for a destructive action (like scaling), the tool will enforce it. Be concise. If the tool returns an error about missing cluster context, ask the user to select a cluster in the dashboard.",
+		Content: "You are a helpful Kubernetes assistant inside the Cloud Sentinel K8s dashboard. You have access to the cluster via tools. You are specifically designed to assist with Kubernetes, DevOps, and cluster management tasks. If a user asks a question that is entirely unrelated to these topics (e.g., general knowledge, weather, personal advice), politely inform them that you are only able to help with cluster management and DevOps related queries within the Cloud Sentinel context. If the user asks for resources but doesn't provide a full name, use the 'list_resources' tool with the 'name_filter' parameter to find what they're looking for. If you need confirmation for a destructive action (like scaling), the tool will enforce it. Before giving your final answer, provide your internal reasoning or 'thinking' process enclosed in <thought> tags. This will help the user understand your logic. After the thought block, provide the final response for the user. Use markdown for your final response, including bold text for emphasis and tables for structured data. Be concise. If the tool returns an error about missing cluster context, ask the user to select a cluster in the dashboard.",
 	})
 
 	for _, m := range session.Messages {
@@ -276,9 +277,8 @@ func executeAIChatLoop(ctx context.Context, aiClient ai.AIClient, session *model
 
 		// Save assistant message
 		dbMsg := model.AIChatMessage{
-			SessionID: session.ID,
 			Role:      msg.Role,
-			Content:   msg.Content,
+			Content:   stripThought(msg.Content),
 			CreatedAt: time.Now(),
 		}
 		if len(msg.ToolCalls) > 0 {
@@ -331,6 +331,131 @@ func executeAIChatLoop(ctx context.Context, aiClient ai.AIClient, session *model
 		}
 	}
 	return finalResponse, nil
+}
+
+func stripThought(content string) string {
+	thoughtRegex := regexp.MustCompile(`(?s)<thought>.*?</thought>`)
+	return strings.TrimSpace(thoughtRegex.ReplaceAllString(content, ""))
+}
+
+func executeAIChatStreamLoop(ctx context.Context, aiClient ai.AIClient, session *model.AIChatSession, messages []openai.ChatCompletionMessage, toolDefs []openai.Tool, registry *tools.Registry, toolCtx context.Context, c *gin.Context) (string, error) {
+	maxIterations := 5
+	var finalContent strings.Builder
+
+	for i := 0; i < maxIterations; i++ {
+		stream, err := aiClient.ChatCompletionStream(ctx, messages, toolDefs)
+		if err != nil {
+			return "", fmt.Errorf("AI Provider error: %w", err)
+		}
+
+		var currentAssistantMessage strings.Builder
+		var currentToolCalls []openai.ToolCall
+
+		for resp := range stream {
+			if len(resp.Choices) == 0 {
+				continue
+			}
+			choice := resp.Choices[0]
+			delta := choice.Delta
+
+			if delta.Content != "" {
+				currentAssistantMessage.WriteString(delta.Content)
+				finalContent.WriteString(delta.Content)
+				// Send chunk via SSE
+				c.SSEvent("message", gin.H{"content": delta.Content})
+				c.Writer.Flush()
+			}
+
+			if len(delta.ToolCalls) > 0 {
+				// Handle tool call chunks
+				for _, tc := range delta.ToolCalls {
+					if tc.Index != nil {
+						idx := *tc.Index
+						for len(currentToolCalls) <= idx {
+							currentToolCalls = append(currentToolCalls, openai.ToolCall{})
+						}
+						if tc.ID != "" {
+							currentToolCalls[idx].ID = tc.ID
+						}
+						if tc.Function.Name != "" {
+							currentToolCalls[idx].Function.Name += tc.Function.Name
+						}
+						if tc.Function.Arguments != "" {
+							currentToolCalls[idx].Function.Arguments += tc.Function.Arguments
+						}
+					} else {
+						currentToolCalls = append(currentToolCalls, tc)
+					}
+				}
+			}
+		}
+
+		// Construct assistant message
+		msg := openai.ChatCompletionMessage{
+			Role:      openai.ChatMessageRoleAssistant,
+			Content:   currentAssistantMessage.String(),
+			ToolCalls: currentToolCalls,
+		}
+		messages = append(messages, msg)
+
+		// Save assistant message to DB (excluding reasoning)
+		dbMsg := model.AIChatMessage{
+			SessionID: session.ID,
+			Role:      msg.Role,
+			Content:   stripThought(msg.Content),
+			CreatedAt: time.Now(),
+		}
+		if len(msg.ToolCalls) > 0 {
+			tcBytes, err := json.Marshal(msg.ToolCalls)
+			if err == nil {
+				dbMsg.ToolCalls = string(tcBytes)
+			}
+		}
+		model.DB.Create(&dbMsg)
+
+		if len(currentToolCalls) > 0 {
+			// Notify user about tool execution
+			c.SSEvent("status", gin.H{"status": "Executing tools..."})
+			c.Writer.Flush()
+
+			for _, tc := range currentToolCalls {
+				klog.Infof("AI executing tool: %s args: %s", tc.Function.Name, tc.Function.Arguments)
+
+				var result string
+				if val := toolCtx.Value(tools.ClientSetKey{}); val == nil {
+					result = "Error: No active cluster context. Please select a cluster in the dashboard."
+				} else {
+					res, err := registry.Execute(toolCtx, tc.Function.Name, tc.Function.Arguments)
+					if err != nil {
+						klog.Errorf("AI tool %s failed: %v", tc.Function.Name, err)
+						result = fmt.Sprintf("Error executing tool: %v", err)
+					} else {
+						result = res
+					}
+				}
+
+				// Append tool result
+				toolMsg := openai.ChatCompletionMessage{
+					Role:       openai.ChatMessageRoleTool,
+					Content:    result,
+					ToolCallID: tc.ID,
+				}
+				messages = append(messages, toolMsg)
+
+				model.DB.Create(&model.AIChatMessage{
+					SessionID: session.ID,
+					Role:      openai.ChatMessageRoleTool,
+					Content:   result,
+					ToolID:    tc.ID,
+					CreatedAt: time.Now(),
+				})
+			}
+			continue
+		} else {
+			break
+		}
+	}
+	return finalContent.String(), nil
 }
 
 func AIChat(c *gin.Context) {
@@ -415,17 +540,26 @@ func AIChat(c *gin.Context) {
 		toolCtx = context.WithValue(toolCtx, tools.ClientSetKey{}, clientSet)
 	}
 
-	finalResponse, err := executeAIChatLoop(c.Request.Context(), aiClient, session, openAIMessages, toolDefs, registry, toolCtx)
+	// Set headers for SSE
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+	c.Header("Transfer-Encoding", "chunked")
+
+	// Send initial session ID
+	c.SSEvent("session", gin.H{"sessionID": session.ID})
+	c.Writer.Flush()
+
+	_, err = executeAIChatStreamLoop(c.Request.Context(), aiClient, session, openAIMessages, toolDefs, registry, toolCtx, c)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.SSEvent("error", gin.H{"error": err.Error()})
+		c.Writer.Flush()
 		return
 	}
 
 	// Update session timestamp
 	model.DB.Model(&session).Update("updated_at", time.Now())
 
-	c.JSON(http.StatusOK, ChatResponse{
-		SessionID: session.ID,
-		Message:   finalResponse,
-	})
+	c.SSEvent("done", gin.H{})
+	c.Writer.Flush()
 }
