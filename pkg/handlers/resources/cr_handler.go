@@ -3,6 +3,7 @@ package resources
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -95,7 +96,30 @@ func (h *CRHandler) List(c *gin.Context) {
 	if crd.Spec.Scope == apiextensionsv1.NamespaceScoped {
 		namespace := c.Param("namespace")
 		if namespace != "" && namespace != "_all" {
-			opts.Namespace = namespace
+			// Handle comma-separated namespaces
+			namespaces := strings.Split(namespace, ",")
+			if len(namespaces) > 1 {
+				// Multi-namespace: aggregate results
+				var allItems []unstructured.Unstructured
+				for _, ns := range namespaces {
+					ns = strings.TrimSpace(ns)
+					if ns == "" {
+						continue
+					}
+					nsOpts := &client.ListOptions{Namespace: ns}
+					nsList := &unstructured.UnstructuredList{}
+					nsList.SetGroupVersionKind(crList.GroupVersionKind())
+					if err := cs.K8sClient.List(ctx, nsList, nsOpts); err != nil {
+						c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+						return
+					}
+					allItems = append(allItems, nsList.Items...)
+				}
+				crList.Items = allItems
+				c.JSON(http.StatusOK, crList)
+				return
+			}
+			opts.Namespace = namespaces[0]
 		}
 	}
 
