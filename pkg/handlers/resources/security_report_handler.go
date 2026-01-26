@@ -35,6 +35,24 @@ var clusterVulnerabilityReportKind = schema.GroupVersionKind{
 	Kind:    "ClusterVulnerabilityReport",
 }
 
+var configAuditReportKind = schema.GroupVersionKind{
+	Group:   "aquasecurity.github.io",
+	Version: "v1alpha1",
+	Kind:    "ConfigAuditReport",
+}
+
+var exposedSecretReportKind = schema.GroupVersionKind{
+	Group:   "aquasecurity.github.io",
+	Version: "v1alpha1",
+	Kind:    "ExposedSecretReport",
+}
+
+var clusterComplianceReportKind = schema.GroupVersionKind{
+	Group:   "aquasecurity.github.io",
+	Version: "v1alpha1",
+	Kind:    "ClusterComplianceReport",
+}
+
 // CheckStatus checks if the Trivy Operator is installed by looking for the CRD
 func (h *SecurityReportHandler) CheckStatus(c *gin.Context) {
 	cs := c.MustGet("cluster").(*cluster.ClientSet)
@@ -218,89 +236,143 @@ func (h *SecurityReportHandler) ListReports(c *gin.Context) {
 func (h *SecurityReportHandler) GetClusterSummary(c *gin.Context) {
 	cs := c.MustGet("cluster").(*cluster.ClientSet)
 
-	// Check CRD
-	var crd apiextensionsv1.CustomResourceDefinition
-	if err := cs.K8sClient.Get(c.Request.Context(), client.ObjectKey{Name: "vulnerabilityreports.aquasecurity.github.io"}, &crd); err != nil {
-		c.JSON(http.StatusOK, model.ClusterSecuritySummary{})
+	summary := model.ClusterSecuritySummary{}
+
+	// 1. Aggregate VulnerabilityReports
+	var vulnCRD apiextensionsv1.CustomResourceDefinition
+	if err := cs.K8sClient.Get(c.Request.Context(), client.ObjectKey{Name: "vulnerabilityreports.aquasecurity.github.io"}, &vulnCRD); err == nil {
+		var vulnList unstructured.UnstructuredList
+		vulnList.SetGroupVersionKind(vulnerabilityReportKind)
+
+		if err := cs.K8sClient.List(c.Request.Context(), &vulnList); err == nil {
+			summary.ScannedImages = len(vulnList.Items)
+
+			for _, u := range vulnList.Items {
+				var report model.VulnerabilityReport
+				if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &report); err != nil {
+					continue
+				}
+
+				s := report.Report.Summary
+				summary.TotalVulnerabilities.CriticalCount += s.CriticalCount
+				summary.TotalVulnerabilities.HighCount += s.HighCount
+				summary.TotalVulnerabilities.MediumCount += s.MediumCount
+				summary.TotalVulnerabilities.LowCount += s.LowCount
+				summary.TotalVulnerabilities.UnknownCount += s.UnknownCount
+
+				if s.CriticalCount > 0 || s.HighCount > 0 || s.MediumCount > 0 || s.LowCount > 0 {
+					summary.VulnerableImages++
+				}
+			}
+		}
+	}
+
+	// 2. Aggregate ConfigAuditReports
+	var configCRD apiextensionsv1.CustomResourceDefinition
+	if err := cs.K8sClient.Get(c.Request.Context(), client.ObjectKey{Name: "configauditreports.aquasecurity.github.io"}, &configCRD); err == nil {
+		var configList unstructured.UnstructuredList
+		configList.SetGroupVersionKind(configAuditReportKind)
+
+		if err := cs.K8sClient.List(c.Request.Context(), &configList); err == nil {
+			for _, u := range configList.Items {
+				var report model.ConfigAuditReport
+				if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &report); err != nil {
+					continue
+				}
+
+				s := report.Report.Summary
+				summary.TotalConfigAuditIssues.CriticalCount += s.CriticalCount
+				summary.TotalConfigAuditIssues.HighCount += s.HighCount
+				summary.TotalConfigAuditIssues.MediumCount += s.MediumCount
+				summary.TotalConfigAuditIssues.LowCount += s.LowCount
+			}
+		}
+	}
+
+	// 3. Aggregate ExposedSecretReports
+	var secretCRD apiextensionsv1.CustomResourceDefinition
+	if err := cs.K8sClient.Get(c.Request.Context(), client.ObjectKey{Name: "exposedsecretreports.aquasecurity.github.io"}, &secretCRD); err == nil {
+		var secretList unstructured.UnstructuredList
+		secretList.SetGroupVersionKind(exposedSecretReportKind)
+
+		if err := cs.K8sClient.List(c.Request.Context(), &secretList); err == nil {
+			for _, u := range secretList.Items {
+				var report model.ExposedSecretReport
+				if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &report); err != nil {
+					continue
+				}
+
+				s := report.Report.Summary
+				summary.TotalExposedSecrets.CriticalCount += s.CriticalCount
+				summary.TotalExposedSecrets.HighCount += s.HighCount
+				summary.TotalExposedSecrets.MediumCount += s.MediumCount
+				summary.TotalExposedSecrets.LowCount += s.LowCount
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, summary)
+}
+
+// GetTopVulnerableWorkloads fetches workloads with most vulnerabilities
+func (h *SecurityReportHandler) GetTopVulnerableWorkloads(c *gin.Context) {
+	cs := c.MustGet("cluster").(*cluster.ClientSet)
+
+	var vulnCRD apiextensionsv1.CustomResourceDefinition
+	if err := cs.K8sClient.Get(c.Request.Context(), client.ObjectKey{Name: "vulnerabilityreports.aquasecurity.github.io"}, &vulnCRD); err != nil {
+		c.JSON(http.StatusOK, model.WorkloadSummaryList{Items: []model.WorkloadSummary{}})
 		return
 	}
 
-	var list unstructured.UnstructuredList
-	list.SetGroupVersionKind(vulnerabilityReportKind)
+	var vulnList unstructured.UnstructuredList
+	vulnList.SetGroupVersionKind(vulnerabilityReportKind)
 
-	if err := cs.K8sClient.List(c.Request.Context(), &list); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err := cs.K8sClient.List(c.Request.Context(), &vulnList); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to list vulnerability reports: %v", err)})
 		return
 	}
 
-	summary := model.ClusterSecuritySummary{
-		ScannedImages: len(list.Items),
-	}
+	workloadMap := make(map[string]*model.WorkloadSummary)
 
-	for _, u := range list.Items {
+	for _, u := range vulnList.Items {
 		var report model.VulnerabilityReport
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &report); err != nil {
 			continue
 		}
 
 		s := report.Report.Summary
-		summary.TotalVulnerabilities.CriticalCount += s.CriticalCount
-		summary.TotalVulnerabilities.HighCount += s.HighCount
-		summary.TotalVulnerabilities.MediumCount += s.MediumCount
-		summary.TotalVulnerabilities.LowCount += s.LowCount
-		summary.TotalVulnerabilities.UnknownCount += s.UnknownCount
 
-		if s.CriticalCount > 0 || s.HighCount > 0 || s.MediumCount > 0 || s.LowCount > 0 {
-			summary.VulnerableImages++
-		}
-	}
-
-	// 2. Aggregate by Workload for Top List
-	workloadMap := make(map[string]*model.WorkloadSummary)
-
-	for _, u := range list.Items {
+		// Aggregate by workload
 		lbls := u.GetLabels()
 		kind := lbls["trivy-operator.resource.kind"]
 		name := lbls["trivy-operator.resource.name"]
 		namespace := u.GetNamespace()
 
-		if kind == "" || name == "" {
-			continue
-		}
-
-		key := fmt.Sprintf("%s/%s/%s", namespace, kind, name)
-		if _, exists := workloadMap[key]; !exists {
-			workloadMap[key] = &model.WorkloadSummary{
-				Namespace: namespace,
-				Kind:      kind,
-				Name:      name,
+		if kind != "" && name != "" {
+			key := fmt.Sprintf("%s/%s/%s", namespace, kind, name)
+			if _, exists := workloadMap[key]; !exists {
+				workloadMap[key] = &model.WorkloadSummary{
+					Namespace: namespace,
+					Kind:      kind,
+					Name:      name,
+				}
 			}
+			w := workloadMap[key]
+			w.Vulnerabilities.CriticalCount += s.CriticalCount
+			w.Vulnerabilities.HighCount += s.HighCount
+			w.Vulnerabilities.MediumCount += s.MediumCount
+			w.Vulnerabilities.LowCount += s.LowCount
+			w.Vulnerabilities.UnknownCount += s.UnknownCount
 		}
-
-		// Extract summary from unstructured again (or reuse if I had stored it, but parsing twice is fine for now/low scale)
-		var report model.VulnerabilityReport
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &report); err != nil {
-			continue
-		}
-		s := report.Report.Summary
-
-		w := workloadMap[key]
-		w.Vulnerabilities.CriticalCount += s.CriticalCount
-		w.Vulnerabilities.HighCount += s.HighCount
-		w.Vulnerabilities.MediumCount += s.MediumCount
-		w.Vulnerabilities.LowCount += s.LowCount
-		w.Vulnerabilities.UnknownCount += s.UnknownCount
 	}
 
-	// Converts map to slice
+	// Convert map to slice and sort
 	var workloads []model.WorkloadSummary
 	for _, w := range workloadMap {
 		workloads = append(workloads, *w)
 	}
 
-	// Sort
 	sort.Slice(workloads, func(i, j int) bool {
-		// Critical > High > Medium > Low
 		if workloads[i].Vulnerabilities.CriticalCount != workloads[j].Vulnerabilities.CriticalCount {
 			return workloads[i].Vulnerabilities.CriticalCount > workloads[j].Vulnerabilities.CriticalCount
 		}
@@ -313,19 +385,231 @@ func (h *SecurityReportHandler) GetClusterSummary(c *gin.Context) {
 		return workloads[i].Vulnerabilities.LowCount > workloads[j].Vulnerabilities.LowCount
 	})
 
-	// Take top 10
-	if len(workloads) > 10 {
-		summary.TopVulnerableWorkloads = workloads[:10]
-	} else {
-		summary.TopVulnerableWorkloads = workloads
+	limit := 10
+	if len(workloads) < limit {
+		limit = len(workloads)
 	}
 
-	c.JSON(http.StatusOK, summary)
+	c.JSON(http.StatusOK, model.WorkloadSummaryList{Items: workloads[:limit]})
+}
+
+// GetTopMisconfiguredWorkloads fetches workloads with most misconfigurations
+func (h *SecurityReportHandler) GetTopMisconfiguredWorkloads(c *gin.Context) {
+	cs := c.MustGet("cluster").(*cluster.ClientSet)
+
+	var configCRD apiextensionsv1.CustomResourceDefinition
+	if err := cs.K8sClient.Get(c.Request.Context(), client.ObjectKey{Name: "configauditreports.aquasecurity.github.io"}, &configCRD); err != nil {
+		c.JSON(http.StatusOK, model.WorkloadSummaryList{Items: []model.WorkloadSummary{}})
+		return
+	}
+
+	var configList unstructured.UnstructuredList
+	configList.SetGroupVersionKind(configAuditReportKind)
+
+	if err := cs.K8sClient.List(c.Request.Context(), &configList); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to list config audit reports: %v", err)})
+		return
+	}
+
+	misconfiguredMap := make(map[string]*model.WorkloadSummary)
+
+	for _, u := range configList.Items {
+		var report model.ConfigAuditReport
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &report); err != nil {
+			continue
+		}
+
+		s := report.Report.Summary
+
+		// Aggregate by workload
+		lbls := u.GetLabels()
+		kind := lbls["trivy-operator.resource.kind"]
+		name := lbls["trivy-operator.resource.name"]
+		namespace := u.GetNamespace()
+
+		if kind != "" && name != "" {
+			key := fmt.Sprintf("%s/%s/%s", namespace, kind, name)
+			if _, exists := misconfiguredMap[key]; !exists {
+				misconfiguredMap[key] = &model.WorkloadSummary{
+					Namespace: namespace,
+					Kind:      kind,
+					Name:      name,
+				}
+			}
+			w := misconfiguredMap[key]
+			w.Vulnerabilities.CriticalCount += s.CriticalCount
+			w.Vulnerabilities.HighCount += s.HighCount
+			w.Vulnerabilities.MediumCount += s.MediumCount
+			w.Vulnerabilities.LowCount += s.LowCount
+		}
+	}
+
+	// Convert map to slice and sort
+	var misconfigured []model.WorkloadSummary
+	for _, w := range misconfiguredMap {
+		// Only include workloads with issues
+		if w.Vulnerabilities.CriticalCount > 0 || w.Vulnerabilities.HighCount > 0 ||
+			w.Vulnerabilities.MediumCount > 0 || w.Vulnerabilities.LowCount > 0 {
+			misconfigured = append(misconfigured, *w)
+		}
+	}
+
+	sort.Slice(misconfigured, func(i, j int) bool {
+		if misconfigured[i].Vulnerabilities.CriticalCount != misconfigured[j].Vulnerabilities.CriticalCount {
+			return misconfigured[i].Vulnerabilities.CriticalCount > misconfigured[j].Vulnerabilities.CriticalCount
+		}
+		if misconfigured[i].Vulnerabilities.HighCount != misconfigured[j].Vulnerabilities.HighCount {
+			return misconfigured[i].Vulnerabilities.HighCount > misconfigured[j].Vulnerabilities.HighCount
+		}
+		return misconfigured[i].Vulnerabilities.MediumCount > misconfigured[j].Vulnerabilities.MediumCount
+	})
+
+	limit := 10
+	if len(misconfigured) < limit {
+		limit = len(misconfigured)
+	}
+
+	c.JSON(http.StatusOK, model.WorkloadSummaryList{Items: misconfigured[:limit]})
+}
+
+// ListConfigAuditReports fetches config audit reports for a workload
+func (h *SecurityReportHandler) ListConfigAuditReports(c *gin.Context) {
+	cs := c.MustGet("cluster").(*cluster.ClientSet)
+	namespace := c.Query("namespace")
+	workloadKind := c.Query("workloadKind")
+	workloadName := c.Query("workloadName")
+
+	if namespace == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "namespace is required"})
+		return
+	}
+
+	// Check if CRD exists
+	var crd apiextensionsv1.CustomResourceDefinition
+	if err := cs.K8sClient.Get(c.Request.Context(), client.ObjectKey{Name: "configauditreports.aquasecurity.github.io"}, &crd); err != nil {
+		c.JSON(http.StatusOK, model.ConfigAuditReportList{Items: []model.ConfigAuditReport{}})
+		return
+	}
+
+	var list unstructured.UnstructuredList
+	list.SetGroupVersionKind(configAuditReportKind)
+
+	opts := []client.ListOption{client.InNamespace(namespace)}
+
+	if workloadKind != "" && workloadName != "" {
+		labels := client.MatchingLabels{
+			"trivy-operator.resource.kind": workloadKind,
+			"trivy-operator.resource.name": workloadName,
+		}
+		opts = append(opts, labels)
+	}
+
+	if err := cs.K8sClient.List(c.Request.Context(), &list, opts...); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to list config audit reports: %v", err)})
+		return
+	}
+
+	reports := make([]model.ConfigAuditReport, 0, len(list.Items))
+	for _, u := range list.Items {
+		var report model.ConfigAuditReport
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &report); err != nil {
+			continue
+		}
+		reports = append(reports, report)
+	}
+
+	c.JSON(http.StatusOK, model.ConfigAuditReportList{Items: reports})
+}
+
+// ListExposedSecretReports fetches exposed secret reports for a workload
+func (h *SecurityReportHandler) ListExposedSecretReports(c *gin.Context) {
+	cs := c.MustGet("cluster").(*cluster.ClientSet)
+	namespace := c.Query("namespace")
+	workloadKind := c.Query("workloadKind")
+	workloadName := c.Query("workloadName")
+
+	if namespace == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "namespace is required"})
+		return
+	}
+
+	// Check if CRD exists
+	var crd apiextensionsv1.CustomResourceDefinition
+	if err := cs.K8sClient.Get(c.Request.Context(), client.ObjectKey{Name: "exposedsecretreports.aquasecurity.github.io"}, &crd); err != nil {
+		c.JSON(http.StatusOK, model.ExposedSecretReportList{Items: []model.ExposedSecretReport{}})
+		return
+	}
+
+	var list unstructured.UnstructuredList
+	list.SetGroupVersionKind(exposedSecretReportKind)
+
+	opts := []client.ListOption{client.InNamespace(namespace)}
+
+	if workloadKind != "" && workloadName != "" {
+		labels := client.MatchingLabels{
+			"trivy-operator.resource.kind": workloadKind,
+			"trivy-operator.resource.name": workloadName,
+		}
+		opts = append(opts, labels)
+	}
+
+	if err := cs.K8sClient.List(c.Request.Context(), &list, opts...); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to list exposed secret reports: %v", err)})
+		return
+	}
+
+	reports := make([]model.ExposedSecretReport, 0, len(list.Items))
+	for _, u := range list.Items {
+		var report model.ExposedSecretReport
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &report); err != nil {
+			continue
+		}
+		reports = append(reports, report)
+	}
+
+	c.JSON(http.StatusOK, model.ExposedSecretReportList{Items: reports})
+}
+
+// ListComplianceReports fetches ClusterComplianceReports (cluster-scoped)
+func (h *SecurityReportHandler) ListComplianceReports(c *gin.Context) {
+	cs := c.MustGet("cluster").(*cluster.ClientSet)
+
+	// Check if CRD exists
+	var crd apiextensionsv1.CustomResourceDefinition
+	if err := cs.K8sClient.Get(c.Request.Context(), client.ObjectKey{Name: "clustercompliancereports.aquasecurity.github.io"}, &crd); err != nil {
+		c.JSON(http.StatusOK, model.ClusterComplianceReportList{Items: []model.ClusterComplianceReport{}})
+		return
+	}
+
+	var list unstructured.UnstructuredList
+	list.SetGroupVersionKind(clusterComplianceReportKind)
+
+	// ClusterComplianceReport is cluster-scoped, no namespace
+	if err := cs.K8sClient.List(c.Request.Context(), &list); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to list compliance reports: %v", err)})
+		return
+	}
+
+	reports := make([]model.ClusterComplianceReport, 0, len(list.Items))
+	for _, u := range list.Items {
+		var report model.ClusterComplianceReport
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &report); err != nil {
+			continue
+		}
+		reports = append(reports, report)
+	}
+
+	c.JSON(http.StatusOK, model.ClusterComplianceReportList{Items: reports})
 }
 
 func (h *SecurityReportHandler) RegisterRoutes(group *gin.RouterGroup) {
 	securityParams := group.Group("/security")
 	securityParams.GET("/status", h.CheckStatus)
 	securityParams.GET("/reports", h.ListReports)
+	securityParams.GET("/config-audit/reports", h.ListConfigAuditReports)
+	securityParams.GET("/secrets/reports", h.ListExposedSecretReports)
+	securityParams.GET("/compliance/reports", h.ListComplianceReports)
 	securityParams.GET("/summary", h.GetClusterSummary)
+	securityParams.GET("/reports/top-vulnerable", h.GetTopVulnerableWorkloads)
+	securityParams.GET("/reports/top-misconfigured", h.GetTopMisconfiguredWorkloads)
 }

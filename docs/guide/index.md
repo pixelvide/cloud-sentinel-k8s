@@ -47,6 +47,8 @@ Cloud Sentinel K8s is a lightweight, modern Kubernetes dashboard that provides a
 - 🛡️ **OAuth Integration** - Supports OAuth management in the UI
 - 🔒 **Role-Based Access Control** - Supports user permission management in the UI
 - 👥 **User Management** - Comprehensive user management and role allocation in the UI
+- 🔍 **Security Scanning** - Integration with Trivy Operator for vulnerability, config audit, and secret scanning
+- 📊 **Security Dashboard** - Cluster-wide security posture overview with severity breakdowns
 
 ## Getting Started
 

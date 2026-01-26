@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { ExternalLink, ShieldAlert, ShieldCheck } from "lucide-react"
+import { ExternalLink, ShieldAlert, ShieldCheck, Bug, Settings, Key } from "lucide-react"
 import { useState } from "react"
 import { securityApi, VulnerabilityReport, Vulnerability } from "@/api/security"
 import { Badge } from "@/components/ui/badge"
@@ -15,6 +15,9 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ConfigAuditTab } from "./config-audit-tab"
+import { ExposedSecretsTab } from "./exposed-secrets-tab"
 
 interface SecurityTabProps {
     namespace?: string
@@ -23,19 +26,9 @@ interface SecurityTabProps {
 }
 
 export function SecurityTab({ namespace, kind, name }: SecurityTabProps) {
-    const [searchTerm, setSearchTerm] = useState("")
-
     const { data: status } = useQuery({
         queryKey: ["security", "status"],
         queryFn: () => securityApi.getStatus(),
-    })
-
-    // Map K8s kind to Trivy resource kind (usually the same, but case sensitivity might matter)
-    // Trivy Operator typically uses the exact Kind string found in metadata (e.g. "Pod", "Deployment")
-    const { data: reports, isLoading } = useQuery({
-        queryKey: ["security", "reports", namespace, kind, name],
-        queryFn: () => securityApi.getReports(namespace, kind, name),
-        enabled: !!status?.trivyInstalled,
     })
 
     if (status && !status.trivyInstalled) {
@@ -60,8 +53,60 @@ export function SecurityTab({ namespace, kind, name }: SecurityTabProps) {
         )
     }
 
+    return (
+        <div className="space-y-6">
+            <Tabs defaultValue="vulnerabilities" className="w-full">
+                <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+                    <TabsTrigger value="vulnerabilities" className="flex items-center gap-2">
+                        <Bug className="h-4 w-4" />
+                        <span className="hidden sm:inline">Vulnerabilities</span>
+                        <span className="sm:hidden">CVEs</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="config-audit" className="flex items-center gap-2">
+                        <Settings className="h-4 w-4" />
+                        <span className="hidden sm:inline">Config Audit</span>
+                        <span className="sm:hidden">Config</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="secrets" className="flex items-center gap-2">
+                        <Key className="h-4 w-4" />
+                        <span className="hidden sm:inline">Secrets</span>
+                        <span className="sm:hidden">Secrets</span>
+                    </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="vulnerabilities" className="mt-6">
+                    <VulnerabilitiesContent namespace={namespace} kind={kind} name={name} />
+                </TabsContent>
+
+                <TabsContent value="config-audit" className="mt-6">
+                    <ConfigAuditTab namespace={namespace} kind={kind} name={name} />
+                </TabsContent>
+
+                <TabsContent value="secrets" className="mt-6">
+                    <ExposedSecretsTab namespace={namespace} kind={kind} name={name} />
+                </TabsContent>
+            </Tabs>
+        </div>
+    )
+}
+
+// Extracted the vulnerability content into its own component for cleaner code
+function VulnerabilitiesContent({ namespace, kind, name }: { namespace?: string; kind: string; name: string }) {
+    const [searchTerm, setSearchTerm] = useState("")
+
+    const { data: status } = useQuery({
+        queryKey: ["security", "status"],
+        queryFn: () => securityApi.getStatus(),
+    })
+
+    const { data: reports, isLoading } = useQuery({
+        queryKey: ["security", "reports", namespace, kind, name],
+        queryFn: () => securityApi.getReports(namespace, kind, name),
+        enabled: !!status?.trivyInstalled,
+    })
+
     if (isLoading) {
-        return <div className="p-6 text-center text-muted-foreground">Loading security reports...</div>
+        return <div className="p-6 text-center text-muted-foreground">Loading vulnerability reports...</div>
     }
 
     if (!reports?.items || reports.items.length === 0) {
@@ -70,7 +115,7 @@ export function SecurityTab({ namespace, kind, name }: SecurityTabProps) {
                 <div className="bg-secondary p-3 rounded-full mb-4">
                     <ShieldCheck className="h-8 w-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-semibold text-foreground">No Security Reports Found</h3>
+                <h3 className="text-lg font-semibold text-foreground">No Vulnerability Reports Found</h3>
                 <p className="text-sm text-muted-foreground mt-2 max-w-sm">
                     Trivy Operator hasn't scanned this resource yet, or no vulnerabilities were found.
                     Check if the operator is running and configured to scan this namespace.

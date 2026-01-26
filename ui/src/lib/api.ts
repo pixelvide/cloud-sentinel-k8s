@@ -947,13 +947,13 @@ export const podUploadFile = async (
 }
 
 export const fetchTemplates = async (): Promise<ResourceTemplate[]> => {
-  return fetchAPI<ResourceTemplate[]>('/templates/')
+  return fetchAPI<ResourceTemplate[]>('/templates')
 }
 
 export const createTemplate = async (
   data: Omit<ResourceTemplate, 'ID'>
 ): Promise<ResourceTemplate> => {
-  return apiClient.post<ResourceTemplate>('/admin/templates/', data)
+  return apiClient.post<ResourceTemplate>('/admin/templates', data)
 }
 
 export const updateTemplate = async (

@@ -68,6 +68,8 @@ _Comprehensive cluster overview with real-time metrics and resource statistics_
 - 🛡️ **OAuth Integration** - Supports OAuth management in the UI
 - 🔒 **Role-Based Access Control** - Supports user permission management in the UI
 - 👥 **User Management** - Comprehensive user management and role allocation in the UI
+- 🔍 **Security Scanning** - Integration with Trivy Operator for vulnerability, config audit, and secret scanning
+- 📊 **Security Dashboard** - Cluster-wide security posture overview with severity breakdowns
 
 ---
 

@@ -34,6 +34,9 @@ features:
   - icon: 📈
     title: Monitoring & Observability
     details: Logs, web terminal, monitoring, and complete resource update history and audit
+  - icon: 🛡️
+    title: Security Scanning
+    details: Trivy Operator integration for vulnerability scanning, config audit, and secret detection
   - icon: 🔐
     title: Advanced Authentication
     details: Password login or custom OIDC integration, user management, role-based access control
