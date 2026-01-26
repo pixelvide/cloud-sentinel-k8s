@@ -109,158 +109,155 @@ export function SecurityDashboard() {
                 </Card>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-4">
-                    <CardHeader>
-                        <CardTitle>Vulnerability Distribution</CardTitle>
-                        <CardDescription>
-                            Breakdown of vulnerabilities by severity.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="pl-2">
-                        <div className="flex flex-col md:flex-row items-center justify-between p-4">
-                            <div className="h-[200px] w-full md:w-1/2">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={[
-                                                { name: "Critical", value: vulns.criticalCount, color: "#dc2626" },
-                                                { name: "High", value: vulns.highCount, color: "#ea580c" },
-                                                { name: "Medium", value: vulns.mediumCount, color: "#eab308" },
-                                                { name: "Low", value: vulns.lowCount, color: "#3b82f6" },
-                                            ].filter(item => item.value > 0)}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={60}
-                                            outerRadius={80}
-                                            paddingAngle={5}
-                                            dataKey="value"
-                                        >
-                                            {[
-                                                { name: "Critical", value: vulns.criticalCount, color: "#dc2626" },
-                                                { name: "High", value: vulns.highCount, color: "#ea580c" },
-                                                { name: "Medium", value: vulns.mediumCount, color: "#eab308" },
-                                                { name: "Low", value: vulns.lowCount, color: "#3b82f6" },
-                                            ].filter(item => item.value > 0).map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip
-                                            contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: 'var(--radius)' }}
-                                            itemStyle={{ color: 'hsl(var(--foreground))' }}
-                                        />
-                                    </PieChart>
-                                </ResponsiveContainer>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Vulnerability Distribution</CardTitle>
+                    <CardDescription>
+                        Breakdown of vulnerabilities by severity.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="pl-2">
+                    <div className="flex flex-col md:flex-row items-center justify-between p-4">
+                        <div className="h-[200px] w-full md:w-1/2">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={[
+                                            { name: "Critical", value: vulns.criticalCount, color: "#dc2626" },
+                                            { name: "High", value: vulns.highCount, color: "#ea580c" },
+                                            { name: "Medium", value: vulns.mediumCount, color: "#eab308" },
+                                            { name: "Low", value: vulns.lowCount, color: "#3b82f6" },
+                                        ].filter(item => item.value > 0)}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={60}
+                                        outerRadius={80}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                    >
+                                        {[
+                                            { name: "Critical", value: vulns.criticalCount, color: "#dc2626" },
+                                            { name: "High", value: vulns.highCount, color: "#ea580c" },
+                                            { name: "Medium", value: vulns.mediumCount, color: "#eab308" },
+                                            { name: "Low", value: vulns.lowCount, color: "#3b82f6" },
+                                        ].filter(item => item.value > 0).map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: 'var(--radius)' }}
+                                        itemStyle={{ color: 'hsl(var(--foreground))' }}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                        <div className="w-full md:w-1/2 space-y-4">
+                            <div className="flex items-center gap-4">
+                                <div className="w-24 text-sm font-medium">Critical</div>
+                                <div className="flex-1 h-4 bg-secondary rounded-full overflow-hidden">
+                                    <div className="h-full bg-red-500 dark:bg-red-600" style={{ width: `${(vulns.criticalCount / total) * 100}%` }} />
+                                </div>
+                                <div className="w-12 text-sm text-right">{vulns.criticalCount}</div>
                             </div>
-                            <div className="w-full md:w-1/2 space-y-4">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-24 text-sm font-medium">Critical</div>
-                                    <div className="flex-1 h-4 bg-secondary rounded-full overflow-hidden">
-                                        <div className="h-full bg-red-500 dark:bg-red-600" style={{ width: `${(vulns.criticalCount / total) * 100}%` }} />
-                                    </div>
-                                    <div className="w-12 text-sm text-right">{vulns.criticalCount}</div>
+                            <div className="flex items-center gap-4">
+                                <div className="w-24 text-sm font-medium">High</div>
+                                <div className="flex-1 h-4 bg-secondary rounded-full overflow-hidden">
+                                    <div className="h-full bg-orange-500 dark:bg-orange-600" style={{ width: `${(vulns.highCount / total) * 100}%` }} />
                                 </div>
-                                <div className="flex items-center gap-4">
-                                    <div className="w-24 text-sm font-medium">High</div>
-                                    <div className="flex-1 h-4 bg-secondary rounded-full overflow-hidden">
-                                        <div className="h-full bg-orange-500 dark:bg-orange-600" style={{ width: `${(vulns.highCount / total) * 100}%` }} />
-                                    </div>
-                                    <div className="w-12 text-sm text-right">{vulns.highCount}</div>
+                                <div className="w-12 text-sm text-right">{vulns.highCount}</div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="w-24 text-sm font-medium">Medium</div>
+                                <div className="flex-1 h-4 bg-secondary rounded-full overflow-hidden">
+                                    <div className="h-full bg-yellow-500 dark:bg-yellow-600" style={{ width: `${(vulns.mediumCount / total) * 100}%` }} />
                                 </div>
-                                <div className="flex items-center gap-4">
-                                    <div className="w-24 text-sm font-medium">Medium</div>
-                                    <div className="flex-1 h-4 bg-secondary rounded-full overflow-hidden">
-                                        <div className="h-full bg-yellow-500 dark:bg-yellow-600" style={{ width: `${(vulns.mediumCount / total) * 100}%` }} />
-                                    </div>
-                                    <div className="w-12 text-sm text-right">{vulns.mediumCount}</div>
+                                <div className="w-12 text-sm text-right">{vulns.mediumCount}</div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="w-24 text-sm font-medium">Low</div>
+                                <div className="flex-1 h-4 bg-secondary rounded-full overflow-hidden">
+                                    <div className="h-full bg-blue-500 dark:bg-blue-600" style={{ width: `${(vulns.lowCount / total) * 100}%` }} />
                                 </div>
-                                <div className="flex items-center gap-4">
-                                    <div className="w-24 text-sm font-medium">Low</div>
-                                    <div className="flex-1 h-4 bg-secondary rounded-full overflow-hidden">
-                                        <div className="h-full bg-blue-500 dark:bg-blue-600" style={{ width: `${(vulns.lowCount / total) * 100}%` }} />
-                                    </div>
-                                    <div className="w-12 text-sm text-right">{vulns.lowCount}</div>
-                                </div>
+                                <div className="w-12 text-sm text-right">{vulns.lowCount}</div>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
-                <div className="col-span-3">
-                    <Card className="h-full">
-                        <CardHeader>
-                            <CardTitle>Top Vulnerable Workloads</CardTitle>
-                            <CardDescription>Workloads with the highest number of critical and high vulnerabilities.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Workload</TableHead>
-                                        <TableHead>Critical</TableHead>
-                                        <TableHead>High</TableHead>
-                                        <TableHead>Medium</TableHead>
-                                        <TableHead>Low</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {(summary.topVulnerableWorkloads || []).map((workload) => (
-                                        <TableRow key={`${workload.namespace}-${workload.kind}-${workload.name}`}>
-                                            <TableCell>
-                                                <div className="flex flex-col">
-                                                    <span className="font-medium text-sm">
-                                                        <Link
-                                                            to={`../${workload.kind.toLowerCase()}s/${workload.namespace}/${workload.name}`}
-                                                            className="hover:underline text-blue-600 dark:text-blue-400"
-                                                        >
-                                                            {workload.name}
-                                                        </Link>
-                                                    </span>
-                                                    <span className="text-xs text-muted-foreground">{workload.kind} • {workload.namespace}</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                {workload.vulnerabilities.criticalCount > 0 && (
-                                                    <Badge variant="destructive" className="bg-red-600 hover:bg-red-700">
-                                                        {workload.vulnerabilities.criticalCount}
-                                                    </Badge>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                {workload.vulnerabilities.highCount > 0 && (
-                                                    <Badge variant="secondary" className="bg-orange-500/15 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800">
-                                                        {workload.vulnerabilities.highCount}
-                                                    </Badge>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                {workload.vulnerabilities.mediumCount > 0 && (
-                                                    <span className="text-yellow-600 dark:text-yellow-400 font-medium">
-                                                        {workload.vulnerabilities.mediumCount}
-                                                    </span>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                {workload.vulnerabilities.lowCount > 0 && (
-                                                    <span className="text-blue-600 dark:text-blue-400">
-                                                        {workload.vulnerabilities.lowCount}
-                                                    </span>
-                                                )}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                    {(!summary.topVulnerableWorkloads || summary.topVulnerableWorkloads.length === 0) && (
-                                        <TableRow>
-                                            <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                                                No vulnerable workloads found.
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card className="h-full">
+                <CardHeader>
+                    <CardTitle>Top Vulnerable Workloads</CardTitle>
+                    <CardDescription>Workloads with the highest number of critical and high vulnerabilities.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Workload</TableHead>
+                                <TableHead>Critical</TableHead>
+                                <TableHead>High</TableHead>
+                                <TableHead>Medium</TableHead>
+                                <TableHead>Low</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {(summary.topVulnerableWorkloads || []).map((workload) => (
+                                <TableRow key={`${workload.namespace}-${workload.kind}-${workload.name}`}>
+                                    <TableCell>
+                                        <div className="flex flex-col">
+                                            <span className="font-medium text-sm">
+                                                <Link
+                                                    to={`../${workload.kind.toLowerCase()}s/${workload.namespace}/${workload.name}`}
+                                                    className="hover:underline text-blue-600 dark:text-blue-400"
+                                                >
+                                                    {workload.name}
+                                                </Link>
+                                            </span>
+                                            <span className="text-xs text-muted-foreground">{workload.kind} • {workload.namespace}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        {workload.vulnerabilities.criticalCount > 0 && (
+                                            <Badge variant="destructive" className="bg-red-600 hover:bg-red-700">
+                                                {workload.vulnerabilities.criticalCount}
+                                            </Badge>
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        {workload.vulnerabilities.highCount > 0 && (
+                                            <Badge variant="secondary" className="bg-orange-500/15 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800">
+                                                {workload.vulnerabilities.highCount}
+                                            </Badge>
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        {workload.vulnerabilities.mediumCount > 0 && (
+                                            <span className="text-yellow-600 dark:text-yellow-400 font-medium">
+                                                {workload.vulnerabilities.mediumCount}
+                                            </span>
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        {workload.vulnerabilities.lowCount > 0 && (
+                                            <span className="text-blue-600 dark:text-blue-400">
+                                                {workload.vulnerabilities.lowCount}
+                                            </span>
+                                        )}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                            {(!summary.topVulnerableWorkloads || summary.topVulnerableWorkloads.length === 0) && (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                                        No vulnerable workloads found.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
         </div>
     )
 }
