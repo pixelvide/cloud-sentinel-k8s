@@ -70,35 +70,30 @@ export function SecurityTab({ namespace, kind, name, visibleTabs }: SecurityTabP
                 <TabsList className="grid w-full grid-cols-5 lg:w-[680px]">
                     {tabsToShow.includes('vulnerabilities') && (
                         <TabsTrigger value="vulnerabilities" className="flex items-center gap-2">
-                            <Bug className="h-4 w-4" />
                             <span className="hidden sm:inline">Vulnerabilities</span>
                             <span className="sm:hidden">CVEs</span>
                         </TabsTrigger>
                     )}
                     {tabsToShow.includes('config-audit') && (
                         <TabsTrigger value="config-audit" className="flex items-center gap-2">
-                            <Settings className="h-4 w-4" />
                             <span className="hidden sm:inline">Config Audit</span>
                             <span className="sm:hidden">Config</span>
                         </TabsTrigger>
                     )}
                     {tabsToShow.includes('infra-assessment') && (
                         <TabsTrigger value="infra-assessment" className="flex items-center gap-2">
-                            <Server className="h-4 w-4" />
                             <span className="hidden sm:inline">Infrastructure</span>
                             <span className="sm:hidden">Infra</span>
                         </TabsTrigger>
                     )}
                     {tabsToShow.includes('rbac-assessment') && (
                         <TabsTrigger value="rbac-assessment" className="flex items-center gap-2">
-                            <ShieldCheck className="h-4 w-4" />
                             <span className="hidden sm:inline">RBAC Audit</span>
                             <span className="sm:hidden">RBAC</span>
                         </TabsTrigger>
                     )}
                     {tabsToShow.includes('secrets') && (
                         <TabsTrigger value="secrets" className="flex items-center gap-2">
-                            <Key className="h-4 w-4" />
                             <span className="hidden sm:inline">Secrets</span>
                             <span className="sm:hidden">Secrets</span>
                         </TabsTrigger>
