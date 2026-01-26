@@ -61,18 +61,18 @@ func (h *NodeHandler) DrainNode(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implement actual drain logic
-	// For now, we'll simulate the drain operation
-	// In a real implementation, you would:
-	// 1. Mark the node as unschedulable (cordon)
-	// 2. Evict all pods from the node
-	// 3. Handle daemonsets appropriately
-	// 4. Wait for pods to be evicted or force delete them
+	drainer := kube.NewDrainer(cs.K8sClient.Client, cs.K8sClient.ClientSet, ctx, nodeName)
+	drainer.Force = drainRequest.Force
+	drainer.GracePeriod = drainRequest.GracePeriod
+	drainer.DeleteLocalData = drainRequest.DeleteLocal
+	drainer.IgnoreDaemonsets = drainRequest.IgnoreDaemonsets
 
+	if err := drainer.Drain(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to drain node: " + err.Error()})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
-		"message": fmt.Sprintf("Node %s drain initiated", nodeName),
-		"node":    node.Name,
-		"options": drainRequest,
+		"message": fmt.Sprintf("Node %s drained successfully", nodeName),
 	})
 }
 
