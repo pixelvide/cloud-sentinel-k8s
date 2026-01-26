@@ -98,3 +98,12 @@ func WriteUserAWSCredentials(storageNamespace string, content string) error {
 
 	return nil
 }
+
+func ContainsString(slice []string, val string) bool {
+	for _, s := range slice {
+		if strings.ToLower(s) == val {
+			return true
+		}
+	}
+	return false
+}

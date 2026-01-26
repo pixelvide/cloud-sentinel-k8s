@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -233,6 +234,27 @@ func buildMessageHistory(session model.AIChatSession, userMessage string) []open
 	return messages
 }
 
+func generateChatTitle(ctx context.Context, aiClient ai.AIClient, userMessage string) string {
+	prompt := fmt.Sprintf("Summarize the following user message into a short, descriptive chat title (max 4 words). Output ONLY the title text, no quotes or punctuation: %s", userMessage)
+	msgs := []openai.ChatCompletionMessage{
+		{
+			Role:    openai.ChatMessageRoleUser,
+			Content: prompt,
+		},
+	}
+
+	resp, err := aiClient.ChatCompletion(ctx, msgs, nil)
+	if err != nil {
+		klog.Errorf("Failed to generate chat title: %v", err)
+		return ""
+	}
+
+	if len(resp.Choices) > 0 {
+		return strings.TrimSpace(resp.Choices[0].Message.Content)
+	}
+	return ""
+}
+
 func executeAIChatLoop(ctx context.Context, aiClient ai.AIClient, session *model.AIChatSession, messages []openai.ChatCompletionMessage, toolDefs []openai.Tool, registry *tools.Registry, toolCtx context.Context) (string, error) {
 	maxIterations := 5
 	var finalResponse string
@@ -375,6 +397,16 @@ func AIChat(c *gin.Context) {
 		Content:   req.Message,
 		CreatedAt: time.Now(),
 	})
+
+	// Generate dynamic title if it's a new chat
+	if session.Title == "New Chat" {
+		go func(sID string, msg string, client ai.AIClient) {
+			newTitle := generateChatTitle(context.Background(), client, msg)
+			if newTitle != "" {
+				model.DB.Model(&model.AIChatSession{}).Where("id = ?", sID).Update("title", newTitle)
+			}
+		}(session.ID, req.Message, aiClient)
+	}
 
 	// 6. Execute Chat Loop
 	toolCtx := context.Background()
