@@ -46,6 +46,7 @@ import { RelatedResourcesTable } from '@/components/related-resource-table'
 import { ResourceDeleteConfirmationDialog } from '@/components/resource-delete-confirmation-dialog'
 import { ResourceHistoryTable } from '@/components/resource-history-table'
 import { Terminal } from '@/components/terminal'
+import { SecurityTab } from '@/components/security/security-tab'
 import { VolumeTable } from '@/components/volume-table'
 import { YamlEditor } from '@/components/yaml-editor'
 
@@ -76,8 +77,8 @@ export function DeploymentDetail(props: { namespace: string; name: string }) {
 
   const labelSelector = deployment?.spec?.selector.matchLabels
     ? Object.entries(deployment.spec.selector.matchLabels)
-        .map(([key, value]) => `${key}=${value}`)
-        .join(',')
+      .map(([key, value]) => `${key}=${value}`)
+      .join(',')
     : undefined
   const { data: relatedPods, isLoading: isLoadingPods } = useResourcesWatch(
     'pods',
@@ -510,7 +511,7 @@ export function DeploymentDetail(props: { namespace: string; name: string }) {
 
                 {deployment.spec?.template.spec?.initContainers?.length &&
                   deployment.spec?.template.spec?.initContainers?.length >
-                    0 && (
+                  0 && (
                     <Card>
                       <CardHeader>
                         <CardTitle>
@@ -597,8 +598,8 @@ export function DeploymentDetail(props: { namespace: string; name: string }) {
                             <span className="text-xs text-muted-foreground ml-auto">
                               {formatDate(
                                 condition.lastTransitionTime ||
-                                  condition.lastUpdateTime ||
-                                  ''
+                                condition.lastUpdateTime ||
+                                ''
                               )}
                             </span>
                           </div>
@@ -626,62 +627,62 @@ export function DeploymentDetail(props: { namespace: string; name: string }) {
           },
           ...(relatedPods
             ? [
-                {
-                  value: 'pods',
-                  label: (
-                    <>
-                      Pods{' '}
-                      {relatedPods && (
-                        <Badge variant="secondary">{relatedPods.length}</Badge>
-                      )}
-                    </>
-                  ),
-                  content: (
-                    <PodTable
+              {
+                value: 'pods',
+                label: (
+                  <>
+                    Pods{' '}
+                    {relatedPods && (
+                      <Badge variant="secondary">{relatedPods.length}</Badge>
+                    )}
+                  </>
+                ),
+                content: (
+                  <PodTable
+                    pods={relatedPods}
+                    isLoading={isLoadingPods}
+                    labelSelector={labelSelector}
+                  />
+                ),
+              },
+              {
+                value: 'logs',
+                label: 'Logs',
+                content: (
+                  <div className="space-y-6">
+                    <LogViewer
+                      namespace={namespace}
                       pods={relatedPods}
-                      isLoading={isLoadingPods}
+                      containers={deployment.spec?.template.spec?.containers}
+                      initContainers={
+                        deployment.spec?.template.spec?.initContainers
+                      }
                       labelSelector={labelSelector}
                     />
-                  ),
-                },
-                {
-                  value: 'logs',
-                  label: 'Logs',
-                  content: (
-                    <div className="space-y-6">
-                      <LogViewer
+                  </div>
+                ),
+              },
+              {
+                value: 'terminal',
+                label: 'Terminal',
+                content: (
+                  <div className="space-y-6">
+                    {relatedPods && relatedPods.length > 0 && (
+                      <Terminal
                         namespace={namespace}
                         pods={relatedPods}
-                        containers={deployment.spec?.template.spec?.containers}
+                        containers={
+                          deployment.spec?.template.spec?.containers
+                        }
                         initContainers={
                           deployment.spec?.template.spec?.initContainers
                         }
-                        labelSelector={labelSelector}
                       />
-                    </div>
-                  ),
-                },
-                {
-                  value: 'terminal',
-                  label: 'Terminal',
-                  content: (
-                    <div className="space-y-6">
-                      {relatedPods && relatedPods.length > 0 && (
-                        <Terminal
-                          namespace={namespace}
-                          pods={relatedPods}
-                          containers={
-                            deployment.spec?.template.spec?.containers
-                          }
-                          initContainers={
-                            deployment.spec?.template.spec?.initContainers
-                          }
-                        />
-                      )}
-                    </div>
-                  ),
-                },
-              ]
+                    )}
+                  </div>
+                ),
+              },
+            ]
             : []),
           {
             value: 'Related',
@@ -708,29 +709,29 @@ export function DeploymentDetail(props: { namespace: string; name: string }) {
           },
           ...(deployment.spec?.template?.spec?.volumes
             ? [
-                {
-                  value: 'volumes',
-                  label: (
-                    <>
-                      Volumes{' '}
-                      <Badge variant="secondary">
-                        {deployment.spec.template.spec.volumes.length}
-                      </Badge>
-                    </>
-                  ),
-                  content: (
-                    <VolumeTable
-                      namespace={namespace}
-                      volumes={deployment.spec?.template?.spec?.volumes}
-                      containers={toSimpleContainer(
-                        deployment.spec?.template?.spec?.initContainers,
-                        deployment.spec?.template?.spec?.containers
-                      )}
-                      isLoading={isLoadingDeployment}
-                    />
-                  ),
-                },
-              ]
+              {
+                value: 'volumes',
+                label: (
+                  <>
+                    Volumes{' '}
+                    <Badge variant="secondary">
+                      {deployment.spec.template.spec.volumes.length}
+                    </Badge>
+                  </>
+                ),
+                content: (
+                  <VolumeTable
+                    namespace={namespace}
+                    volumes={deployment.spec?.template?.spec?.volumes}
+                    containers={toSimpleContainer(
+                      deployment.spec?.template?.spec?.initContainers,
+                      deployment.spec?.template?.spec?.containers
+                    )}
+                    isLoading={isLoadingDeployment}
+                  />
+                ),
+              },
+            ]
             : []),
           {
             value: 'events',
@@ -754,6 +755,13 @@ export function DeploymentDetail(props: { namespace: string; name: string }) {
                 initContainers={deployment.spec?.template.spec?.initContainers}
                 labelSelector={labelSelector}
               />
+            ),
+          },
+          {
+            value: 'security',
+            label: 'Security',
+            content: (
+              <SecurityTab namespace={namespace} kind="Deployment" name={name} />
             ),
           },
           {

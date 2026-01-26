@@ -143,6 +143,9 @@ func RegisterRoutes(group *gin.RouterGroup) {
 		otherGroup.PUT("/:namespace/:name", crHandler.Update)
 		otherGroup.DELETE("/:namespace/:name", crHandler.Delete)
 	}
+
+	securityHandler := NewSecurityReportHandler()
+	securityHandler.RegisterRoutes(group)
 }
 
 func registerClusterScopeRoutes(group *gin.RouterGroup, handler resourceHandler) {

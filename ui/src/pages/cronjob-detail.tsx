@@ -38,6 +38,7 @@ import { ResourceHistoryTable } from '@/components/resource-history-table'
 import { Column, SimpleTable } from '@/components/simple-table'
 import { VolumeTable } from '@/components/volume-table'
 import { YamlEditor } from '@/components/yaml-editor'
+import { SecurityTab } from '@/components/security/security-tab'
 
 interface JobStatusBadge {
   label: string
@@ -291,15 +292,15 @@ export function CronJobDetail(props: { namespace: string; name: string }) {
           },
           ownerReferences: cronjob.metadata?.uid
             ? [
-                {
-                  apiVersion: cronjob.apiVersion || 'batch/v1',
-                  kind: 'CronJob',
-                  name,
-                  uid: cronjob.metadata.uid,
-                  controller: true,
-                  blockOwnerDeletion: true,
-                },
-              ]
+              {
+                apiVersion: cronjob.apiVersion || 'batch/v1',
+                kind: 'CronJob',
+                name,
+                uid: cronjob.metadata.uid,
+                controller: true,
+                blockOwnerDeletion: true,
+              },
+            ]
             : undefined,
         },
         spec: jobTemplateSpec,
@@ -587,6 +588,7 @@ export function CronJobDetail(props: { namespace: string; name: string }) {
               </div>
             ),
           },
+
           {
             value: 'yaml',
             label: 'YAML',
@@ -664,26 +666,31 @@ export function CronJobDetail(props: { namespace: string; name: string }) {
           },
           ...(volumes
             ? [
-                {
-                  value: 'volumes',
-                  label: (
-                    <>
-                      Volumes{' '}
-                      {volumes && (
-                        <Badge variant="secondary">{volumes.length}</Badge>
-                      )}
-                    </>
-                  ),
-                  content: (
-                    <VolumeTable
-                      namespace={namespace}
-                      volumes={volumes}
-                      containers={containers}
-                    />
-                  ),
-                },
-              ]
+              {
+                value: 'volumes',
+                label: (
+                  <>
+                    Volumes{' '}
+                    {volumes && (
+                      <Badge variant="secondary">{volumes.length}</Badge>
+                    )}
+                  </>
+                ),
+                content: (
+                  <VolumeTable
+                    namespace={namespace}
+                    volumes={volumes}
+                    containers={containers}
+                  />
+                ),
+              },
+            ]
             : []),
+          {
+            value: 'security',
+            label: 'Security',
+            content: <SecurityTab namespace={namespace} kind="CronJob" name={name} />,
+          },
           {
             value: 'anomalies',
             label: (

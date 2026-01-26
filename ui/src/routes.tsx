@@ -17,6 +17,7 @@ import { Overview } from './pages/overview'
 import { ResourceDetail } from './pages/resource-detail'
 import { ResourceList } from './pages/resource-list'
 import { SettingsPage } from './pages/settings'
+import { SecurityDashboard } from './pages/security-dashboard'
 
 const subPath = getSubPath()
 
@@ -62,6 +63,10 @@ export const router = createBrowserRouter(
             {
               path: 'dashboard',
               element: <Overview />,
+            },
+            {
+              path: 'security',
+              element: <SecurityDashboard />,
             },
             {
               path: 'helm-releases',

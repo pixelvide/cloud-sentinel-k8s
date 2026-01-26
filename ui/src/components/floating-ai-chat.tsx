@@ -172,7 +172,7 @@ export function FloatingAIChat() {
                                     } else if (eventType === 'error') {
                                         toast.error(data.error)
                                     }
-                                } catch (e) {
+                                } catch {
                                     // Ignore parse errors for incomplete JSON
                                 }
                             }

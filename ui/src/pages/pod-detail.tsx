@@ -50,6 +50,7 @@ import { RelatedResourcesTable } from '@/components/related-resource-table'
 import { ResourceDeleteConfirmationDialog } from '@/components/resource-delete-confirmation-dialog'
 import { ContainerSelector } from '@/components/selector/container-selector'
 import { Terminal } from '@/components/terminal'
+import { SecurityTab } from '@/components/security/security-tab'
 import { VolumeTable } from '@/components/volume-table'
 import { YamlEditor } from '@/components/yaml-editor'
 
@@ -597,6 +598,13 @@ export function PodDetail(props: { namespace: string; name: string }) {
                   initContainers={pod.spec?.initContainers}
                 />
               </div>
+            ),
+          },
+          {
+            value: 'security',
+            label: 'Security',
+            content: (
+              <SecurityTab namespace={namespace} kind="Pod" name={name} />
             ),
           },
           {

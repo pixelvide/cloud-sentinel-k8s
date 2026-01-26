@@ -23,6 +23,8 @@ import { RelatedResourcesTable } from '@/components/related-resource-table'
 import { ResourceDeleteConfirmationDialog } from '@/components/resource-delete-confirmation-dialog'
 import { ResourceHistoryTable } from '@/components/resource-history-table'
 import { YamlEditor } from '@/components/yaml-editor'
+import { SecurityTab } from '@/components/security/security-tab'
+
 
 export function SimpleResourceDetail<
   T extends Exclude<ResourceType, 'helmreleases'>,
@@ -252,6 +254,27 @@ export function SimpleResourceDetail<
               />
             ),
           },
+          ...(
+            ['replicasets', 'replicationcontrollers', 'statefulsets', 'daemonsets', 'deployments', 'pods', 'jobs', 'cronjobs'].includes(resourceType)
+              ? [
+                {
+                  value: 'security',
+                  label: 'Security',
+                  content: (
+                    <SecurityTab
+                      kind={
+                        (data as { kind?: string })?.kind ||
+                        resourceType.charAt(0).toUpperCase() +
+                        resourceType.slice(1).replace(/s$/, '')
+                      }
+                      name={name}
+                      namespace={namespace}
+                    />
+                  ),
+                },
+              ]
+              : []
+          ),
           {
             value: 'anomalies',
             label: (

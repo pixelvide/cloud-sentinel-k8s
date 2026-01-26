@@ -3,6 +3,7 @@ package ai
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -75,66 +76,7 @@ func (g *GeminiAdapter) ChatCompletionStream(ctx context.Context, messages []ope
 		}
 	}
 
-	var systemInstruction *genai.Content
-	var history []*genai.Content
-
-	for _, m := range messages {
-		if m.Role == openai.ChatMessageRoleSystem {
-			systemInstruction = &genai.Content{
-				Parts: []genai.Part{genai.Text(m.Content)},
-			}
-			continue
-		}
-
-		role := "user"
-		switch m.Role {
-		case openai.ChatMessageRoleAssistant:
-			role = "model"
-		case openai.ChatMessageRoleTool:
-			role = "user"
-		}
-
-		parts := []genai.Part{}
-		if m.Content != "" && m.Role != openai.ChatMessageRoleTool {
-			parts = append(parts, genai.Text(m.Content))
-		}
-
-		if len(m.ToolCalls) > 0 {
-			for _, tc := range m.ToolCalls {
-				args := map[string]interface{}{}
-				if err := json.Unmarshal([]byte(tc.Function.Arguments), &args); err != nil {
-					args = map[string]interface{}{"args": tc.Function.Arguments}
-				}
-				parts = append(parts, genai.FunctionCall{
-					Name: tc.Function.Name,
-					Args: args,
-				})
-			}
-		}
-
-		if m.Role == openai.ChatMessageRoleTool {
-			name := findToolName(messages, m.ToolCallID)
-			var response map[string]interface{}
-			if err := json.Unmarshal([]byte(m.Content), &response); err != nil {
-				response = map[string]interface{}{"result": m.Content}
-			}
-			parts = append(parts, genai.FunctionResponse{
-				Name:     name,
-				Response: response,
-			})
-		}
-
-		if len(parts) > 0 {
-			if len(history) > 0 && history[len(history)-1].Role == role {
-				history[len(history)-1].Parts = append(history[len(history)-1].Parts, parts...)
-			} else {
-				history = append(history, &genai.Content{
-					Role:  role,
-					Parts: parts,
-				})
-			}
-		}
-	}
+	history, systemInstruction := buildGeminiHistory(messages)
 
 	if systemInstruction != nil {
 		gm.SystemInstruction = systemInstruction
@@ -156,7 +98,7 @@ func (g *GeminiAdapter) ChatCompletionStream(ctx context.Context, messages []ope
 		for {
 			resp, err := iter.Next()
 			if err != nil {
-				if err == context.Canceled || strings.Contains(err.Error(), "iterator done") || strings.Contains(err.Error(), "EOF") {
+				if errors.Is(err, context.Canceled) || strings.Contains(err.Error(), "iterator done") || strings.Contains(err.Error(), "EOF") {
 					break
 				}
 				klog.Errorf("Gemini Stream error: %v", err)
@@ -185,7 +127,11 @@ func convertGeminiStreamResponseToOpenAI(resp *genai.GenerateContentResponse) op
 			if txt, ok := part.(genai.Text); ok {
 				contentBuilder.WriteString(string(txt))
 			} else if fnCall, ok := part.(genai.FunctionCall); ok {
-				argsBytes, _ := json.Marshal(fnCall.Args)
+				argsBytes, err := json.Marshal(fnCall.Args)
+				if err != nil {
+					klog.Errorf("Gemini: failed to marshal function args for %s: %v", fnCall.Name, err)
+					argsBytes = []byte("{}")
+				}
 				delta.ToolCalls = append(delta.ToolCalls, openai.ToolCall{
 					ID:   "call_" + fnCall.Name,
 					Type: openai.ToolTypeFunction,
@@ -264,74 +210,7 @@ func (g *GeminiAdapter) ChatCompletion(ctx context.Context, messages []openai.Ch
 	// Gemini uses a ChatSession object which maintains history, or we can send contents manually.
 	// Since we are stateless (loading history from DB each time), we will construct the Content list.
 
-	// Separate System Prompt if present
-	var systemInstruction *genai.Content
-	var history []*genai.Content
-
-	for _, m := range messages {
-		if m.Role == openai.ChatMessageRoleSystem {
-			systemInstruction = &genai.Content{
-				Parts: []genai.Part{genai.Text(m.Content)},
-			}
-			continue // System prompt is handled separately in Gemini
-		}
-
-		role := "user"
-		switch m.Role {
-		case openai.ChatMessageRoleAssistant:
-			role = "model"
-		case openai.ChatMessageRoleTool:
-			role = "user" // Tool responses must come from 'user' role in Gemini SDK
-		}
-
-		parts := []genai.Part{}
-
-		// Text Content (Only if not a tool response, as tool responses use FunctionResponse parts)
-		if m.Content != "" && m.Role != openai.ChatMessageRoleTool {
-			parts = append(parts, genai.Text(m.Content))
-		}
-
-		// Tool Calls (Assistant -> User/Tool)
-		if len(m.ToolCalls) > 0 {
-			for _, tc := range m.ToolCalls {
-				args := map[string]interface{}{}
-				if err := json.Unmarshal([]byte(tc.Function.Arguments), &args); err != nil {
-					// Fallback if args aren't valid JSON map
-					args = map[string]interface{}{"args": tc.Function.Arguments}
-				}
-				parts = append(parts, genai.FunctionCall{
-					Name: tc.Function.Name,
-					Args: args,
-				})
-			}
-		}
-
-		// Tool Responses (Tool -> Assistant)
-		if m.Role == openai.ChatMessageRoleTool {
-			name := findToolName(messages, m.ToolCallID)
-			var response map[string]interface{}
-			// Try to parse content as JSON, otherwise wrap string
-			if err := json.Unmarshal([]byte(m.Content), &response); err != nil {
-				response = map[string]interface{}{"result": m.Content}
-			}
-			parts = append(parts, genai.FunctionResponse{
-				Name:     name,
-				Response: response,
-			})
-		}
-
-		if len(parts) > 0 {
-			// Merge adjacent messages with the same role into a single Gemini turn
-			if len(history) > 0 && history[len(history)-1].Role == role {
-				history[len(history)-1].Parts = append(history[len(history)-1].Parts, parts...)
-			} else {
-				history = append(history, &genai.Content{
-					Role:  role,
-					Parts: parts,
-				})
-			}
-		}
-	}
+	history, systemInstruction := buildGeminiHistory(messages)
 
 	if systemInstruction != nil {
 		gm.SystemInstruction = systemInstruction
@@ -489,4 +368,69 @@ func convertGeminiResponseToOpenAI(resp *genai.GenerateContentResponse) openai.C
 		Model:   "gemini",
 		Choices: choices,
 	}
+}
+
+func buildGeminiHistory(messages []openai.ChatCompletionMessage) ([]*genai.Content, *genai.Content) {
+	var systemInstruction *genai.Content
+	var history []*genai.Content
+
+	for _, m := range messages {
+		if m.Role == openai.ChatMessageRoleSystem {
+			systemInstruction = &genai.Content{
+				Parts: []genai.Part{genai.Text(m.Content)},
+			}
+			continue
+		}
+
+		role := "user"
+		switch m.Role {
+		case openai.ChatMessageRoleAssistant:
+			role = "model"
+		case openai.ChatMessageRoleTool:
+			role = "user"
+		}
+
+		parts := []genai.Part{}
+
+		if m.Content != "" && m.Role != openai.ChatMessageRoleTool {
+			parts = append(parts, genai.Text(m.Content))
+		}
+
+		if len(m.ToolCalls) > 0 {
+			for _, tc := range m.ToolCalls {
+				args := map[string]interface{}{}
+				if err := json.Unmarshal([]byte(tc.Function.Arguments), &args); err != nil {
+					args = map[string]interface{}{"args": tc.Function.Arguments}
+				}
+				parts = append(parts, genai.FunctionCall{
+					Name: tc.Function.Name,
+					Args: args,
+				})
+			}
+		}
+
+		if m.Role == openai.ChatMessageRoleTool {
+			name := findToolName(messages, m.ToolCallID)
+			var response map[string]interface{}
+			if err := json.Unmarshal([]byte(m.Content), &response); err != nil {
+				response = map[string]interface{}{"result": m.Content}
+			}
+			parts = append(parts, genai.FunctionResponse{
+				Name:     name,
+				Response: response,
+			})
+		}
+
+		if len(parts) > 0 {
+			if len(history) > 0 && history[len(history)-1].Role == role {
+				history[len(history)-1].Parts = append(history[len(history)-1].Parts, parts...)
+			} else {
+				history = append(history, &genai.Content{
+					Role:  role,
+					Parts: parts,
+				})
+			}
+		}
+	}
+	return history, systemInstruction
 }

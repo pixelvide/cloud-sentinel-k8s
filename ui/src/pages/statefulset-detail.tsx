@@ -45,6 +45,7 @@ import { RelatedResourcesTable } from '@/components/related-resource-table'
 import { ResourceDeleteConfirmationDialog } from '@/components/resource-delete-confirmation-dialog'
 import { ResourceHistoryTable } from '@/components/resource-history-table'
 import { Terminal } from '@/components/terminal'
+import { SecurityTab } from '@/components/security/security-tab'
 import { VolumeTable } from '@/components/volume-table'
 import { YamlEditor } from '@/components/yaml-editor'
 
@@ -80,8 +81,8 @@ export function StatefulSetDetail(props: { namespace: string; name: string }) {
 
   const labelSelector = statefulset?.spec?.selector.matchLabels
     ? Object.entries(statefulset.spec.selector.matchLabels)
-        .map(([key, value]) => `${key}=${value}`)
-        .join(',')
+      .map(([key, value]) => `${key}=${value}`)
+      .join(',')
     : undefined
   const { data: relatedPods, isLoading: isLoadingPods } = useResourcesWatch(
     'pods',
@@ -578,83 +579,83 @@ export function StatefulSetDetail(props: { namespace: string; name: string }) {
           },
           ...(relatedPods
             ? [
-                {
-                  value: 'pods',
-                  label: (
-                    <>
-                      Pods{' '}
-                      {relatedPods && (
-                        <Badge variant="secondary">{relatedPods.length}</Badge>
-                      )}
-                    </>
-                  ),
-                  content: (
-                    <PodTable
+              {
+                value: 'pods',
+                label: (
+                  <>
+                    Pods{' '}
+                    {relatedPods && (
+                      <Badge variant="secondary">{relatedPods.length}</Badge>
+                    )}
+                  </>
+                ),
+                content: (
+                  <PodTable
+                    pods={relatedPods}
+                    isLoading={isLoadingPods}
+                    labelSelector={labelSelector}
+                  />
+                ),
+              },
+              {
+                value: 'logs',
+                label: 'Logs',
+                content: (
+                  <div className="space-y-6">
+                    <LogViewer
+                      namespace={namespace}
                       pods={relatedPods}
-                      isLoading={isLoadingPods}
+                      containers={spec?.template.spec?.containers}
+                      initContainers={spec?.template.spec?.initContainers}
                       labelSelector={labelSelector}
                     />
-                  ),
-                },
-                {
-                  value: 'logs',
-                  label: 'Logs',
-                  content: (
-                    <div className="space-y-6">
-                      <LogViewer
+                  </div>
+                ),
+              },
+              {
+                value: 'terminal',
+                label: 'Terminal',
+                content: (
+                  <div className="space-y-6">
+                    {relatedPods && relatedPods.length > 0 && (
+                      <Terminal
                         namespace={namespace}
                         pods={relatedPods}
                         containers={spec?.template.spec?.containers}
                         initContainers={spec?.template.spec?.initContainers}
-                        labelSelector={labelSelector}
                       />
-                    </div>
-                  ),
-                },
-                {
-                  value: 'terminal',
-                  label: 'Terminal',
-                  content: (
-                    <div className="space-y-6">
-                      {relatedPods && relatedPods.length > 0 && (
-                        <Terminal
-                          namespace={namespace}
-                          pods={relatedPods}
-                          containers={spec?.template.spec?.containers}
-                          initContainers={spec?.template.spec?.initContainers}
-                        />
-                      )}
-                    </div>
-                  ),
-                },
-              ]
+                    )}
+                  </div>
+                ),
+              },
+            ]
             : []),
           ...(spec?.template?.spec?.volumes
             ? [
-                {
-                  value: 'volumes',
-                  label: (
-                    <>
-                      Volumes
-                      {spec.template.spec.volumes && (
-                        <Badge variant="secondary">
-                          {spec.template.spec.volumes.length}
-                        </Badge>
-                      )}
-                    </>
-                  ),
-                  content: (
-                    <div className="space-y-6">
-                      <VolumeTable
-                        namespace={namespace}
-                        volumes={spec.template.spec?.volumes}
-                        containers={spec.template.spec?.containers}
-                        isLoading={isLoadingStatefulSet}
-                      />
-                    </div>
-                  ),
-                },
-              ]
+              {
+                value: 'volumes',
+                label: (
+                  <>
+                    Volumes
+                    {spec.template.spec.volumes && (
+                      <Badge variant="secondary">
+                        {spec.template.spec.volumes.length}
+                      </Badge>
+                    )}
+                  </>
+                ),
+                content: (
+                  <div className="space-y-6">
+                    <VolumeTable
+                      namespace={namespace}
+                      volumes={spec.template.spec?.volumes}
+                      containers={spec.template.spec?.containers}
+                      isLoading={isLoadingStatefulSet}
+                    />
+                  </div>
+                ),
+              },
+            ]
             : []),
           {
             value: 'Related',
@@ -702,6 +703,13 @@ export function StatefulSetDetail(props: { namespace: string; name: string }) {
                 defaultQueryName={relatedPods?.[0]?.metadata?.generateName}
                 labelSelector={labelSelector}
               />
+            ),
+          },
+          {
+            value: 'security',
+            label: 'Security',
+            content: (
+              <SecurityTab namespace={namespace} kind="StatefulSet" name={name} />
             ),
           },
           {

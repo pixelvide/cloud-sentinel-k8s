@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"regexp"
 	"strings"
 	"time"
 
@@ -256,88 +255,6 @@ func generateChatTitle(ctx context.Context, aiClient ai.AIClient, userMessage st
 	return ""
 }
 
-func executeAIChatLoop(ctx context.Context, aiClient ai.AIClient, session *model.AIChatSession, messages []openai.ChatCompletionMessage, toolDefs []openai.Tool, registry *tools.Registry, toolCtx context.Context) (string, error) {
-	maxIterations := 5
-	var finalResponse string
-
-	for i := 0; i < maxIterations; i++ {
-		resp, err := aiClient.ChatCompletion(ctx, messages, toolDefs)
-		if err != nil {
-			return "", fmt.Errorf("AI Provider error: %w", err)
-		}
-
-		if len(resp.Choices) == 0 {
-			return "", fmt.Errorf("empty response from AI")
-		}
-
-		choice := resp.Choices[0]
-		msg := choice.Message
-
-		messages = append(messages, msg)
-
-		// Save assistant message
-		dbMsg := model.AIChatMessage{
-			Role:      msg.Role,
-			Content:   msg.Content,
-			CreatedAt: time.Now(),
-		}
-		if len(msg.ToolCalls) > 0 {
-			tcBytes, err := json.Marshal(msg.ToolCalls)
-			if err == nil {
-				dbMsg.ToolCalls = string(tcBytes)
-			}
-		}
-		model.DB.Create(&dbMsg)
-
-		if len(msg.ToolCalls) > 0 {
-			// Execute Tools
-			for _, tc := range msg.ToolCalls {
-				klog.Infof("AI executing tool: %s args: %s", tc.Function.Name, tc.Function.Arguments)
-
-				var result string
-				if val := toolCtx.Value(tools.ClientSetKey{}); val == nil {
-					result = "Error: No active cluster context. Please select a cluster in the dashboard."
-				} else {
-					klog.Infof("AI executing tool: %s", tc.Function.Name)
-					res, err := registry.Execute(toolCtx, tc.Function.Name, tc.Function.Arguments)
-					if err != nil {
-						klog.Errorf("AI tool %s failed: %v", tc.Function.Name, err)
-						result = fmt.Sprintf("Error executing tool: %v", err)
-					} else {
-						result = res
-					}
-				}
-
-				// Append tool result
-				toolMsg := openai.ChatCompletionMessage{
-					Role:       openai.ChatMessageRoleTool,
-					Content:    result,
-					ToolCallID: tc.ID,
-				}
-				messages = append(messages, toolMsg)
-
-				model.DB.Create(&model.AIChatMessage{
-					SessionID: session.ID,
-					Role:      openai.ChatMessageRoleTool,
-					Content:   result,
-					ToolID:    tc.ID,
-					CreatedAt: time.Now(),
-				})
-			}
-			continue
-		} else {
-			finalResponse = msg.Content
-			break
-		}
-	}
-	return finalResponse, nil
-}
-
-func stripThought(content string) string {
-	thoughtRegex := regexp.MustCompile(`(?s)<thought>.*?</thought>`)
-	return strings.TrimSpace(thoughtRegex.ReplaceAllString(content, ""))
-}
-
 func executeAIChatStreamLoop(ctx context.Context, aiClient ai.AIClient, session *model.AIChatSession, messages []openai.ChatCompletionMessage, toolDefs []openai.Tool, registry *tools.Registry, toolCtx context.Context, c *gin.Context) (string, error) {
 	maxIterations := 5
 	var finalContent strings.Builder
@@ -507,6 +424,7 @@ func AIChat(c *gin.Context) {
 	registry.Register(&tools.DescribeResourceTool{})
 	registry.Register(&tools.ScaleDeploymentTool{})
 	registry.Register(&tools.AnalyzeSecurityTool{})
+	registry.Register(&tools.CheckImageSecurityTool{})
 	registry.Register(&tools.ListResourcesTool{})
 	registry.Register(&tools.GetClusterInfoTool{})
 

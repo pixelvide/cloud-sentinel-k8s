@@ -4,7 +4,7 @@ import Icon from '@/assets/icon.svg'
 import { useSidebarConfig } from '@/contexts/sidebar-config-context'
 import { CollapsibleContent } from '@radix-ui/react-collapsible'
 import { IconLayoutDashboard } from '@tabler/icons-react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, ShieldCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router-dom'
 
@@ -187,6 +187,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <Link to={getClusterUrl('/')} onClick={handleMenuItemClick}>
                   <IconLayoutDashboard className="text-sidebar-primary" />
                   <span className="font-medium">{t('nav.overview')}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip="Security"
+                asChild
+                isActive={isActive('/security')}
+                className="transition-all duration-200 hover:bg-accent/60 active:scale-95 data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:shadow-sm"
+              >
+                <Link to={getClusterUrl('/security')} onClick={handleMenuItemClick}>
+                  <ShieldCheck className="text-sidebar-primary" />
+                  <span className="font-medium">Security</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

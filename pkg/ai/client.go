@@ -67,7 +67,9 @@ func (c *OpenAIAdapter) ChatCompletionStream(ctx context.Context, messages []ope
 
 	go func() {
 		defer close(streamChan)
-		defer stream.Close()
+		defer func() {
+			_ = stream.Close()
+		}()
 
 		for {
 			resp, err := stream.Recv()
