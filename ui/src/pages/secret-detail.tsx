@@ -20,6 +20,7 @@ import { LabelsAnno } from '@/components/lables-anno'
 import { RelatedResourcesTable } from '@/components/related-resource-table'
 import { ResourceDeleteConfirmationDialog } from '@/components/resource-delete-confirmation-dialog'
 import { ResourceHistoryTable } from '@/components/resource-history-table'
+import { SecurityTab } from '@/components/security/security-tab'
 import { YamlEditor } from '@/components/yaml-editor'
 
 export function SecretDetail(props: { namespace: string; name: string }) {
@@ -289,6 +290,13 @@ export function SecretDetail(props: { namespace: string; name: string }) {
                 name={secret.metadata!.name!}
                 namespace={secret.metadata!.namespace}
               />
+            ),
+          },
+          {
+            value: 'security',
+            label: 'Security',
+            content: (
+              <SecurityTab namespace={namespace} kind="Secret" name={name} />
             ),
           },
           {

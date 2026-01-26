@@ -29,6 +29,7 @@ import { LabelsAnno } from '@/components/lables-anno'
 import { RelatedResourcesTable } from '@/components/related-resource-table'
 import { ResourceDeleteConfirmationDialog } from '@/components/resource-delete-confirmation-dialog'
 import { ResourceHistoryTable } from '@/components/resource-history-table'
+import { SecurityTab } from '@/components/security/security-tab'
 import { YamlEditor } from '@/components/yaml-editor'
 
 export function ServiceDetail(props: { name: string; namespace?: string }) {
@@ -282,6 +283,13 @@ export function ServiceDetail(props: { name: string; namespace?: string }) {
                 namespace={namespace}
                 currentResource={data}
               />
+            ),
+          },
+          {
+            value: 'security',
+            label: 'Security',
+            content: (
+              <SecurityTab namespace={namespace} kind="Service" name={name} />
             ),
           },
           {

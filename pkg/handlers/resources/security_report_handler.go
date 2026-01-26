@@ -53,6 +53,30 @@ var clusterComplianceReportKind = schema.GroupVersionKind{
 	Kind:    "ClusterComplianceReport",
 }
 
+var infraAssessmentReportKind = schema.GroupVersionKind{
+	Group:   "aquasecurity.github.io",
+	Version: "v1alpha1",
+	Kind:    "InfraAssessmentReport",
+}
+
+var clusterInfraAssessmentReportKind = schema.GroupVersionKind{
+	Group:   "aquasecurity.github.io",
+	Version: "v1alpha1",
+	Kind:    "ClusterInfraAssessmentReport",
+}
+
+var rbacAssessmentReportKind = schema.GroupVersionKind{
+	Group:   "aquasecurity.github.io",
+	Version: "v1alpha1",
+	Kind:    "RbacAssessmentReport",
+}
+
+var clusterRbacAssessmentReportKind = schema.GroupVersionKind{
+	Group:   "aquasecurity.github.io",
+	Version: "v1alpha1",
+	Kind:    "ClusterRbacAssessmentReport",
+}
+
 // CheckStatus checks if the Trivy Operator is installed by looking for the CRD
 func (h *SecurityReportHandler) CheckStatus(c *gin.Context) {
 	cs := c.MustGet("cluster").(*cluster.ClientSet)
@@ -472,6 +496,123 @@ func (h *SecurityReportHandler) GetTopMisconfiguredWorkloads(c *gin.Context) {
 	c.JSON(http.StatusOK, model.WorkloadSummaryList{Items: misconfigured[:limit]})
 }
 
+// GetTopRbacRiskyWorkloads fetches workloads with most RBAC risks
+func (h *SecurityReportHandler) GetTopRbacRiskyWorkloads(c *gin.Context) {
+	cs := c.MustGet("cluster").(*cluster.ClientSet)
+
+	// Check if CRD exists
+	var crd apiextensionsv1.CustomResourceDefinition
+	if err := cs.K8sClient.Get(c.Request.Context(), client.ObjectKey{Name: "rbacassessmentreports.aquasecurity.github.io"}, &crd); err != nil {
+		c.JSON(http.StatusOK, model.WorkloadSummaryList{Items: []model.WorkloadSummary{}})
+		return
+	}
+
+	var list unstructured.UnstructuredList
+	list.SetGroupVersionKind(rbacAssessmentReportKind)
+
+	if err := cs.K8sClient.List(c.Request.Context(), &list); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to list rbac reports: %v", err)})
+		return
+	}
+
+	rbacMap := make(map[string]*model.WorkloadSummary)
+
+	for _, u := range list.Items {
+		var report model.RbacAssessmentReport
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &report); err != nil {
+			continue
+		}
+
+		s := report.Report.Summary
+
+		// Aggregate by workload
+		lbls := u.GetLabels()
+		kind := lbls["trivy-operator.resource.kind"]
+		name := lbls["trivy-operator.resource.name"]
+		namespace := u.GetNamespace()
+
+		if kind != "" && name != "" {
+			key := fmt.Sprintf("%s/%s/%s", namespace, kind, name)
+			if _, exists := rbacMap[key]; !exists {
+				rbacMap[key] = &model.WorkloadSummary{
+					Namespace: namespace,
+					Kind:      kind,
+					Name:      name,
+				}
+			}
+			w := rbacMap[key]
+			w.Vulnerabilities.CriticalCount += s.CriticalCount
+			w.Vulnerabilities.HighCount += s.HighCount
+			w.Vulnerabilities.MediumCount += s.MediumCount
+			w.Vulnerabilities.LowCount += s.LowCount
+		}
+	}
+
+	// Also check ClusterRbacAssessmentReports (for ClusterRoles etc)
+	var clusterCrd apiextensionsv1.CustomResourceDefinition
+	if err := cs.K8sClient.Get(c.Request.Context(), client.ObjectKey{Name: "clusterrbacassessmentreports.aquasecurity.github.io"}, &clusterCrd); err == nil {
+		var clusterList unstructured.UnstructuredList
+		clusterList.SetGroupVersionKind(clusterRbacAssessmentReportKind)
+		if err := cs.K8sClient.List(c.Request.Context(), &clusterList); err == nil {
+			for _, u := range clusterList.Items {
+				var report model.ClusterRbacAssessmentReport
+				if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &report); err != nil {
+					continue
+				}
+
+				s := report.Report.Summary
+				lbls := u.GetLabels()
+				kind := lbls["trivy-operator.resource.kind"]
+				name := lbls["trivy-operator.resource.name"]
+				// Cluster scoped, no namespace
+
+				if kind != "" && name != "" {
+					key := fmt.Sprintf("cluster/%s/%s", kind, name)
+					if _, exists := rbacMap[key]; !exists {
+						rbacMap[key] = &model.WorkloadSummary{
+							Namespace: "", // Cluster Scoped
+							Kind:      kind,
+							Name:      name,
+						}
+					}
+					w := rbacMap[key]
+					w.Vulnerabilities.CriticalCount += s.CriticalCount
+					w.Vulnerabilities.HighCount += s.HighCount
+					w.Vulnerabilities.MediumCount += s.MediumCount
+					w.Vulnerabilities.LowCount += s.LowCount
+				}
+			}
+		}
+	}
+
+	// Convert map to slice and sort
+	var risky []model.WorkloadSummary
+	for _, w := range rbacMap {
+		// Only include workloads with issues
+		if w.Vulnerabilities.CriticalCount > 0 || w.Vulnerabilities.HighCount > 0 ||
+			w.Vulnerabilities.MediumCount > 0 || w.Vulnerabilities.LowCount > 0 {
+			risky = append(risky, *w)
+		}
+	}
+
+	sort.Slice(risky, func(i, j int) bool {
+		if risky[i].Vulnerabilities.CriticalCount != risky[j].Vulnerabilities.CriticalCount {
+			return risky[i].Vulnerabilities.CriticalCount > risky[j].Vulnerabilities.CriticalCount
+		}
+		if risky[i].Vulnerabilities.HighCount != risky[j].Vulnerabilities.HighCount {
+			return risky[i].Vulnerabilities.HighCount > risky[j].Vulnerabilities.HighCount
+		}
+		return risky[i].Vulnerabilities.MediumCount > risky[j].Vulnerabilities.MediumCount
+	})
+
+	limit := 10
+	if len(risky) < limit {
+		limit = len(risky)
+	}
+
+	c.JSON(http.StatusOK, model.WorkloadSummaryList{Items: risky[:limit]})
+}
+
 // ListConfigAuditReports fetches config audit reports for a workload
 func (h *SecurityReportHandler) ListConfigAuditReports(c *gin.Context) {
 	cs := c.MustGet("cluster").(*cluster.ClientSet)
@@ -496,17 +637,67 @@ func (h *SecurityReportHandler) ListConfigAuditReports(c *gin.Context) {
 
 	opts := []client.ListOption{client.InNamespace(namespace)}
 
-	if workloadKind != "" && workloadName != "" {
+	if workloadKind == "Deployment" {
+		var rsList appsv1.ReplicaSetList
+		if err := cs.K8sClient.List(c.Request.Context(), &rsList, client.InNamespace(namespace)); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to list recyclasets: %v", err)})
+			return
+		}
+
+		var targetRSNames []string
+		for _, rs := range rsList.Items {
+			for _, owner := range rs.OwnerReferences {
+				if owner.Kind == "Deployment" && owner.Name == workloadName {
+					targetRSNames = append(targetRSNames, rs.Name)
+					break
+				}
+			}
+		}
+
+		if len(targetRSNames) == 0 {
+			c.JSON(http.StatusOK, model.ConfigAuditReportList{Items: []model.ConfigAuditReport{}})
+			return
+		}
+
+		labels := client.MatchingLabels{
+			"trivy-operator.resource.kind": "ReplicaSet",
+		}
+		opts = append(opts, labels)
+
+		if err := cs.K8sClient.List(c.Request.Context(), &list, opts...); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to list config audit reports: %v", err)})
+			return
+		}
+
+		filteredItems := []unstructured.Unstructured{}
+		for _, item := range list.Items {
+			lbls := item.GetLabels()
+			reportResourceName := lbls["trivy-operator.resource.name"]
+			for _, target := range targetRSNames {
+				if reportResourceName == target {
+					filteredItems = append(filteredItems, item)
+					break
+				}
+			}
+		}
+		list.Items = filteredItems
+
+	} else if workloadKind != "" && workloadName != "" {
 		labels := client.MatchingLabels{
 			"trivy-operator.resource.kind": workloadKind,
 			"trivy-operator.resource.name": workloadName,
 		}
 		opts = append(opts, labels)
-	}
+		if err := cs.K8sClient.List(c.Request.Context(), &list, opts...); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to list config audit reports: %v", err)})
+			return
+		}
 
-	if err := cs.K8sClient.List(c.Request.Context(), &list, opts...); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to list config audit reports: %v", err)})
-		return
+	} else {
+		if err := cs.K8sClient.List(c.Request.Context(), &list, opts...); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to list config audit reports: %v", err)})
+			return
+		}
 	}
 
 	reports := make([]model.ConfigAuditReport, 0, len(list.Items))
@@ -519,6 +710,154 @@ func (h *SecurityReportHandler) ListConfigAuditReports(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, model.ConfigAuditReportList{Items: reports})
+}
+
+// ListInfraAssessmentReports fetches infra assessment reports for a workload
+func (h *SecurityReportHandler) ListInfraAssessmentReports(c *gin.Context) {
+	cs := c.MustGet("cluster").(*cluster.ClientSet)
+	namespace := c.Query("namespace")
+	workloadKind := c.Query("workloadKind")
+	workloadName := c.Query("workloadName")
+
+	if namespace == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "namespace is required"})
+		return
+	}
+
+	// Check if CRD exists
+	var crd apiextensionsv1.CustomResourceDefinition
+	if err := cs.K8sClient.Get(c.Request.Context(), client.ObjectKey{Name: "infraassessmentreports.aquasecurity.github.io"}, &crd); err != nil {
+		c.JSON(http.StatusOK, model.InfraAssessmentReportList{Items: []model.InfraAssessmentReport{}})
+		return
+	}
+
+	var list unstructured.UnstructuredList
+	list.SetGroupVersionKind(infraAssessmentReportKind)
+
+	opts := []client.ListOption{client.InNamespace(namespace)}
+
+	if workloadKind == "Deployment" {
+		var rsList appsv1.ReplicaSetList
+		if err := cs.K8sClient.List(c.Request.Context(), &rsList, client.InNamespace(namespace)); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to list recyclasets: %v", err)})
+			return
+		}
+
+		var targetRSNames []string
+		for _, rs := range rsList.Items {
+			for _, owner := range rs.OwnerReferences {
+				if owner.Kind == "Deployment" && owner.Name == workloadName {
+					targetRSNames = append(targetRSNames, rs.Name)
+					break
+				}
+			}
+		}
+
+		if len(targetRSNames) == 0 {
+			c.JSON(http.StatusOK, model.InfraAssessmentReportList{Items: []model.InfraAssessmentReport{}})
+			return
+		}
+
+		labels := client.MatchingLabels{
+			"trivy-operator.resource.kind": "ReplicaSet",
+		}
+		opts = append(opts, labels)
+
+		if err := cs.K8sClient.List(c.Request.Context(), &list, opts...); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to list infra assessment reports: %v", err)})
+			return
+		}
+
+		filteredItems := []unstructured.Unstructured{}
+		for _, item := range list.Items {
+			lbls := item.GetLabels()
+			reportResourceName := lbls["trivy-operator.resource.name"]
+			for _, target := range targetRSNames {
+				if reportResourceName == target {
+					filteredItems = append(filteredItems, item)
+					break
+				}
+			}
+		}
+		list.Items = filteredItems
+
+	} else if workloadKind != "" && workloadName != "" {
+		labels := client.MatchingLabels{
+			"trivy-operator.resource.kind": workloadKind,
+			"trivy-operator.resource.name": workloadName,
+		}
+		opts = append(opts, labels)
+		if err := cs.K8sClient.List(c.Request.Context(), &list, opts...); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to list infra assessment reports: %v", err)})
+			return
+		}
+
+	} else {
+		if err := cs.K8sClient.List(c.Request.Context(), &list, opts...); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to list infra assessment reports: %v", err)})
+			return
+		}
+	}
+
+	reports := make([]model.InfraAssessmentReport, 0, len(list.Items))
+	for _, u := range list.Items {
+		var report model.InfraAssessmentReport
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &report); err != nil {
+			continue
+		}
+		reports = append(reports, report)
+	}
+
+	c.JSON(http.StatusOK, model.InfraAssessmentReportList{Items: reports})
+}
+
+// ListClusterInfraAssessmentReports fetches cluster infra assessment reports (for nodes)
+func (h *SecurityReportHandler) ListClusterInfraAssessmentReports(c *gin.Context) {
+	cs := c.MustGet("cluster").(*cluster.ClientSet)
+	// Typically filtered by a node name which might be passed as workloadName
+	workloadName := c.Query("workloadName")
+
+	// Check if CRD exists
+	var crd apiextensionsv1.CustomResourceDefinition
+	if err := cs.K8sClient.Get(c.Request.Context(), client.ObjectKey{Name: "clusterinfraassessmentreports.aquasecurity.github.io"}, &crd); err != nil {
+		c.JSON(http.StatusOK, model.ClusterInfraAssessmentReportList{Items: []model.ClusterInfraAssessmentReport{}})
+		return
+	}
+
+	var list unstructured.UnstructuredList
+	list.SetGroupVersionKind(clusterInfraAssessmentReportKind)
+
+	// Cluster scope, no namespace
+	opts := []client.ListOption{}
+
+	// Filter by labels if a node name is provided.
+	// Typically Trivy Operator labels node reports with the node name.
+	if workloadName != "" {
+		// Assuming Trivy labels them with resource.name or similar.
+		// For nodes, it's often labeled as 'trivy-operator.resource.name' or exists with the name 'node-<nodename>'.
+		// Let's try label matching first as it's more robust than guessing specific name pattern.
+		labels := client.MatchingLabels{
+			"trivy-operator.resource.name": workloadName,
+			// "trivy-operator.resource.kind": "Node", // Optional, likely redundant if looking in ClusterInfraAssessment
+		}
+		opts = append(opts, labels)
+	}
+
+	if err := cs.K8sClient.List(c.Request.Context(), &list, opts...); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to list cluster infra assessment reports: %v", err)})
+		return
+	}
+
+	reports := make([]model.ClusterInfraAssessmentReport, 0, len(list.Items))
+	for _, u := range list.Items {
+		var report model.ClusterInfraAssessmentReport
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &report); err != nil {
+			continue
+		}
+		reports = append(reports, report)
+	}
+
+	c.JSON(http.StatusOK, model.ClusterInfraAssessmentReportList{Items: reports})
 }
 
 // ListExposedSecretReports fetches exposed secret reports for a workload
@@ -545,17 +884,67 @@ func (h *SecurityReportHandler) ListExposedSecretReports(c *gin.Context) {
 
 	opts := []client.ListOption{client.InNamespace(namespace)}
 
-	if workloadKind != "" && workloadName != "" {
+	if workloadKind == "Deployment" {
+		var rsList appsv1.ReplicaSetList
+		if err := cs.K8sClient.List(c.Request.Context(), &rsList, client.InNamespace(namespace)); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to list recyclasets: %v", err)})
+			return
+		}
+
+		var targetRSNames []string
+		for _, rs := range rsList.Items {
+			for _, owner := range rs.OwnerReferences {
+				if owner.Kind == "Deployment" && owner.Name == workloadName {
+					targetRSNames = append(targetRSNames, rs.Name)
+					break
+				}
+			}
+		}
+
+		if len(targetRSNames) == 0 {
+			c.JSON(http.StatusOK, model.ExposedSecretReportList{Items: []model.ExposedSecretReport{}})
+			return
+		}
+
+		labels := client.MatchingLabels{
+			"trivy-operator.resource.kind": "ReplicaSet",
+		}
+		opts = append(opts, labels)
+
+		if err := cs.K8sClient.List(c.Request.Context(), &list, opts...); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to list exposed secret reports: %v", err)})
+			return
+		}
+
+		filteredItems := []unstructured.Unstructured{}
+		for _, item := range list.Items {
+			lbls := item.GetLabels()
+			reportResourceName := lbls["trivy-operator.resource.name"]
+			for _, target := range targetRSNames {
+				if reportResourceName == target {
+					filteredItems = append(filteredItems, item)
+					break
+				}
+			}
+		}
+		list.Items = filteredItems
+
+	} else if workloadKind != "" && workloadName != "" {
 		labels := client.MatchingLabels{
 			"trivy-operator.resource.kind": workloadKind,
 			"trivy-operator.resource.name": workloadName,
 		}
 		opts = append(opts, labels)
-	}
+		if err := cs.K8sClient.List(c.Request.Context(), &list, opts...); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to list exposed secret reports: %v", err)})
+			return
+		}
 
-	if err := cs.K8sClient.List(c.Request.Context(), &list, opts...); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to list exposed secret reports: %v", err)})
-		return
+	} else {
+		if err := cs.K8sClient.List(c.Request.Context(), &list, opts...); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to list exposed secret reports: %v", err)})
+			return
+		}
 	}
 
 	reports := make([]model.ExposedSecretReport, 0, len(list.Items))
@@ -602,14 +991,112 @@ func (h *SecurityReportHandler) ListComplianceReports(c *gin.Context) {
 	c.JSON(http.StatusOK, model.ClusterComplianceReportList{Items: reports})
 }
 
+// ListRbacAssessmentReports fetches RBAC assessment reports for a workload
+func (h *SecurityReportHandler) ListRbacAssessmentReports(c *gin.Context) {
+	cs := c.MustGet("cluster").(*cluster.ClientSet)
+	namespace := c.Query("namespace")
+	workloadKind := c.Query("workloadKind")
+	workloadName := c.Query("workloadName")
+
+	if namespace == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "namespace is required"})
+		return
+	}
+
+	// Check if CRD exists
+	var crd apiextensionsv1.CustomResourceDefinition
+	if err := cs.K8sClient.Get(c.Request.Context(), client.ObjectKey{Name: "rbacassessmentreports.aquasecurity.github.io"}, &crd); err != nil {
+		c.JSON(http.StatusOK, model.RbacAssessmentReportList{Items: []model.RbacAssessmentReport{}})
+		return
+	}
+
+	var list unstructured.UnstructuredList
+	list.SetGroupVersionKind(rbacAssessmentReportKind)
+
+	opts := []client.ListOption{client.InNamespace(namespace)}
+
+	if workloadKind != "" && workloadName != "" {
+		labels := client.MatchingLabels{
+			"trivy-operator.resource.kind": workloadKind,
+			"trivy-operator.resource.name": workloadName,
+		}
+		opts = append(opts, labels)
+	}
+
+	if err := cs.K8sClient.List(c.Request.Context(), &list, opts...); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to list rbac assessment reports: %v", err)})
+		return
+	}
+
+	reports := make([]model.RbacAssessmentReport, 0, len(list.Items))
+	for _, u := range list.Items {
+		var report model.RbacAssessmentReport
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &report); err != nil {
+			continue
+		}
+		reports = append(reports, report)
+	}
+
+	c.JSON(http.StatusOK, model.RbacAssessmentReportList{Items: reports})
+}
+
+// ListClusterRbacAssessmentReports fetches cluster RBAC assessment reports (for cluster roles/bindings)
+func (h *SecurityReportHandler) ListClusterRbacAssessmentReports(c *gin.Context) {
+	cs := c.MustGet("cluster").(*cluster.ClientSet)
+	workloadName := c.Query("workloadName")
+	workloadKind := c.Query("workloadKind")
+
+	// Check if CRD exists
+	var crd apiextensionsv1.CustomResourceDefinition
+	if err := cs.K8sClient.Get(c.Request.Context(), client.ObjectKey{Name: "clusterrbacassessmentreports.aquasecurity.github.io"}, &crd); err != nil {
+		c.JSON(http.StatusOK, model.ClusterRbacAssessmentReportList{Items: []model.ClusterRbacAssessmentReport{}})
+		return
+	}
+
+	var list unstructured.UnstructuredList
+	list.SetGroupVersionKind(clusterRbacAssessmentReportKind)
+
+	// Cluster scope
+	opts := []client.ListOption{}
+
+	if workloadKind != "" && workloadName != "" {
+		labels := client.MatchingLabels{
+			"trivy-operator.resource.kind": workloadKind,
+			"trivy-operator.resource.name": workloadName,
+		}
+		opts = append(opts, labels)
+	}
+
+	if err := cs.K8sClient.List(c.Request.Context(), &list, opts...); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to list cluster rbac assessment reports: %v", err)})
+		return
+	}
+
+	reports := make([]model.ClusterRbacAssessmentReport, 0, len(list.Items))
+	for _, u := range list.Items {
+		var report model.ClusterRbacAssessmentReport
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &report); err != nil {
+			continue
+		}
+		reports = append(reports, report)
+	}
+
+	c.JSON(http.StatusOK, model.ClusterRbacAssessmentReportList{Items: reports})
+}
+
 func (h *SecurityReportHandler) RegisterRoutes(group *gin.RouterGroup) {
 	securityParams := group.Group("/security")
 	securityParams.GET("/status", h.CheckStatus)
 	securityParams.GET("/reports", h.ListReports)
 	securityParams.GET("/config-audit/reports", h.ListConfigAuditReports)
+	securityParams.GET("/infra-assessment/reports", h.ListInfraAssessmentReports)
+	securityParams.GET("/cluster-infra-assessment/reports", h.ListClusterInfraAssessmentReports)
+	securityParams.GET("/rbac-assessment/reports", h.ListRbacAssessmentReports)
+	securityParams.GET("/cluster-rbac-assessment/reports", h.ListClusterRbacAssessmentReports)
 	securityParams.GET("/secrets/reports", h.ListExposedSecretReports)
 	securityParams.GET("/compliance/reports", h.ListComplianceReports)
 	securityParams.GET("/summary", h.GetClusterSummary)
 	securityParams.GET("/reports/top-vulnerable", h.GetTopVulnerableWorkloads)
 	securityParams.GET("/reports/top-misconfigured", h.GetTopMisconfiguredWorkloads)
+	securityParams.GET("/reports/top-rbac-risky", h.GetTopRbacRiskyWorkloads)
 }

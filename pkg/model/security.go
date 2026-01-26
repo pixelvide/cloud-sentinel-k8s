@@ -77,13 +77,14 @@ type WorkloadSummaryList struct {
 
 // ClusterSecuritySummary represents aggregated security data
 type ClusterSecuritySummary struct {
-	TotalVulnerabilities   VulnerabilitySummary `json:"totalVulnerabilities"`
-	TotalConfigAuditIssues CheckSummary         `json:"totalConfigAuditIssues"`
-	TotalExposedSecrets    CheckSummary         `json:"totalExposedSecrets"`
-	VulnerableImages       int                  `json:"vulnerableImages"`
-	ScannedImages          int                  `json:"scannedImages"`
-	TopVulnerableWorkloads []WorkloadSummary    `json:"topVulnerableWorkloads"`
-	TopMisconfigured       []WorkloadSummary    `json:"topMisconfigured"`
+	TotalVulnerabilities      VulnerabilitySummary `json:"totalVulnerabilities"`
+	TotalConfigAuditIssues    CheckSummary         `json:"totalConfigAuditIssues"`
+	TotalRbacAssessmentIssues CheckSummary         `json:"totalRbacAssessmentIssues"`
+	TotalExposedSecrets       CheckSummary         `json:"totalExposedSecrets"`
+	VulnerableImages          int                  `json:"vulnerableImages"`
+	ScannedImages             int                  `json:"scannedImages"`
+	TopVulnerableWorkloads    []WorkloadSummary    `json:"topVulnerableWorkloads"`
+	TopMisconfigured          []WorkloadSummary    `json:"topMisconfigured"`
 }
 
 // CheckSummary is a generic summary for pass/fail check reports (ConfigAudit, RBAC, Secrets)
@@ -202,6 +203,24 @@ type RbacAssessmentReportList struct {
 	Items           []RbacAssessmentReport `json:"items"`
 }
 
+// ============================
+// ClusterRbacAssessmentReport
+// ============================
+
+// ClusterRbacAssessmentReport represents the Trivy Operator ClusterRbacAssessmentReport CRD
+type ClusterRbacAssessmentReport struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Report            RbacAssessmentReportData `json:"report"` // Reuses RbacAssessmentReportData
+}
+
+// ClusterRbacAssessmentReportList is a list of ClusterRbacAssessmentReports
+type ClusterRbacAssessmentReportList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []ClusterRbacAssessmentReport `json:"items"`
+}
+
 // =====================
 // ClusterComplianceReport
 // =====================
@@ -269,4 +288,40 @@ type ClusterComplianceReportList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []ClusterComplianceReport `json:"items"`
+}
+
+// =====================
+// InfraAssessmentReport
+// =====================
+
+// InfraAssessmentReport represents the Trivy Operator InfraAssessmentReport CRD
+type InfraAssessmentReport struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Report            ConfigAuditReportData `json:"report"` // Reuses ConfigAuditReportData
+}
+
+// InfraAssessmentReportList is a list of InfraAssessmentReports
+type InfraAssessmentReportList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []InfraAssessmentReport `json:"items"`
+}
+
+// ============================
+// ClusterInfraAssessmentReport
+// ============================
+
+// ClusterInfraAssessmentReport represents the Trivy Operator ClusterInfraAssessmentReport CRD
+type ClusterInfraAssessmentReport struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Report            ConfigAuditReportData `json:"report"` // Reuses ConfigAuditReportData
+}
+
+// ClusterInfraAssessmentReportList is a list of ClusterInfraAssessmentReports
+type ClusterInfraAssessmentReportList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []ClusterInfraAssessmentReport `json:"items"`
 }

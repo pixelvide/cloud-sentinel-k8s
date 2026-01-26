@@ -181,6 +181,12 @@ export function SecurityDashboard() {
         enabled: !!status?.trivyInstalled,
     })
 
+    const { data: topRbacRisky, isLoading: loadingRbacRisky } = useQuery({
+        queryKey: ["security", "top-rbac-risky-workloads"],
+        queryFn: () => securityApi.getTopRbacRiskyWorkloads(),
+        enabled: !!status?.trivyInstalled,
+    })
+
     if (status && !status.trivyInstalled) {
         return (
             <div className="p-6">
@@ -214,10 +220,11 @@ export function SecurityDashboard() {
         return <div className="p-6">No data available.</div>
     }
 
-    const { totalVulnerabilities: vulns, totalConfigAuditIssues: configAudit, totalExposedSecrets: secrets } = summary
+    const { totalVulnerabilities: vulns, totalConfigAuditIssues: configAudit, totalRbacAssessmentIssues: rbacAudit, totalExposedSecrets: secrets } = summary
 
     const vulnTotal = vulns.criticalCount + vulns.highCount + vulns.mediumCount + vulns.lowCount || 1
     const configTotal = (configAudit?.criticalCount || 0) + (configAudit?.highCount || 0) + (configAudit?.mediumCount || 0) + (configAudit?.lowCount || 0)
+    const rbacTotal = (rbacAudit?.criticalCount || 0) + (rbacAudit?.highCount || 0) + (rbacAudit?.mediumCount || 0) + (rbacAudit?.lowCount || 0)
     const secretsTotal = (secrets?.criticalCount || 0) + (secrets?.highCount || 0) + (secrets?.mediumCount || 0) + (secrets?.lowCount || 0)
 
     return (
@@ -230,7 +237,7 @@ export function SecurityDashboard() {
             </div>
 
             {/* Overview Summary Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Critical CVEs</CardTitle>
@@ -259,6 +266,16 @@ export function SecurityDashboard() {
                     <CardContent>
                         <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{configTotal}</div>
                         <p className="text-xs text-muted-foreground">Misconfigurations</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">RBAC Issues</CardTitle>
+                        <ShieldCheck className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{rbacTotal}</div>
+                        <p className="text-xs text-muted-foreground">Risky permissions</p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -298,6 +315,7 @@ export function SecurityDashboard() {
                 <TabsList>
                     <TabsTrigger value="vulnerabilities">Vulnerabilities</TabsTrigger>
                     <TabsTrigger value="config">Configuration</TabsTrigger>
+                    <TabsTrigger value="rbac">RBAC</TabsTrigger>
                     <TabsTrigger value="compliance">Compliance</TabsTrigger>
                 </TabsList>
 
@@ -579,6 +597,138 @@ export function SecurityDashboard() {
                                         <TableRow>
                                             <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                                                 No misconfigured workloads found.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="rbac" className="space-y-6 mt-4">
+                    {/* RBAC Issues Distribution */}
+                    {rbacTotal > 0 && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>RBAC Issues Distribution</CardTitle>
+                                <CardDescription>
+                                    Breakdown of Kubernetes RBAC risks by severity.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="pl-2">
+                                <div className="w-full space-y-4 p-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-24 text-sm font-medium">Critical</div>
+                                        <div className="flex-1 h-4 bg-secondary rounded-full overflow-hidden">
+                                            <div className="h-full bg-red-500 dark:bg-red-600" style={{ width: `${((rbacAudit?.criticalCount || 0) / (rbacTotal || 1)) * 100}%` }} />
+                                        </div>
+                                        <div className="w-12 text-sm text-right">{rbacAudit?.criticalCount || 0}</div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-24 text-sm font-medium">High</div>
+                                        <div className="flex-1 h-4 bg-secondary rounded-full overflow-hidden">
+                                            <div className="h-full bg-orange-500 dark:bg-orange-600" style={{ width: `${((rbacAudit?.highCount || 0) / (rbacTotal || 1)) * 100}%` }} />
+                                        </div>
+                                        <div className="w-12 text-sm text-right">{rbacAudit?.highCount || 0}</div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-24 text-sm font-medium">Medium</div>
+                                        <div className="flex-1 h-4 bg-secondary rounded-full overflow-hidden">
+                                            <div className="h-full bg-yellow-500 dark:bg-yellow-600" style={{ width: `${((rbacAudit?.mediumCount || 0) / (rbacTotal || 1)) * 100}%` }} />
+                                        </div>
+                                        <div className="w-12 text-sm text-right">{rbacAudit?.mediumCount || 0}</div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-24 text-sm font-medium">Low</div>
+                                        <div className="flex-1 h-4 bg-secondary rounded-full overflow-hidden">
+                                            <div className="h-full bg-blue-500 dark:bg-blue-600" style={{ width: `${((rbacAudit?.lowCount || 0) / (rbacTotal || 1)) * 100}%` }} />
+                                        </div>
+                                        <div className="w-12 text-sm text-right">{rbacAudit?.lowCount || 0}</div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* Top Risky RBAC Workloads */}
+                    <Card className="h-full">
+                        <CardHeader>
+                            <CardTitle>Top Risky RBAC Workloads</CardTitle>
+                            <CardDescription>Workloads with the most critical and high RBAC risks.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Workload</TableHead>
+                                        <TableHead>Critical</TableHead>
+                                        <TableHead>High</TableHead>
+                                        <TableHead>Medium</TableHead>
+                                        <TableHead>Low</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {loadingRbacRisky ? (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                                                Loading top risky RBAC workloads...
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : (topRbacRisky?.items || []).map((workload) => (
+                                        <TableRow key={`${workload.kind}-${workload.name}`}>
+                                            <TableCell>
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium text-sm">
+                                                        <Link
+                                                            to={workload.namespace
+                                                                ? `../${workload.kind.toLowerCase()}s/${workload.namespace}/${workload.name}`
+                                                                : `../${workload.kind.toLowerCase()}s/${workload.name}`
+                                                            }
+                                                            className="hover:underline text-blue-600 dark:text-blue-400"
+                                                        >
+                                                            {workload.name}
+                                                        </Link>
+                                                    </span>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {workload.kind} {workload.namespace ? `• ${workload.namespace}` : "• Cluster Scoped"}
+                                                    </span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                {workload.vulnerabilities.criticalCount > 0 && (
+                                                    <Badge variant="destructive" className="bg-red-600 hover:bg-red-700">
+                                                        {workload.vulnerabilities.criticalCount}
+                                                    </Badge>
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                {workload.vulnerabilities.highCount > 0 && (
+                                                    <Badge variant="secondary" className="bg-orange-500/15 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800">
+                                                        {workload.vulnerabilities.highCount}
+                                                    </Badge>
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                {workload.vulnerabilities.mediumCount > 0 && (
+                                                    <span className="text-yellow-600 dark:text-yellow-400 font-medium">
+                                                        {workload.vulnerabilities.mediumCount}
+                                                    </span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                {workload.vulnerabilities.lowCount > 0 && (
+                                                    <span className="text-blue-600 dark:text-blue-400">
+                                                        {workload.vulnerabilities.lowCount}
+                                                    </span>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                    {!loadingRbacRisky && (!topRbacRisky?.items || topRbacRisky.items.length === 0) && (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                                                No risky RBAC workloads found.
                                             </TableCell>
                                         </TableRow>
                                     )}

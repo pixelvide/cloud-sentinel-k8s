@@ -122,6 +122,7 @@ export interface WorkloadSummary {
 export interface ClusterSecuritySummary {
     totalVulnerabilities: VulnerabilitySummary
     totalConfigAuditIssues: CheckSummary
+    totalRbacAssessmentIssues: CheckSummary
     totalExposedSecrets: CheckSummary
     vulnerableImages: number
     scannedImages: number
@@ -165,6 +166,43 @@ export interface ClusterComplianceReport {
     status: ClusterComplianceReportStatus
 }
 
+
+// InfraAssessmentReport types
+export interface InfraAssessmentReport {
+    metadata: {
+        name: string
+        namespace: string
+        creationTimestamp: string
+    }
+    report: ConfigAuditReportData // Reusing ConfigAuditReportData as structure is likely identical
+}
+
+export interface ClusterInfraAssessmentReport {
+    metadata: {
+        name: string
+        creationTimestamp: string
+    }
+    report: ConfigAuditReportData // Reusing ConfigAuditReportData
+}
+
+// RbacAssessmentReport types
+export interface RbacAssessmentReport {
+    metadata: {
+        name: string
+        namespace: string
+        creationTimestamp: string
+    }
+    report: ConfigAuditReportData // Reusing ConfigAuditReportData
+}
+
+export interface ClusterRbacAssessmentReport {
+    metadata: {
+        name: string
+        creationTimestamp: string
+    }
+    report: ConfigAuditReportData // Reusing ConfigAuditReportData
+}
+
 export const securityApi = {
     getStatus: () => apiClient.get<SecurityStatus>("/security/status"),
 
@@ -186,6 +224,45 @@ export const securityApi = {
         return apiClient.get<{ items: ConfigAuditReport[] }>(`/security/config-audit/reports?${params.toString()}`)
     },
 
+    getInfraAssessmentReports: (namespace: string | undefined, workloadKind: string, workloadName: string) => {
+        const params = new URLSearchParams({
+            workloadKind,
+            workloadName
+        })
+        if (namespace) params.append("namespace", namespace)
+        return apiClient.get<{ items: InfraAssessmentReport[] }>(`/security/infra-assessment/reports?${params.toString()}`)
+    },
+
+    getClusterInfraAssessmentReports: (workloadName: string) => {
+        // For cluster scoped resources, we might filter by name if needed, or just fetch all and filter client side
+        // Assuming the backend supports filtering by name for ClusterInfraAssessmentReport if relevant
+        // Or we just rely on labels. For now, let's assume a similar pattern or just fetching all if no filter.
+        // But since this is specific to a Node, we likely need to find the report for that Node.
+        // The standard Trivy Operator creates a report with name like "node-<node-name>" or similar.
+        // Let's assume we can query by label or name. 
+        // Based on existing pattern, we'll pass the workload name (Node name).
+        const params = new URLSearchParams({
+            workloadName
+        })
+        return apiClient.get<{ items: ClusterInfraAssessmentReport[] }>(`/security/cluster-infra-assessment/reports?${params.toString()}`)
+    },
+
+    getRbacAssessmentReports: (namespace: string | undefined, workloadKind: string, workloadName: string) => {
+        const params = new URLSearchParams({
+            workloadKind,
+            workloadName
+        })
+        if (namespace) params.append("namespace", namespace)
+        return apiClient.get<{ items: RbacAssessmentReport[] }>(`/security/rbac-assessment/reports?${params.toString()}`)
+    },
+
+    getClusterRbacAssessmentReports: (workloadName: string) => {
+        const params = new URLSearchParams({
+            workloadName
+        })
+        return apiClient.get<{ items: ClusterRbacAssessmentReport[] }>(`/security/cluster-rbac-assessment/reports?${params.toString()}`)
+    },
+
     getExposedSecretReports: (namespace: string | undefined, workloadKind: string, workloadName: string) => {
         const params = new URLSearchParams({
             workloadKind,
@@ -202,4 +279,6 @@ export const securityApi = {
     getTopVulnerableWorkloads: () => apiClient.get<{ items: WorkloadSummary[] }>("/security/reports/top-vulnerable"),
 
     getTopMisconfiguredWorkloads: () => apiClient.get<{ items: WorkloadSummary[] }>("/security/reports/top-misconfigured"),
+
+    getTopRbacRiskyWorkloads: () => apiClient.get<{ items: WorkloadSummary[] }>("/security/reports/top-rbac-risky"),
 }
