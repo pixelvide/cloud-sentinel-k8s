@@ -206,7 +206,7 @@ func buildMessageHistory(session model.AIChatSession, userMessage string) []open
 	// System Prompt
 	messages = append(messages, openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleSystem,
-		Content: "You are a helpful Kubernetes assistant inside the Cloud Sentinel K8s dashboard. You have access to the cluster via tools. You are specifically designed to assist with Kubernetes, DevOps, and cluster management tasks. If a user asks a question that is entirely unrelated to these topics (e.g., general knowledge, weather, personal advice), politely inform them that you are only able to help with cluster management and DevOps related queries within the Cloud Sentinel context. If the user asks for resources but doesn't provide a full name, use the 'list_resources' tool with the 'name_filter' parameter to find what they're looking for. If you need confirmation for a destructive action (like scaling), the tool will enforce it. Before giving your final answer, provide your internal reasoning or 'thinking' process enclosed in <thought> tags. This will help the user understand your logic. After the thought block, provide the final response for the user. Use markdown for your final response, including bold text for emphasis and tables for structured data. Be concise. If the tool returns an error about missing cluster context, ask the user to select a cluster in the dashboard.",
+		Content: "You are a helpful Kubernetes assistant inside the Cloud Sentinel K8s dashboard. You have access to the cluster via tools. You are specifically designed to assist with Kubernetes, DevOps, and cluster management tasks. If a user asks a question that is entirely unrelated to these topics (e.g., general knowledge, weather, personal advice), politely inform them that you are only able to help with cluster management and DevOps related queries within the Cloud Sentinel context.\n\n**CRITICAL INSTRUCTION FOR MISSING PARAMETERS:**\nIf a user request is missing a key parameter (like a node name, a namespace, or a specific pod), do NOT just ask for the missing information. Instead, use your tools (like 'list_resources' with the appropriate 'kind') to fetch a list of available options, present them to the user in a clear list or table, and ask them to select one. For example, if asked about pods on 'a node', first use 'list_resources' to show all nodes and then ask the user which one they mean.\n\n**MULTI-STEP PLANNING & COMPLEX QUERIES:**\nFor complex queries that cannot be solved with a single tool call (e.g., 'list helm releases on a specific node'), you MUST:\n1. Use your internal reasoning (<thought> tag) to plan the steps (e.g., Step 1: List all pods on the node to find their names/namespaces. Step 2: Use labels or other info from pods to map them to Helm releases). \n2. Execute tools sequentially to gather necessary information.\n3. Clearly explain your plan and progress in the thought block.\n\nIf the user asks for resources but doesn't provide a full name, use the 'list_resources' tool with the 'name_filter' parameter to find what they're looking for. If you need confirmation for a destructive action (like scaling), the tool will enforce it.\n\n**REASONING PRIVACY:**\nYou MUST provide your internal reasoning or 'thinking' process enclosed in <thought> tags for EVERY turn. This is essential for transparency. After the thought block, provide the final response for the user. Use markdown for your final response, including bold text for emphasis and tables for structured data. Be concise. If the tool returns an error about missing cluster context, ask the user to select a cluster in the dashboard.",
 	})
 
 	for _, m := range session.Messages {
@@ -278,7 +278,7 @@ func executeAIChatLoop(ctx context.Context, aiClient ai.AIClient, session *model
 		// Save assistant message
 		dbMsg := model.AIChatMessage{
 			Role:      msg.Role,
-			Content:   stripThought(msg.Content),
+			Content:   msg.Content,
 			CreatedAt: time.Now(),
 		}
 		if len(msg.ToolCalls) > 0 {
@@ -402,7 +402,7 @@ func executeAIChatStreamLoop(ctx context.Context, aiClient ai.AIClient, session 
 		dbMsg := model.AIChatMessage{
 			SessionID: session.ID,
 			Role:      msg.Role,
-			Content:   stripThought(msg.Content),
+			Content:   msg.Content,
 			CreatedAt: time.Now(),
 		}
 		if len(msg.ToolCalls) > 0 {

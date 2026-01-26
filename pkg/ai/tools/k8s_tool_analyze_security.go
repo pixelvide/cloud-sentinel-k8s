@@ -22,7 +22,7 @@ func (t *AnalyzeSecurityTool) Definition() openai.Tool {
 		Type: openai.ToolTypeFunction,
 		Function: &openai.FunctionDefinition{
 			Name:        "analyze_security",
-			Description: "Analyze the security context of a resource (Pod or Deployment) and report potential issues.",
+			Description: "Analyze the security context of a specific resource (Pod or Deployment) and report potential issues. If you don't know the specific pod or namespace, find them first using 'list_pods' or 'list_resources'.",
 			Parameters: json.RawMessage(`{
 				"type": "object",
 				"properties": {

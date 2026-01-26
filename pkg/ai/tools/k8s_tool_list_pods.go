@@ -21,7 +21,7 @@ func (t *ListPodsTool) Definition() openai.Tool {
 		Type: openai.ToolTypeFunction,
 		Function: &openai.FunctionDefinition{
 			Name:        "list_pods",
-			Description: "List pods in a namespace, optionally filtered by status",
+			Description: "List pods in a namespace, optionally filtered by status or node name. Use this tool when you need to see pods for a specific node or across the cluster.",
 			Parameters: json.RawMessage(`{
 				"type": "object",
 				"properties": {
@@ -85,8 +85,8 @@ func (t *ListPodsTool) Execute(ctx context.Context, args string) (string, error)
 			restarts += int(status.RestartCount)
 		}
 
-		results = append(results, fmt.Sprintf("%s (Status: %s, Restarts: %d, IP: %s)",
-			pod.Name, pod.Status.Phase, restarts, pod.Status.PodIP))
+		results = append(results, fmt.Sprintf("%s/%s (Status: %s, Restarts: %d, IP: %s)",
+			pod.Namespace, pod.Name, pod.Status.Phase, restarts, pod.Status.PodIP))
 	}
 
 	if len(results) == 0 {

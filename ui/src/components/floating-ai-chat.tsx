@@ -242,23 +242,19 @@ export function FloatingAIChat() {
     }
 
     const parseMessage = (content: string) => {
-        const thoughtStart = content.indexOf('<thought>')
-        const thoughtEnd = content.indexOf('</thought>')
+        const thoughts: string[] = []
+        const thoughtRegex = /<thought>([\s\S]*?)(?:<\/thought>|$)/g
+        let match
 
-        if (thoughtStart !== -1) {
-            if (thoughtEnd !== -1) {
-                // Thought is complete
-                const thought = content.substring(thoughtStart + 9, thoughtEnd).trim()
-                const answer = content.substring(thoughtEnd + 10).trim()
-                return { thought, answer }
-            } else {
-                // Thought is still streaming
-                const thought = content.substring(thoughtStart + 9).trim()
-                return { thought, answer: '' }
-            }
+        while ((match = thoughtRegex.exec(content)) !== null) {
+            thoughts.push(match[1].trim())
         }
 
-        return { thought: null, answer: content.trim() }
+        // The answer is what's left after removing all thoughts
+        // However, we want to skip the <thought> tags themselves in the final display
+        const answer = content.replace(/<thought>[\s\S]*?(?:<\/thought>|$)/g, '').trim()
+
+        return { thoughts, answer }
     }
 
     if (!isOpen || !config?.is_ai_chat_enabled) return null
@@ -432,16 +428,16 @@ export function FloatingAIChat() {
                                                 msg.content
                                             ) : (
                                                 (() => {
-                                                    const { thought, answer } = parseMessage(msg.content)
+                                                    const { thoughts, answer } = parseMessage(msg.content)
                                                     return (
                                                         <div className="flex flex-col gap-2">
-                                                            {thought && (
-                                                                <Collapsible.Root className="bg-background/50 rounded-lg overflow-hidden border border-primary/10">
+                                                            {thoughts.map((thought, tIdx) => (
+                                                                <Collapsible.Root key={tIdx} className="bg-background/50 rounded-lg overflow-hidden border border-primary/10">
                                                                     <Collapsible.Trigger asChild>
                                                                         <button className="flex items-center justify-between w-full px-3 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-primary/5 transition-colors">
                                                                             <div className="flex items-center gap-1.5 line-clamp-1">
                                                                                 <IconBulb className="h-3 w-3 text-primary/60" />
-                                                                                <span>Thinking...</span>
+                                                                                <span>Thinking {thoughts.length > 1 ? `(${tIdx + 1})` : ''}...</span>
                                                                             </div>
                                                                             <IconChevronDown className="h-3 w-3 transition-transform duration-200" />
                                                                         </button>
@@ -450,7 +446,7 @@ export function FloatingAIChat() {
                                                                         {thought}
                                                                     </Collapsible.Content>
                                                                 </Collapsible.Root>
-                                                            )}
+                                                            ))}
                                                             <div className="markdown-content prose prose-sm dark:prose-invert max-w-none">
                                                                 <ReactMarkdown
                                                                     remarkPlugins={[remarkGfm]}
