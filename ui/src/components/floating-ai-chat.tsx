@@ -33,6 +33,7 @@ import {
 } from '@/lib/api'
 import { getSubPath, withSubPath } from '@/lib/subpath'
 import { useAuth } from '@/contexts/auth-context'
+import { useCluster } from '@/hooks/use-cluster'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
@@ -48,6 +49,7 @@ import {
 export function FloatingAIChat() {
     const { t } = useTranslation()
     const { config } = useAuth()
+    const { currentCluster } = useCluster()
     const [isOpen, setIsOpen] = useState(false)
     const [isMinimized, setIsMinimized] = useState(false)
     const [messages, setMessages] = useState<AIChatMessage[]>([])
@@ -192,7 +194,7 @@ export function FloatingAIChat() {
         setMessages((prev) => [...prev, initialAssistantMsg])
 
         try {
-            const clusterName = localStorage.getItem('current-cluster') || undefined
+            const clusterName = currentCluster || undefined
 
             const response = await fetch(withSubPath('/api/v1/ai/chat'), {
                 method: 'POST',
@@ -216,70 +218,94 @@ export function FloatingAIChat() {
             const reader = response.body?.getReader()
             const decoder = new TextDecoder()
             let accumulatedContent = ''
+            let buffer = ''
+            let lastToolCallIndex = 0
 
             if (reader) {
                 while (true) {
                     const { done, value } = await reader.read()
                     if (done) break
 
-                    const chunk = decoder.decode(value, { stream: true })
-                    const lines = chunk.split('\n')
+                    buffer += decoder.decode(value, { stream: true })
+                    const lines = buffer.split('\n')
+                    buffer = lines.pop() || '' // Keep the last incomplete line
 
                     for (const line of lines) {
-                        if (line.startsWith('event:')) {
-                            const eventType = line.replace('event:', '').trim()
-                            // The data follows the event line
-                            const dataLine = lines[lines.indexOf(line) + 1]
-                            if (dataLine && dataLine.startsWith('data:')) {
-                                try {
-                                    const data = JSON.parse(dataLine.replace('data:', '').trim())
+                        if (!line.trim()) continue
 
-                                    if (eventType === 'session') {
-                                        if (!sessionId) setSessionId(data.sessionID)
-                                    } else if (eventType === 'message') {
-                                        accumulatedContent += data.content
-                                        setMessages((prev) => {
-                                            const newMsgs = [...prev]
-                                            newMsgs[newMsgs.length - 1] = {
-                                                ...newMsgs[newMsgs.length - 1],
-                                                content: accumulatedContent,
-                                            }
-                                            return newMsgs
-                                        })
-                                    } else if (eventType === 'status') {
-                                        // Optional: handle status updates if needed
-                                        console.log('AI Status:', data.status)
-                                    } else if (eventType === 'error') {
-                                        toast.error(data.error)
-                                    }
-                                } catch {
-                                    // Ignore parse errors for incomplete JSON
-                                }
-                            }
+                        if (line.startsWith('event:')) {
+                            // We expect data on next lines, but simple logic: just look for data: prefixes in following iterations
+                            // This simple parser is stateless per line, assuming standard SSE format event/data pairs or just data
+                            continue
                         }
 
-                        // Check for tool calls in the line for navigation
-                        if (line.includes('<tool_call>')) {
+                        // Handle data lines
+                        if (line.startsWith('data:')) {
                             try {
-                                // Simple extraction for now, might need robust parsing if split across lines
-                                // format: <tool_call>JSON</tool_call>
-                                const start = line.indexOf('<tool_call>') + 11
-                                const end = line.indexOf('</tool_call>')
-                                if (end > start) {
-                                    const jsonStr = line.substring(start, end)
-                                    const toolCall = JSON.parse(jsonStr)
-                                    if (toolCall.name === 'navigate_to') {
-                                        const args = JSON.parse(toolCall.arguments)
-                                        if (args.path) {
-                                            navigate(withSubPath(args.path))
-                                        } else if (args.page) {
-                                            const cluster = localStorage.getItem('current-cluster') || 'local'
-                                            navigate(withSubPath(`/c/${cluster}/${args.page}`))
+                                const dataStr = line.replace('data:', '').trim()
+                                if (!dataStr) continue
+
+                                const data = JSON.parse(dataStr)
+
+                                if (data.sessionID && !sessionId) {
+                                    setSessionId(data.sessionID)
+                                } else if (data.content) {
+                                    accumulatedContent += data.content
+                                    setMessages((prev) => {
+                                        const newMsgs = [...prev]
+                                        newMsgs[newMsgs.length - 1] = {
+                                            ...newMsgs[newMsgs.length - 1],
+                                            content: accumulatedContent,
+                                        }
+                                        return newMsgs
+                                    })
+
+                                    // Check for tool calls in the accumulated content
+                                    // We scan from the last processed index to find new tool calls
+                                    const openTag = '<tool_call>'
+                                    const closeTag = '</tool_call>'
+
+                                    const openIndex = accumulatedContent.indexOf(openTag, lastToolCallIndex)
+                                    if (openIndex !== -1) {
+                                        const closeIndex = accumulatedContent.indexOf(closeTag, openIndex)
+                                        if (closeIndex !== -1) {
+                                            const toolCallStr = accumulatedContent.substring(openIndex + openTag.length, closeIndex)
+                                            try {
+                                                const toolCall = JSON.parse(toolCallStr)
+                                                if (toolCall.name === 'navigate_to') {
+                                                    let args = toolCall.arguments
+                                                    if (typeof args === 'string') {
+                                                        try {
+                                                            args = JSON.parse(args)
+                                                        } catch (e) {
+                                                            console.error('Failed to parse tool arguments', e)
+                                                            return
+                                                        }
+                                                    }
+                                                    console.log('Navigating to:', args)
+
+                                                    // Note: React Router's navigate function is relative to the basename.
+                                                    // Since we set basename in the RouterProvider, we should NOT use withSubPath here
+                                                    // otherwise we double the prefix (e.g. /k8s/k8s/...).
+                                                    if (args.path) {
+                                                        navigate(args.path)
+                                                    } else if (args.page) {
+                                                        const cluster = currentCluster || 'local'
+                                                        navigate(`/c/${cluster}/${args.page}`)
+                                                    }
+                                                }
+                                            } catch (e) {
+                                                console.error('Failed to parse tool call', e)
+                                            }
+                                            // Advance index past this tool call so we don't process it again
+                                            lastToolCallIndex = closeIndex + closeTag.length
                                         }
                                     }
+                                } else if (data.error) {
+                                    toast.error(data.error)
                                 }
-                            } catch {
-                                // ignore parsing errors during stream
+                            } catch (e) {
+                                // Ignore parse errors for split JSON or empty lines
                             }
                         }
                     }

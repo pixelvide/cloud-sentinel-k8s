@@ -11,6 +11,7 @@ _A modern, intuitive Kubernetes dashboard_
 [![TypeScript](https://img.shields.io/badge/TypeScript-5+-3178C6?style=flat&logo=typescript)](https://www.typescriptlang.org)
 [![License](https://img.shields.io/badge/License-Apache-green.svg)](LICENSE)
 [![HelloGitHub](https://api.hellogithub.com/v1/widgets/recommend.svg?rid=a8bd165df55f41a295b62c716228b007&claim_uid=w5uk718RFhDzdCX&theme=small)](https://hellogithub.com/repository/pixelvide/cloud-sentinel-k8s)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/pixelvide/cloud-sentinel-k8s)
 
 [**Documentation**](https://pixelvide.github.io/cloud-sentinel-k8s)
 <br>

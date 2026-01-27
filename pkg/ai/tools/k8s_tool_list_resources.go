@@ -35,25 +35,25 @@ func (t *ListResourcesTool) Definition() openai.Tool {
 		Type: openai.ToolTypeFunction,
 		Function: &openai.FunctionDefinition{
 			Name:        "list_resources",
-			Description: "List Kubernetes resources of a specific kind in a namespace, optionally filtered by labels. This tool also support listing CustomResourceDefinition (CRD) and HelmRelease.",
+			Description: "SEARCH and LIST Kubernetes resources. Use this as your PRIMARY tool for finding resources when you don't know the exact name. Supports fuzzy filtering.",
 			Parameters: json.RawMessage(`{
 				"type": "object",
 				"properties": {
 					"kind": {
 						"type": "string",
-						"description": "The kind of resource to list (Pod, Service, Deployment, ReplicaSet, StatefulSet, DaemonSet, Job, CronJob, ConfigMap, Secret, Namespace, Node, Ingress, Event, CustomResourceDefinition, HelmRelease)."
+						"description": "The kind of resource (Pod, Service, Deployment, Ingress, etc). Case-insensitive."
 					},
 					"namespace": {
 						"type": "string",
-						"description": "The namespace to list resources from. If empty, lists from all namespaces (if applicable)."
+						"description": "The namespace to search. Leave empty to search ALL namespaces."
 					},
 					"name_filter": {
 						"type": "string",
-						"description": "Optional name filter. Only resources containing this string in their name will be returned."
+						"description": "Filter by name (substring match). HIGHLY RECOMMENDED to narrow down results."
 					},
 					"label_selector": {
 						"type": "string",
-						"description": "Optional label selector to filter results (e.g., 'app=nginx')."
+						"description": "Filter by label selector (e.g., 'app=nginx')."
 					}
 				},
 				"required": ["kind"]
@@ -320,7 +320,7 @@ func (t *ListResourcesTool) listPods(ctx context.Context, cs *cluster.ClientSet,
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, item.Namespace, ns, filter) {
 			continue
 		}
 		results = append(results, fmt.Sprintf("%s/%s (Status: %s)", item.Namespace, item.Name, item.Status.Phase))
@@ -336,7 +336,7 @@ func (t *ListResourcesTool) listServices(ctx context.Context, cs *cluster.Client
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, item.Namespace, ns, filter) {
 			continue
 		}
 		results = append(results, fmt.Sprintf("%s/%s (Type: %s, ClusterIP: %s)", item.Namespace, item.Name, item.Spec.Type, item.Spec.ClusterIP))
@@ -352,7 +352,7 @@ func (t *ListResourcesTool) listDeployments(ctx context.Context, cs *cluster.Cli
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, item.Namespace, ns, filter) {
 			continue
 		}
 		results = append(results, fmt.Sprintf("%s/%s (Ready: %d/%d)", item.Namespace, item.Name, item.Status.ReadyReplicas, item.Status.Replicas))
@@ -368,7 +368,7 @@ func (t *ListResourcesTool) listReplicaSets(ctx context.Context, cs *cluster.Cli
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, item.Namespace, ns, filter) {
 			continue
 		}
 		results = append(results, fmt.Sprintf("%s/%s (Replicas: %d)", item.Namespace, item.Name, item.Status.Replicas))
@@ -384,7 +384,7 @@ func (t *ListResourcesTool) listStatefulSets(ctx context.Context, cs *cluster.Cl
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, item.Namespace, ns, filter) {
 			continue
 		}
 		results = append(results, fmt.Sprintf("%s/%s (Ready: %d/%d)", item.Namespace, item.Name, item.Status.ReadyReplicas, item.Status.Replicas))
@@ -400,7 +400,7 @@ func (t *ListResourcesTool) listDaemonSets(ctx context.Context, cs *cluster.Clie
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, item.Namespace, ns, filter) {
 			continue
 		}
 		results = append(results, fmt.Sprintf("%s/%s (Desired: %d, Ready: %d)", item.Namespace, item.Name, item.Status.DesiredNumberScheduled, item.Status.NumberReady))
@@ -416,7 +416,7 @@ func (t *ListResourcesTool) listJobs(ctx context.Context, cs *cluster.ClientSet,
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, item.Namespace, ns, filter) {
 			continue
 		}
 		results = append(results, fmt.Sprintf("%s/%s (Succeeded: %d)", item.Namespace, item.Name, item.Status.Succeeded))
@@ -432,7 +432,7 @@ func (t *ListResourcesTool) listCronJobs(ctx context.Context, cs *cluster.Client
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, item.Namespace, ns, filter) {
 			continue
 		}
 		results = append(results, fmt.Sprintf("%s/%s (Schedule: %s)", item.Namespace, item.Name, item.Spec.Schedule))
@@ -448,7 +448,7 @@ func (t *ListResourcesTool) listConfigMaps(ctx context.Context, cs *cluster.Clie
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, item.Namespace, ns, filter) {
 			continue
 		}
 		results = append(results, fmt.Sprintf("%s/%s", item.Namespace, item.Name))
@@ -464,7 +464,7 @@ func (t *ListResourcesTool) listSecrets(ctx context.Context, cs *cluster.ClientS
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, item.Namespace, ns, filter) {
 			continue
 		}
 		results = append(results, fmt.Sprintf("%s/%s (Type: %s)", item.Namespace, item.Name, item.Type))
@@ -480,7 +480,7 @@ func (t *ListResourcesTool) listNamespaces(ctx context.Context, cs *cluster.Clie
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, "", "", filter) {
 			continue
 		}
 		results = append(results, fmt.Sprintf("%s (Status: %s)", item.Name, item.Status.Phase))
@@ -496,7 +496,7 @@ func (t *ListResourcesTool) listNodes(ctx context.Context, cs *cluster.ClientSet
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, "", "", filter) {
 			continue
 		}
 		status := "NotReady"
@@ -519,7 +519,7 @@ func (t *ListResourcesTool) listIngresses(ctx context.Context, cs *cluster.Clien
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, item.Namespace, ns, filter) {
 			continue
 		}
 		results = append(results, fmt.Sprintf("%s/%s", item.Namespace, item.Name))
@@ -535,7 +535,7 @@ func (t *ListResourcesTool) listEvents(ctx context.Context, cs *cluster.ClientSe
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.InvolvedObject.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.InvolvedObject.Name, item.Namespace, ns, filter) {
 			continue
 		}
 		results = append(results, fmt.Sprintf("%s/%s (%s: %s)", item.Namespace, item.InvolvedObject.Name, item.Type, item.Message))
@@ -550,7 +550,7 @@ func (t *ListResourcesTool) listHelmReleases(_ context.Context, cs *cluster.Clie
 	}
 	var results []string
 	for _, r := range releases {
-		if filter != "" && !strings.Contains(strings.ToLower(r.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(r.Name, r.Namespace, ns, filter) {
 			continue
 		}
 		results = append(results, fmt.Sprintf("%s/%s (Chart: %s-%s, Status: %s)",
@@ -567,7 +567,7 @@ func (t *ListResourcesTool) listPersistentVolumes(ctx context.Context, cs *clust
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, "", "", filter) {
 			continue
 		}
 		capacity := item.Spec.Capacity.Storage().String()
@@ -585,7 +585,7 @@ func (t *ListResourcesTool) listPersistentVolumeClaims(ctx context.Context, cs *
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, item.Namespace, ns, filter) {
 			continue
 		}
 		capacity := ""
@@ -612,7 +612,7 @@ func (t *ListResourcesTool) listServiceAccounts(ctx context.Context, cs *cluster
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, item.Namespace, ns, filter) {
 			continue
 		}
 		results = append(results, fmt.Sprintf("%s/%s (Secrets: %d)", item.Namespace, item.Name, len(item.Secrets)))
@@ -628,7 +628,7 @@ func (t *ListResourcesTool) listEndpoints(ctx context.Context, cs *cluster.Clien
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, item.Namespace, ns, filter) {
 			continue
 		}
 		addressCount := 0
@@ -648,7 +648,7 @@ func (t *ListResourcesTool) listEndpointSlices(ctx context.Context, cs *cluster.
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, item.Namespace, ns, filter) {
 			continue
 		}
 		addressType := string(item.AddressType)
@@ -666,7 +666,7 @@ func (t *ListResourcesTool) listResourceQuotas(ctx context.Context, cs *cluster.
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, item.Namespace, ns, filter) {
 			continue
 		}
 		results = append(results, fmt.Sprintf("%s/%s", item.Namespace, item.Name))
@@ -682,7 +682,7 @@ func (t *ListResourcesTool) listLimitRanges(ctx context.Context, cs *cluster.Cli
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, item.Namespace, ns, filter) {
 			continue
 		}
 		results = append(results, fmt.Sprintf("%s/%s", item.Namespace, item.Name))
@@ -698,7 +698,7 @@ func (t *ListResourcesTool) listHorizontalPodAutoscalers(ctx context.Context, cs
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, item.Namespace, ns, filter) {
 			continue
 		}
 		minReplicas := int32(1)
@@ -719,7 +719,7 @@ func (t *ListResourcesTool) listPodDisruptionBudgets(ctx context.Context, cs *cl
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, item.Namespace, ns, filter) {
 			continue
 		}
 		minAvailable := "N/A"
@@ -744,7 +744,7 @@ func (t *ListResourcesTool) listNetworkPolicies(ctx context.Context, cs *cluster
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, item.Namespace, ns, filter) {
 			continue
 		}
 		policyTypes := ""
@@ -767,7 +767,7 @@ func (t *ListResourcesTool) listStorageClasses(ctx context.Context, cs *cluster.
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, "", "", filter) {
 			continue
 		}
 		isDefault := ""
@@ -787,7 +787,7 @@ func (t *ListResourcesTool) listRoles(ctx context.Context, cs *cluster.ClientSet
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, item.Namespace, ns, filter) {
 			continue
 		}
 		results = append(results, fmt.Sprintf("%s/%s (Rules: %d)", item.Namespace, item.Name, len(item.Rules)))
@@ -803,7 +803,7 @@ func (t *ListResourcesTool) listRoleBindings(ctx context.Context, cs *cluster.Cl
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, item.Namespace, ns, filter) {
 			continue
 		}
 		results = append(results, fmt.Sprintf("%s/%s (RoleRef: %s, Subjects: %d)",
@@ -820,7 +820,7 @@ func (t *ListResourcesTool) listClusterRoles(ctx context.Context, cs *cluster.Cl
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, "", "", filter) {
 			continue
 		}
 		results = append(results, fmt.Sprintf("%s (Rules: %d)", item.Name, len(item.Rules)))
@@ -836,7 +836,7 @@ func (t *ListResourcesTool) listClusterRoleBindings(ctx context.Context, cs *clu
 
 	var results []string
 	for _, item := range list.Items {
-		if filter != "" && !strings.Contains(strings.ToLower(item.Name), strings.ToLower(filter)) {
+		if !shouldIncludeResource(item.Name, "", "", filter) {
 			continue
 		}
 		results = append(results, fmt.Sprintf("%s (RoleRef: %s, Subjects: %d)", item.Name, item.RoleRef.Name, len(item.Subjects)))

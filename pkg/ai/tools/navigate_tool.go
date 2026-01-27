@@ -19,17 +19,17 @@ func (t *NavigateToTool) Definition() openai.Tool {
 		Type: openai.ToolTypeFunction,
 		Function: &openai.FunctionDefinition{
 			Name:        "navigate_to",
-			Description: "Navigate the user to a specific page in the dashboard. Use this when the user asks to see a resource or go to a specific section.",
+			Description: "NAVIGATE the user's UI to a specific page. WARNING: Only use this if the user EXPLICITLY asks to 'go to', 'see', or 'visit' a page/resource. Do NOT use this for your own data gathering.",
 			Parameters: json.RawMessage(`{
 				"type": "object",
 				"properties": {
 					"page": {
 						"type": "string",
-						"description": "The page to navigate to. Supported values: 'pods', 'deployments', 'services', 'ingresses', 'nodes', 'namespaces', 'settings', 'security', 'helm', 'events'. For specific resources, use the 'path' argument instead."
+						"description": "The page to navigate to. Enum: ['pods', 'deployments', 'services', 'ingresses', 'nodes', 'namespaces', 'settings', 'security', 'helm', 'events']."
 					},
 					"path": {
 						"type": "string",
-						"description": "The specific path to navigate to, if it's a specific resource. format: '/c/:cluster/:kind/:namespace/:name'. Example: '/c/local/pods/default/nginx-123'."
+						"description": "The specific path for a resource. format: '/c/:cluster/:kind/:namespace/:name'. Example: '/c/local/pods/default/nginx-1'."
 					}
 				},
 				"required": ["page"]

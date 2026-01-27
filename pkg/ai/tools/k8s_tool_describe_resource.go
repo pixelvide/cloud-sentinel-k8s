@@ -19,7 +19,7 @@ func (t *DescribeResourceTool) Definition() openai.Tool {
 		Type: openai.ToolTypeFunction,
 		Function: &openai.FunctionDefinition{
 			Name:        "describe_resource",
-			Description: "Get details (JSON) of a specific resource",
+			Description: "GET DETAILED STATUS, EVENTS, and CONFIGURATION of a specific resource. Use this for troubleshooting crashes, pending states, or configuration errors.",
 			Parameters: json.RawMessage(`{
 				"type": "object",
 				"properties": {
@@ -33,7 +33,7 @@ func (t *DescribeResourceTool) Definition() openai.Tool {
 					},
 					"name": {
 						"type": "string",
-						"description": "The name of the resource."
+						"description": "The exact name of the resource."
 					}
 				},
 				"required": ["namespace", "kind", "name"]
