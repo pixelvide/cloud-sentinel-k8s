@@ -85,9 +85,30 @@ export function FloatingAIChat() {
         return () => window.removeEventListener('toggle-ai-chat', handleToggle)
     }, [])
 
+    const scrollContainerRef = useRef<HTMLDivElement>(null)
+    const shouldAutoScrollRef = useRef(true)
+
+    // Track if user is at the bottom
+    const handleScroll = () => {
+        if (!scrollContainerRef.current) return
+        const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current
+        // Tolerance of 20px
+        const isAtBottom = scrollHeight - scrollTop - clientHeight < 50
+        shouldAutoScrollRef.current = isAtBottom
+    }
+
+    // Initial scroll on open
     useEffect(() => {
-        if (isOpen && !isMinimized) {
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        if (isOpen && !isMinimized && messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'auto' })
+            shouldAutoScrollRef.current = true
+        }
+    }, [isOpen, isMinimized])
+
+    // Auto-scroll on new messages if sticky
+    useEffect(() => {
+        if (isOpen && !isMinimized && shouldAutoScrollRef.current && messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
         }
     }, [messages, isOpen, isMinimized])
 
@@ -103,6 +124,7 @@ export function FloatingAIChat() {
         setMessages((prev) => [...prev, userMsg])
         setInputValue('')
         setSending(true)
+        shouldAutoScrollRef.current = true
 
         // Add an empty assistant message that we'll fill as we stream
         const initialAssistantMsg: AIChatMessage = {
@@ -241,22 +263,6 @@ export function FloatingAIChat() {
         }
     }
 
-    const parseMessage = (content: string) => {
-        const thoughts: string[] = []
-        const thoughtRegex = /<thought>([\s\S]*?)(?:<\/thought>|$)/g
-        let match
-
-        while ((match = thoughtRegex.exec(content)) !== null) {
-            thoughts.push(match[1].trim())
-        }
-
-        // The answer is what's left after removing all thoughts
-        // However, we want to skip the <thought> tags themselves in the final display
-        const answer = content.replace(/<thought>[\s\S]*?(?:<\/thought>|$)/g, '').trim()
-
-        return { thoughts, answer }
-    }
-
     if (!isOpen || !config?.is_ai_chat_enabled) return null
 
     return (
@@ -391,7 +397,11 @@ export function FloatingAIChat() {
                 <>
                     {/* Messages */}
                     <div className="flex-1 overflow-hidden">
-                        <ScrollArea className="h-full p-4">
+                        <ScrollArea
+                            className="h-full p-4"
+                            ref={scrollContainerRef}
+                            onScroll={handleScroll}
+                        >
                             {messages.length === 0 && (
                                 <div className="h-full flex flex-col items-center justify-center text-muted-foreground pt-10">
                                     <IconRobot className="h-10 w-10 mb-2 opacity-20" />
@@ -403,83 +413,168 @@ export function FloatingAIChat() {
 
                             <div className="space-y-4 pb-2">
                                 {messages.map((msg, idx) => (
-                                    <div
-                                        key={idx}
-                                        className={clsx(
-                                            'flex gap-2',
-                                            msg.role === 'user' ? 'justify-end' : 'justify-start'
-                                        )}
-                                    >
+                                    <div key={idx} className={clsx("flex gap-2", msg.role === 'user' ? 'justify-end' : 'justify-start')}>
                                         {msg.role !== 'user' && (
                                             <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-1">
                                                 <IconRobot className="h-4 w-4 text-primary" />
                                             </div>
                                         )}
+                                        {msg.role === 'user' ? (
+                                            <div className="bg-primary text-primary-foreground rounded-2xl rounded-br-none px-3 py-2 shadow-sm max-w-[80%]">
+                                                <ReactMarkdown
+                                                    remarkPlugins={[remarkGfm]}
+                                                    components={{
+                                                        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                                                        code: ({ children }) => (
+                                                            <code className="bg-primary-foreground/20 px-1.5 py-0.5 rounded text-[12px] font-mono">{children}</code>
+                                                        ),
+                                                    }}
+                                                >
+                                                    {msg.content}
+                                                </ReactMarkdown>
+                                            </div>
+                                        ) : (
+                                            (() => {
+                                                const content = msg.content
+                                                const parts = []
+                                                let remaining = content
 
-                                        <div
-                                            className={clsx(
-                                                'rounded-2xl px-3 py-2 max-w-[85%] text-sm shadow-sm',
-                                                msg.role === 'user'
-                                                    ? 'bg-primary text-primary-foreground rounded-tr-none'
-                                                    : 'bg-muted rounded-tl-none'
-                                            )}
-                                        >
-                                            {msg.role === 'user' ? (
-                                                msg.content
-                                            ) : (
-                                                (() => {
-                                                    const { thoughts, answer } = parseMessage(msg.content)
-                                                    return (
-                                                        <div className="flex flex-col gap-2">
-                                                            {thoughts.map((thought, tIdx) => (
-                                                                <Collapsible.Root key={tIdx} className="bg-background/50 rounded-lg overflow-hidden border border-primary/10">
-                                                                    <Collapsible.Trigger asChild>
-                                                                        <button className="flex items-center justify-between w-full px-3 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-primary/5 transition-colors">
-                                                                            <div className="flex items-center gap-1.5 line-clamp-1">
-                                                                                <IconBulb className="h-3 w-3 text-primary/60" />
-                                                                                <span>Thinking {thoughts.length > 1 ? `(${tIdx + 1})` : ''}...</span>
-                                                                            </div>
-                                                                            <IconChevronDown className="h-3 w-3 transition-transform duration-200" />
-                                                                        </button>
-                                                                    </Collapsible.Trigger>
-                                                                    <Collapsible.Content className="px-3 py-2 text-[11px] text-muted-foreground/80 border-t border-primary/5 italic whitespace-pre-wrap leading-relaxed">
-                                                                        {thought}
-                                                                    </Collapsible.Content>
-                                                                </Collapsible.Root>
-                                                            ))}
-                                                            <div className="markdown-content prose prose-sm dark:prose-invert max-w-none">
-                                                                <ReactMarkdown
-                                                                    remarkPlugins={[remarkGfm]}
-                                                                    components={{
-                                                                        table: ({ children }) => (
-                                                                            <div className="overflow-x-auto my-2 rounded-lg border border-primary/10">
-                                                                                <table className="w-full text-left border-collapse">{children}</table>
-                                                                            </div>
-                                                                        ),
-                                                                        thead: ({ children }) => (
-                                                                            <thead className="bg-muted/50 font-semibold">{children}</thead>
-                                                                        ),
-                                                                        th: ({ children }) => (
-                                                                            <th className="px-3 py-2 border-b border-primary/10">{children}</th>
-                                                                        ),
-                                                                        td: ({ children }) => (
-                                                                            <td className="px-3 py-2 border-b border-primary/5">{children}</td>
-                                                                        ),
-                                                                        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                                                                        code: ({ children }) => (
-                                                                            <code className="bg-muted px-1.5 py-0.5 rounded text-[12px] font-mono">{children}</code>
-                                                                        ),
-                                                                    }}
-                                                                >
-                                                                    {answer}
-                                                                </ReactMarkdown>
+                                                // Extract Plan
+                                                const planMatch = remaining.match(/<plan>([\s\S]*?)<\/plan>/)
+                                                if (planMatch) {
+                                                    parts.push({ type: 'plan', content: planMatch[1].trim() })
+                                                    remaining = remaining.replace(planMatch[0], '')
+                                                }
+
+                                                const regex = /(<thought>[\s\S]*?<\/thought>)|(<tool_call>[\s\S]*?<\/tool_call>)|(<tool_result>[\s\S]*?<\/tool_result>)/g
+                                                let match
+                                                let lastIndex = 0
+                                                const tags = []
+
+                                                while ((match = regex.exec(remaining)) !== null) {
+                                                    if (match.index > lastIndex) {
+                                                        const text = remaining.substring(lastIndex, match.index)
+                                                        if (text.trim()) tags.push({ type: 'text', content: text })
+                                                    }
+
+                                                    if (match[1]) {
+                                                        tags.push({ type: 'thought', content: match[1].replace(/<\/?thought>/g, '').trim() })
+                                                    } else if (match[2]) {
+                                                        tags.push({ type: 'tool_call', content: match[2].replace(/<\/?tool_call>/g, '').trim() })
+                                                    } else if (match[3]) {
+                                                        tags.push({ type: 'tool_result', content: match[3].replace(/<\/?tool_result>/g, '').trim() })
+                                                    }
+                                                    lastIndex = regex.lastIndex
+                                                }
+                                                if (lastIndex < remaining.length) {
+                                                    const text = remaining.substring(lastIndex)
+                                                    if (text.trim()) tags.push({ type: 'text', content: text })
+                                                }
+
+                                                return (
+                                                    <div className="flex flex-col gap-2 max-w-[85%]">
+                                                        {parts.map((p, i) => (
+                                                            <div key={`plan-${i}`} className="bg-blue-50/50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-xs mb-2 shadow-sm">
+                                                                <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1 flex items-center gap-1">
+                                                                    <IconBulb className="h-3 w-3" /> Plan
+                                                                </div>
+                                                                <div className="whitespace-pre-wrap text-blue-900 dark:text-blue-300 font-mono text-[11px] leading-relaxed">
+                                                                    {p.content}
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    )
-                                                })()
-                                            )}
-                                        </div>
+                                                        ))}
 
+                                                        {tags.map((tag, i) => {
+                                                            if (tag.type === 'thought') {
+                                                                return (
+                                                                    <Collapsible.Root
+                                                                        key={i}
+                                                                        defaultOpen={idx === messages.length - 1 && sending}
+                                                                        className="bg-background/50 rounded-lg overflow-hidden border border-primary/10 mb-1"
+                                                                    >
+                                                                        <Collapsible.Trigger asChild>
+                                                                            <button className="flex items-center justify-between w-full px-3 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-primary/5 transition-colors">
+                                                                                <div className="flex items-center gap-1.5 line-clamp-1">
+                                                                                    <IconBulb className="h-3 w-3 text-primary/60" />
+                                                                                    <span>Thinking Process...</span>
+                                                                                </div>
+                                                                                <IconChevronDown className="h-3 w-3 transition-transform duration-200" />
+                                                                            </button>
+                                                                        </Collapsible.Trigger>
+                                                                        <Collapsible.Content className="px-3 py-2 text-[11px] text-muted-foreground/80 border-t border-primary/5 italic whitespace-pre-wrap leading-relaxed">
+                                                                            {tag.content}
+                                                                        </Collapsible.Content>
+                                                                    </Collapsible.Root>
+                                                                )
+                                                            } else if (tag.type === 'tool_call') {
+                                                                let callData = { name: 'Unknown', arguments: {} }
+                                                                try { callData = JSON.parse(tag.content) } catch (e) { }
+                                                                return (
+                                                                    <div key={i} className="bg-muted/30 rounded-lg border border-primary/10 overflow-hidden mb-1">
+                                                                        <div className="px-3 py-1.5 text-[11px] font-medium flex items-center justify-between text-muted-foreground bg-muted/50">
+                                                                            <span className="font-mono">Running: {callData.name}</span>
+                                                                        </div>
+                                                                        <div className="px-3 py-2 text-[10px] font-mono text-muted-foreground overflow-x-auto">
+                                                                            {JSON.stringify(callData.arguments)}
+                                                                        </div>
+                                                                    </div>
+                                                                )
+                                                            } else if (tag.type === 'tool_result') {
+                                                                return (
+                                                                    <Collapsible.Root
+                                                                        key={i}
+                                                                        defaultOpen={idx === messages.length - 1 && sending}
+                                                                        className="bg-muted/30 rounded-lg border border-primary/10 overflow-hidden mb-1"
+                                                                    >
+                                                                        <Collapsible.Trigger asChild>
+                                                                            <button className="flex items-center justify-between w-full px-3 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-primary/5 transition-colors">
+                                                                                <div className="flex items-center gap-1.5">
+                                                                                    <span>Tool Output</span>
+                                                                                </div>
+                                                                                <IconChevronDown className="h-3 w-3 transition-transform duration-200" />
+                                                                            </button>
+                                                                        </Collapsible.Trigger>
+                                                                        <Collapsible.Content className="px-3 py-2 text-[10px] font-mono whitespace-pre-wrap max-h-[200px] overflow-y-auto border-t border-primary/5">
+                                                                            {tag.content}
+                                                                        </Collapsible.Content>
+                                                                    </Collapsible.Root>
+                                                                )
+                                                            } else {
+                                                                return (
+                                                                    <div key={i} className="markdown-content prose prose-sm dark:prose-invert max-w-none bg-muted px-3 py-2 rounded-2xl rounded-tl-none shadow-sm">
+                                                                        <ReactMarkdown
+                                                                            remarkPlugins={[remarkGfm]}
+                                                                            components={{
+                                                                                table: ({ children }) => (
+                                                                                    <div className="overflow-x-auto my-2 rounded-lg border border-primary/10">
+                                                                                        <table className="w-full text-left border-collapse">{children}</table>
+                                                                                    </div>
+                                                                                ),
+                                                                                thead: ({ children }) => (
+                                                                                    <thead className="bg-muted/50 font-semibold">{children}</thead>
+                                                                                ),
+                                                                                th: ({ children }) => (
+                                                                                    <th className="px-3 py-2 border-b border-primary/10">{children}</th>
+                                                                                ),
+                                                                                td: ({ children }) => (
+                                                                                    <td className="px-3 py-2 border-b border-primary/5">{children}</td>
+                                                                                ),
+                                                                                p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                                                                                code: ({ children }) => (
+                                                                                    <code className="bg-muted px-1.5 py-0.5 rounded text-[12px] font-mono">{children}</code>
+                                                                                ),
+                                                                            }}
+                                                                        >
+                                                                            {tag.content}
+                                                                        </ReactMarkdown>
+                                                                    </div>
+                                                                )
+                                                            }
+                                                        })}
+                                                    </div>
+                                                )
+                                            })()
+                                        )}
                                         {msg.role === 'user' && (
                                             <div className="h-7 w-7 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-1">
                                                 <IconUser className="h-4 w-4 text-primary-foreground" />
