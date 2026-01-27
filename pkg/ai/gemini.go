@@ -98,7 +98,7 @@ func (g *GeminiAdapter) ChatCompletionStream(ctx context.Context, messages []ope
 		for {
 			resp, err := iter.Next()
 			if err != nil {
-				if errors.Is(err, context.Canceled) || strings.Contains(err.Error(), "iterator done") || strings.Contains(err.Error(), "EOF") {
+				if errors.Is(err, context.Canceled) || strings.Contains(err.Error(), "iterator done") || strings.Contains(err.Error(), "EOF") || strings.Contains(err.Error(), "no more items in iterator") {
 					break
 				}
 				klog.Errorf("Gemini Stream error: %v", err)
@@ -117,29 +117,46 @@ func (g *GeminiAdapter) ChatCompletionStream(ctx context.Context, messages []ope
 func convertGeminiStreamResponseToOpenAI(resp *genai.GenerateContentResponse) openai.ChatCompletionStreamResponse {
 	choices := []openai.ChatCompletionStreamChoice{}
 
+	if resp == nil || len(resp.Candidates) == 0 {
+		return openai.ChatCompletionStreamResponse{
+			ID:      "gemini-stream-resp",
+			Object:  "chat.completion.chunk",
+			Created: 0,
+			Model:   "gemini",
+			Choices: choices,
+		}
+	}
+
 	for i, cand := range resp.Candidates {
+		if cand == nil {
+			continue
+		}
+
 		delta := openai.ChatCompletionStreamChoiceDelta{
 			Role: openai.ChatMessageRoleAssistant,
 		}
 
 		var contentBuilder strings.Builder
-		for _, part := range cand.Content.Parts {
-			if txt, ok := part.(genai.Text); ok {
-				contentBuilder.WriteString(string(txt))
-			} else if fnCall, ok := part.(genai.FunctionCall); ok {
-				argsBytes, err := json.Marshal(fnCall.Args)
-				if err != nil {
-					klog.Errorf("Gemini: failed to marshal function args for %s: %v", fnCall.Name, err)
-					argsBytes = []byte("{}")
+
+		if cand.Content != nil {
+			for _, part := range cand.Content.Parts {
+				if txt, ok := part.(genai.Text); ok {
+					contentBuilder.WriteString(string(txt))
+				} else if fnCall, ok := part.(genai.FunctionCall); ok {
+					argsBytes, err := json.Marshal(fnCall.Args)
+					if err != nil {
+						klog.Errorf("Gemini: failed to marshal function args for %s: %v", fnCall.Name, err)
+						argsBytes = []byte("{}")
+					}
+					delta.ToolCalls = append(delta.ToolCalls, openai.ToolCall{
+						ID:   "call_" + fnCall.Name,
+						Type: openai.ToolTypeFunction,
+						Function: openai.FunctionCall{
+							Name:      fnCall.Name,
+							Arguments: string(argsBytes),
+						},
+					})
 				}
-				delta.ToolCalls = append(delta.ToolCalls, openai.ToolCall{
-					ID:   "call_" + fnCall.Name,
-					Type: openai.ToolTypeFunction,
-					Function: openai.FunctionCall{
-						Name:      fnCall.Name,
-						Arguments: string(argsBytes),
-					},
-				})
 			}
 		}
 		delta.Content = contentBuilder.String()

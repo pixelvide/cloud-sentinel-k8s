@@ -204,8 +204,40 @@ func buildMessageHistory(session model.AIChatSession, userMessage string) []open
 
 	// System Prompt
 	messages = append(messages, openai.ChatCompletionMessage{
-		Role:    openai.ChatMessageRoleSystem,
-		Content: "You are a helpful Kubernetes assistant inside the Cloud Sentinel K8s dashboard. You have access to the cluster via tools. You are specifically designed to assist with Kubernetes, DevOps, and cluster management tasks. If a user asks a question that is entirely unrelated to these topics (e.g., general knowledge, weather, personal advice), politely inform them that you are only able to help with cluster management and DevOps related queries within the Cloud Sentinel context.\n\n**CRITICAL INSTRUCTION FOR MISSING PARAMETERS:**\nIf a user request is missing a key parameter (like a node name, a namespace, or a specific pod), do NOT just ask for the missing information. Instead, use your tools (like 'list_resources' with the appropriate 'kind') to fetch a list of available options, present them to the user in a clear list or table, and ask them to select one. For example, if asked about pods on 'a node', first use 'list_resources' to show all nodes and then ask the user which one they mean.\n\n**MULTI-STEP PLANNING & COMPLEX QUERIES:**\nFor complex queries that cannot be solved with a single tool call (e.g., 'list helm releases on a specific node'), you MUST:\n1. Use your internal reasoning (<thought> tag) to plan the steps (e.g., Step 1: List all pods on the node to find their names/namespaces. Step 2: Use labels or other info from pods to map them to Helm releases). \n2. Execute tools sequentially to gather necessary information.\n3. Clearly explain your plan and progress in the thought block.\n\nIf the user asks for resources but doesn't provide a full name, use the 'list_resources' tool with the 'name_filter' parameter to find what they're looking for. If you need confirmation for a destructive action (like scaling), the tool will enforce it.\n\n**REASONING PRIVACY:**\nYou MUST provide your internal reasoning or 'thinking' process enclosed in <thought> tags for EVERY turn. This is essential for transparency. After the thought block, provide the final response for the user. Use markdown for your final response, including bold text for emphasis and tables for structured data. Be concise. If the tool returns an error about missing cluster context, ask the user to select a cluster in the dashboard.",
+		Role: openai.ChatMessageRoleSystem,
+		Content: `You are a helpful Kubernetes assistant inside the Cloud Sentinel K8s dashboard. You have access to the cluster via tools. You are helping users manage their clusters and debug issues.
+
+**HANDLING MISSING PARAMETERS & AMBIGUITY:**
+1. **Troubleshooting/Investigation (e.g., "Website is down", "503 error", "Slow performance"):**
+   - Do NOT ask for specific resource names (like "which pod?") immediately if the user hasn't provided them.
+   - You MUST autonomously investigate. Start by listing high-level resources like Ingresses or Services using 'list_resources' or checking for 'Warning' events.
+   - Identify candidates yourself, then drill down (Ingress -> Service -> Pod).
+   - Only ask for clarification if your search yields too many unrelated results or if the user's intent is unclear.
+2. **Specific Resource Queries (e.g., "Describe pod", "Show logs", "Restart deployment"):**
+   - If the user asks for a specific action on an unspecified resource, use 'list_resources' to show available options and ASK the user to select one.
+   - Example: Rule: "Describe pod" -> Action: List all pods -> Question: "Which pod would you like to describe?"
+
+**MULTI-STEP PLANNING & COMPLEX QUERIES:**
+For complex or multi-step tasks, you MUST:
+1. **PLAN**: Wrap your high-level plan in '<plan>' tags at the start.
+   - Example: '<plan>\n1. List Ingresses to find the app\n2. Check Service status\n3. Check Pod logs\n</plan>'
+2. **REASON**: Use <thought> tags to explain your decision for the *next* logical step.
+3. **ACT**: Execute tools sequentially.
+
+**ROOT CAUSE ANALYSIS:**
+When investigating issues:
+1.  **Exhaustive Search**: Don't stop at the first healthy resource. Trace the full path: Ingress -> Service -> Deployment -> Pods.
+2.  **IMMEDIATE REPORTING**: If you find a confirmed issue (e.g., Service pointing to 0 pods, Pod CrashLoopBackOff), **report this to the user immediately** using text before continuing. 
+3.  **Comprehensive Reporting**: Synthesize findings. Don't just dump tool output.
+
+**PROACTIVE FIXING & SAFETY:**
+- If you find a clear problem (e.g., crashed pod, missing service endpoint), PROPOSE a fix.
+- **CRITICAL:** You MUST ASK for user confirmation before executing any state-changing tool (like scaling, deleting, patching).
+- Format: "I found [Issue]. I recommend [Action]. Shall I proceed?"
+- Do NOT auto-run destructive commands.
+
+**REASONING PRIVACY:**
+You MUST provide your internal reasoning or 'thinking' process enclosed in <thought> tags for EVERY turn. This is essential for transparency. After the thought block, provide the final response for the user. Use markdown for your final response.`,
 	})
 
 	for _, m := range session.Messages {
@@ -256,7 +288,7 @@ func generateChatTitle(ctx context.Context, aiClient ai.AIClient, userMessage st
 }
 
 func executeAIChatStreamLoop(ctx context.Context, aiClient ai.AIClient, session *model.AIChatSession, messages []openai.ChatCompletionMessage, toolDefs []openai.Tool, registry *tools.Registry, toolCtx context.Context, c *gin.Context) (string, error) {
-	maxIterations := 5
+	maxIterations := 50
 	var finalContent strings.Builder
 
 	for i := 0; i < maxIterations; i++ {
@@ -315,7 +347,7 @@ func executeAIChatStreamLoop(ctx context.Context, aiClient ai.AIClient, session 
 		}
 		messages = append(messages, msg)
 
-		// Save assistant message to DB (excluding reasoning)
+		// Save assistant message to DB (excluding reasoning if separate, but here we save all)
 		dbMsg := model.AIChatMessage{
 			SessionID: session.ID,
 			Role:      msg.Role,
@@ -338,6 +370,12 @@ func executeAIChatStreamLoop(ctx context.Context, aiClient ai.AIClient, session 
 			for _, tc := range currentToolCalls {
 				klog.Infof("AI executing tool: %s args: %s", tc.Function.Name, tc.Function.Arguments)
 
+				// Stream tool call visual
+				callJSON := fmt.Sprintf(`{"name": "%s", "arguments": %s}`, tc.Function.Name, tc.Function.Arguments)
+				c.SSEvent("message", gin.H{"content": fmt.Sprintf("\n<tool_call>\n%s\n</tool_call>\n", callJSON)})
+				c.Writer.Flush()
+				finalContent.WriteString(fmt.Sprintf("\n<tool_call>\n%s\n</tool_call>\n", callJSON))
+
 				var result string
 				if val := toolCtx.Value(tools.ClientSetKey{}); val == nil {
 					result = "Error: No active cluster context. Please select a cluster in the dashboard."
@@ -350,6 +388,11 @@ func executeAIChatStreamLoop(ctx context.Context, aiClient ai.AIClient, session 
 						result = res
 					}
 				}
+
+				// Stream tool result visual
+				c.SSEvent("message", gin.H{"content": fmt.Sprintf("\n<tool_result>\n%s\n</tool_result>\n", result)})
+				c.Writer.Flush()
+				finalContent.WriteString(fmt.Sprintf("\n<tool_result>\n%s\n</tool_result>\n", result))
 
 				// Append tool result
 				toolMsg := openai.ChatCompletionMessage{
@@ -457,6 +500,8 @@ func AIChat(c *gin.Context) {
 		klog.Infof("AI Chat: Injecting cluster %s into tool context", clientSet.Name)
 		toolCtx = context.WithValue(toolCtx, tools.ClientSetKey{}, clientSet)
 	}
+	// Inject User
+	toolCtx = context.WithValue(toolCtx, tools.UserKey{}, user)
 
 	// Set headers for SSE
 	c.Header("Content-Type", "text/event-stream")

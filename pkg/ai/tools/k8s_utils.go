@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/pixelvide/cloud-sentinel-k8s/pkg/cluster"
+	"github.com/pixelvide/cloud-sentinel-k8s/pkg/model"
 	"github.com/pixelvide/cloud-sentinel-k8s/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -24,6 +25,16 @@ func GetClientSet(ctx context.Context) (*cluster.ClientSet, error) {
 	}
 	klog.V(2).Infof("K8s Tool: Found client for cluster %s", cs.Name)
 	return cs, nil
+}
+
+type UserKey struct{}
+
+func GetUser(ctx context.Context) (*model.User, error) {
+	u, ok := ctx.Value(UserKey{}).(*model.User)
+	if !ok || u == nil {
+		return nil, fmt.Errorf("user not found in context")
+	}
+	return u, nil
 }
 
 func buildListOptions(ns string, opts metav1.ListOptions) ([]client.ListOption, error) {

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { ExternalLink, ShieldAlert, Bug, Settings, Key, Server, ShieldCheck } from "lucide-react"
+import { ExternalLink, ShieldAlert } from "lucide-react"
 import { securityApi } from "@/api/security"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
