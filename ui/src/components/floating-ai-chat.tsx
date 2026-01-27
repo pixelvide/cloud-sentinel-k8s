@@ -278,7 +278,7 @@ export function FloatingAIChat() {
                                         }
                                     }
                                 }
-                            } catch (e) {
+                            } catch {
                                 // ignore parsing errors during stream
                             }
                         }
