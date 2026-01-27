@@ -502,6 +502,8 @@ func AIChat(c *gin.Context) {
 	}
 	// Inject User
 	toolCtx = context.WithValue(toolCtx, tools.UserKey{}, user)
+	// Inject SessionID
+	toolCtx = context.WithValue(toolCtx, tools.SessionIDKey{}, session.ID)
 
 	// Set headers for SSE
 	c.Header("Content-Type", "text/event-stream")

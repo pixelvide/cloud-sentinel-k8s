@@ -104,6 +104,14 @@ func (t *ScaleDeploymentTool) Execute(ctx context.Context, args string) (string,
 				"previousReplicas": currentReplicas,
 				"targetReplicas":   params.Replicas,
 			}
+
+			// Add AI context if available
+			sessionID := GetSessionID(ctx)
+			if sessionID != "" {
+				payload["source"] = "ai"
+				payload["chatSessionId"] = sessionID
+			}
+
 			payloadBytes, _ := json.Marshal(payload)
 
 			model.DB.Create(&model.AuditLog{

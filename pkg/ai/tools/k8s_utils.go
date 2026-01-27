@@ -37,6 +37,16 @@ func GetUser(ctx context.Context) (*model.User, error) {
 	return u, nil
 }
 
+type SessionIDKey struct{}
+
+func GetSessionID(ctx context.Context) string {
+	s, ok := ctx.Value(SessionIDKey{}).(string)
+	if !ok {
+		return ""
+	}
+	return s
+}
+
 func buildListOptions(ns string, opts metav1.ListOptions) ([]client.ListOption, error) {
 	var listUpdates []client.ListOption
 	if ns != "" {
