@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.1](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v0.13.0...v0.13.1) (2026-01-28)
+
+
+### Bug Fixes
+
+* ensure namespace refresh on cluster switch ([43c0d52](https://github.com/pixelvide/cloud-sentinel-k8s/commit/43c0d5215c62d5f3f40e306a9cc93639a4fb16c7))
+
 ## [0.13.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v0.12.0...v0.13.0) (2026-01-27)
 
 
