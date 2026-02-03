@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.0](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v0.13.1...v0.14.0) (2026-02-03)
+
+
+### Features
+
+* cleanup untagged image ([#72](https://github.com/pixelvide/cloud-sentinel-k8s/issues/72)) ([a8c972d](https://github.com/pixelvide/cloud-sentinel-k8s/commit/a8c972dd2368bee8666baf6105ab009c9dc46f6e))
+
 ## [0.13.1](https://github.com/pixelvide/cloud-sentinel-k8s/compare/v0.13.0...v0.13.1) (2026-01-28)
 
 
