@@ -157,6 +157,7 @@ export function SidebarCustomizer({
                             size="sm"
                             onClick={() => toggleItemPin(item.id)}
                             className="h-8 w-8 p-0"
+                            aria-label={t('sidebar.unpin', 'Unpin')}
                           >
                             <PinOff className="h-3.5 w-3.5" />
                           </Button>
@@ -214,6 +215,7 @@ export function SidebarCustomizer({
                         onClick={() => toggleGroupVisibility(group.id)}
                         className="h-8 w-8 p-0"
                         title={group.visible ? 'Hide' : 'Show'}
+                        aria-label={group.visible ? 'Hide' : 'Show'}
                       >
                         {!group.visible ? (
                           <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
@@ -227,6 +229,7 @@ export function SidebarCustomizer({
                         onClick={() => moveGroup(group.id, 'up')}
                         className="h-8 w-8 p-0"
                         title={t('sidebar.moveUp', 'Move up')}
+                        aria-label={t('sidebar.moveUp', 'Move up')}
                         disabled={index === 0}
                       >
                         <ArrowUp className="h-3.5 w-3.5" />
@@ -237,6 +240,7 @@ export function SidebarCustomizer({
                         onClick={() => moveGroup(group.id, 'down')}
                         className="h-8 w-8 p-0"
                         title={t('sidebar.moveDown', 'Move down')}
+                        aria-label={t('sidebar.moveDown', 'Move down')}
                         disabled={index === sortedGroups.length - 1}
                       >
                         <ArrowDown className="h-3.5 w-3.5" />
@@ -248,6 +252,7 @@ export function SidebarCustomizer({
                           onClick={() => removeCustomGroup(group.id)}
                           className="h-8 w-8 p-0"
                           title="Delete custom group"
+                          aria-label="Delete custom group"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -293,6 +298,7 @@ export function SidebarCustomizer({
                               onClick={() => toggleItemPin(item.id)}
                               className={`h-8 w-8 p-0 ${isPinned ? 'text-primary' : 'text-muted-foreground'}`}
                               title={isPinned ? 'Unpin' : 'Pin to top'}
+                              aria-label={isPinned ? 'Unpin' : 'Pin to top'}
                             >
                               {isPinned ? (
                                 <PinOff className="h-3.5 w-3.5" />
@@ -309,6 +315,7 @@ export function SidebarCustomizer({
                                 }
                                 className="h-8 w-8 p-0"
                                 title="Remove from group"
+                                aria-label="Remove from group"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
@@ -319,6 +326,7 @@ export function SidebarCustomizer({
                                 onClick={() => toggleItemVisibility(item.id)}
                                 className="h-8 w-8 p-0"
                                 title={isHidden ? 'Show' : 'Hide'}
+                                aria-label={isHidden ? 'Show' : 'Hide'}
                               >
                                 {isHidden ? (
                                   <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
@@ -384,6 +392,7 @@ export function SidebarCustomizer({
                   <Button
                     onClick={handleCreateGroup}
                     disabled={!newGroupName.trim()}
+                    aria-label={t('sidebar.createGroup', 'Create New CRD Group')}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
