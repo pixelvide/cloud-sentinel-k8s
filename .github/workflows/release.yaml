@@ -86,6 +86,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
+          provenance: false
+          sbom: false
           tags: |
             ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ steps.check_version.outputs.version }}
             ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
