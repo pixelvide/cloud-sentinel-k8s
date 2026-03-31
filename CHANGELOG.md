@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://github.com/pixelvide/kube-sentinel/compare/v1.1.2...v1.2.0) (2026-03-31)
+
+
+### Features
+
+* helm list all releases ([#111](https://github.com/pixelvide/kube-sentinel/issues/111)) ([baa6009](https://github.com/pixelvide/kube-sentinel/commit/baa60096ec5586908f35529958ab56d41cf3c0ef))
+
+
+### Bug Fixes
+
+* image pull related issues ([#126](https://github.com/pixelvide/kube-sentinel/issues/126)) ([64f4e92](https://github.com/pixelvide/kube-sentinel/commit/64f4e9240b3757931fe3381a1661a3185b908cc7))
+
 ## [1.1.2](https://github.com/pixelvide/kube-sentinel/compare/v1.1.1...v1.1.2) (2026-02-16)
 
 
