@@ -113,6 +113,16 @@ entries:
     version: 0.5.0
   kube-sentinel:
   - apiVersion: v2
+    appVersion: v1.2.0
+    created: "2026-03-31T06:20:38.232451243Z"
+    description: A Helm chart for Kubernetes
+    digest: 2acf1aa2746521eb96664438d80434d3fe121d9dd42ee508296dee0afde3d02e
+    name: kube-sentinel
+    type: application
+    urls:
+    - https://github.com/pixelvide/kube-sentinel/releases/download/v1.2.0/kube-sentinel-1.2.0.tgz
+    version: 1.2.0
+  - apiVersion: v2
     appVersion: v1.1.2
     created: "2026-02-16T09:18:00.847701809Z"
     description: A Helm chart for Kubernetes
@@ -162,4 +172,4 @@ entries:
     urls:
     - https://github.com/pixelvide/kube-sentinel/releases/download/v1.0.0/kube-sentinel-1.0.0.tgz
     version: 1.0.0
-generated: "2026-02-16T09:18:00.835831626Z"
+generated: "2026-03-31T06:20:38.231578737Z"
