@@ -83,7 +83,7 @@ For detailed instructions, please refer to the [documentation](https://pixelvide
 To run Kube Sentinel using Docker, you can use the pre-built image:
 
 ```bash
-docker run --rm -p 8080:8080 ghcr.io/pixelvide/kube-sentinel:1.1.2
+docker run --rm -p 8080:8080 ghcr.io/pixelvide/kube-sentinel:1.2.0
 ```
 
 ### Deploy in Kubernetes
@@ -110,7 +110,7 @@ docker run --rm -p 8080:8080 ghcr.io/pixelvide/kube-sentinel:1.1.2
    ```bash
    kubectl apply -f deploy/install.yaml
    # or install it online
-   kubectl apply -f https://raw.githubusercontent.com/pixelvide/kube-sentinel/refs/tags/v1.1.2/deploy/install.yaml
+   kubectl apply -f https://raw.githubusercontent.com/pixelvide/kube-sentinel/refs/tags/v1.2.0/deploy/install.yaml
    ```
 
 2. **Access via port-forward**
