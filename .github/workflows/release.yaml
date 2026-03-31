@@ -90,6 +90,8 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ steps.check_version.outputs.version }}
             ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
           labels: runnumber=${{ github.run_id }}
+          provenance: false
+          sbom: false
 
       - name: Package Helm chart
         run: |
