@@ -9,3 +9,7 @@
 ## 2026-02-13 - [Stable Keys in Generic Tables]
 **Learning:** Generic table components (like `SimpleTable`) were using array indices as React keys (`key={rowIndex}`). This forces unnecessary re-renders of all rows when the list order changes (e.g. sorting) and can lead to incorrect state preservation.
 **Action:** Add an optional `getRowId` prop to generic table components and use stable IDs (like `metadata.uid`) as keys whenever possible.
+
+## 2026-02-17 - [Initial Bundle Size Reduction]
+**Learning:** The React application was loading the entire bundle upfront (~1.9MB), causing slow initial load times for users even if they only needed a single page. Static imports in `routes.tsx` were the primary cause.
+**Action:** Use `React.lazy` and `Suspense` for route-based code splitting to significantly reduce the initial bundle size (achieved ~50% reduction).

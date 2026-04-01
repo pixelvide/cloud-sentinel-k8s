@@ -1,23 +1,60 @@
+import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 
 import App from './App'
 import { InitCheckRoute } from './components/init-check-route'
+import { Loading } from './components/loading'
 import { ProtectedRoute } from './components/protected-route'
 import {
   ClusterRedirector,
   RootRedirector,
 } from './components/route-redirectors'
 import { getSubPath } from './lib/subpath'
-import { CRListPage } from './pages/cr-list-page'
-import { HelmChartListPage } from './pages/helm-chart-list-page'
-import { HelmReleaseListPage } from './pages/helm-release-list-page'
-import { InitializationPage } from './pages/initialization'
-import { LoginPage } from './pages/login'
-import { Overview } from './pages/overview'
-import { ResourceDetail } from './pages/resource-detail'
-import { ResourceList } from './pages/resource-list'
-import { SecurityDashboard } from './pages/security-dashboard'
-import { SettingsPage } from './pages/settings'
+
+const CRListPage = lazy(() =>
+  import('./pages/cr-list-page').then((module) => ({
+    default: module.CRListPage,
+  }))
+)
+const HelmChartListPage = lazy(() =>
+  import('./pages/helm-chart-list-page').then((module) => ({
+    default: module.HelmChartListPage,
+  }))
+)
+const HelmReleaseListPage = lazy(() =>
+  import('./pages/helm-release-list-page').then((module) => ({
+    default: module.HelmReleaseListPage,
+  }))
+)
+const InitializationPage = lazy(() =>
+  import('./pages/initialization').then((module) => ({
+    default: module.InitializationPage,
+  }))
+)
+const LoginPage = lazy(() =>
+  import('./pages/login').then((module) => ({ default: module.LoginPage }))
+)
+const Overview = lazy(() =>
+  import('./pages/overview').then((module) => ({ default: module.Overview }))
+)
+const ResourceDetail = lazy(() =>
+  import('./pages/resource-detail').then((module) => ({
+    default: module.ResourceDetail,
+  }))
+)
+const ResourceList = lazy(() =>
+  import('./pages/resource-list').then((module) => ({
+    default: module.ResourceList,
+  }))
+)
+const SecurityDashboard = lazy(() =>
+  import('./pages/security-dashboard').then((module) => ({
+    default: module.SecurityDashboard,
+  }))
+)
+const SettingsPage = lazy(() =>
+  import('./pages/settings').then((module) => ({ default: module.SettingsPage }))
+)
 
 const subPath = getSubPath()
 
@@ -25,13 +62,19 @@ export const router = createBrowserRouter(
   [
     {
       path: '/setup',
-      element: <InitializationPage />,
+      element: (
+        <Suspense fallback={<Loading />}>
+          <InitializationPage />
+        </Suspense>
+      ),
     },
     {
       path: '/login',
       element: (
         <InitCheckRoute>
-          <LoginPage />
+          <Suspense fallback={<Loading />}>
+            <LoginPage />
+          </Suspense>
         </InitCheckRoute>
       ),
     },
@@ -51,7 +94,11 @@ export const router = createBrowserRouter(
         },
         {
           path: 'settings',
-          element: <SettingsPage />,
+          element: (
+            <Suspense fallback={<Loading />}>
+              <SettingsPage />
+            </Suspense>
+          ),
         },
         {
           path: 'c/:cluster',
@@ -62,43 +109,83 @@ export const router = createBrowserRouter(
             },
             {
               path: 'dashboard',
-              element: <Overview />,
+              element: (
+                <Suspense fallback={<Loading />}>
+                  <Overview />
+                </Suspense>
+              ),
             },
             {
               path: 'security',
-              element: <SecurityDashboard />,
+              element: (
+                <Suspense fallback={<Loading />}>
+                  <SecurityDashboard />
+                </Suspense>
+              ),
             },
             {
               path: 'helm-releases',
-              element: <HelmReleaseListPage />,
+              element: (
+                <Suspense fallback={<Loading />}>
+                  <HelmReleaseListPage />
+                </Suspense>
+              ),
             },
             {
               path: 'helm-charts',
-              element: <HelmChartListPage />,
+              element: (
+                <Suspense fallback={<Loading />}>
+                  <HelmChartListPage />
+                </Suspense>
+              ),
             },
             {
               path: 'crds/:crd',
-              element: <CRListPage />,
+              element: (
+                <Suspense fallback={<Loading />}>
+                  <CRListPage />
+                </Suspense>
+              ),
             },
             {
               path: 'crds/:resource/:namespace/:name',
-              element: <ResourceDetail />,
+              element: (
+                <Suspense fallback={<Loading />}>
+                  <ResourceDetail />
+                </Suspense>
+              ),
             },
             {
               path: 'crds/:resource/:name',
-              element: <ResourceDetail />,
+              element: (
+                <Suspense fallback={<Loading />}>
+                  <ResourceDetail />
+                </Suspense>
+              ),
             },
             {
               path: ':resource/:name',
-              element: <ResourceDetail />,
+              element: (
+                <Suspense fallback={<Loading />}>
+                  <ResourceDetail />
+                </Suspense>
+              ),
             },
             {
               path: ':resource',
-              element: <ResourceList />,
+              element: (
+                <Suspense fallback={<Loading />}>
+                  <ResourceList />
+                </Suspense>
+              ),
             },
             {
               path: ':resource/:namespace/:name',
-              element: <ResourceDetail />,
+              element: (
+                <Suspense fallback={<Loading />}>
+                  <ResourceDetail />
+                </Suspense>
+              ),
             },
           ],
         },
