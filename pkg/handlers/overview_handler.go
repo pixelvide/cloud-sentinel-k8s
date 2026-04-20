@@ -119,10 +119,6 @@ func GetOverview(c *gin.Context) {
 	c.JSON(http.StatusOK, overview)
 }
 
-// var (
-// 	initialized bool
-// )
-
 func InitCheck(c *gin.Context) {
 	uc, err := model.CountUsers()
 	if err != nil {
