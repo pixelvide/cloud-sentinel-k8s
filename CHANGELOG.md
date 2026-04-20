@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/pixelvide/kube-sentinel/compare/v1.2.0...v1.2.1) (2026-04-20)
+
+
+### Bug Fixes
+
+* Image cleanup issue ([#132](https://github.com/pixelvide/kube-sentinel/issues/132)) ([e2c208c](https://github.com/pixelvide/kube-sentinel/commit/e2c208c95b675407bcc9d89029f727a31b43d6f2))
+
 ## [1.2.0](https://github.com/pixelvide/kube-sentinel/compare/v1.1.2...v1.2.0) (2026-03-31)
 
 
