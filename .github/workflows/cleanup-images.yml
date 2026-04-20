@@ -20,56 +20,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Delete untagged images
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          OWNER="${{ github.repository_owner }}"
-          PACKAGE="${{ env.PACKAGE_NAME }}"
-          echo "identifying owner type for $OWNER..."
-          OWNER_TYPE=$(gh api "/users/$OWNER" --jq .type)
-          echo "Owner type: $OWNER_TYPE"
-          
-          if [ "$OWNER_TYPE" == "Organization" ]; then
-            API_PATH="/orgs/$OWNER/packages/container/$PACKAGE/versions"
-          else
-            API_PATH="/users/$OWNER/packages/container/$PACKAGE/versions"
-          fi
-          
-          echo "Fetching untagged versions older than ${{ env.DAYS_OLD }} days from $API_PATH..."
-          
-          # Calculate timestamp for N days ago in seconds
-          CUTOFF_DATE=$(date -d "${{ env.DAYS_OLD }} days ago" +%s)
-          
-          # Fetch versions, filtering for untagged ones
-          # We use jq to handle the date comparison and selection
-          VERSIONS=$(gh api "$API_PATH" --paginate --jq ".[] | select(.metadata.container.tags | length == 0) | {id: .id, created_at: .created_at}")
-          
-          # Check if any versions found
-          if [ -z "$VERSIONS" ]; then
-            echo "No untagged images found."
-            exit 0
-          fi
-          
-          echo "checking $VERSIONS for deletion candidates..."
-          
-          count=0
-          # Iterate through each finding
-          # Note: We process line by line.
-          echo "$VERSIONS" | jq -c '.' | while read -r version; do
-            ID=$(echo "$version" | jq -r .id)
-            CREATED_AT=$(echo "$version" | jq -r .created_at)
-            CREATED_TS=$(date -d "$CREATED_AT" +%s)
-            
-            if [ $CREATED_TS -lt $CUTOFF_DATE ]; then
-              echo "Deleting version $ID (Created: $CREATED_AT)..."
-              gh api \
-                --method DELETE \
-                "$API_PATH/$ID"
-              count=$((count+1))
-            else
-              echo "Skipping version $ID (Created: $CREATED_AT) - newer than ${{ env.DAYS_OLD }} days."
-            fi
-          done
-          
-          echo "Cleanup complete. Removed $count versions."
+      - name: Cleanup untagged images
+        uses: snok/container-retention-policy@v3
+        with:
+          account-type: ${{ github.event.repository.owner.type == 'Organization' && 'org' || 'personal' }}
+          image-names: ${{ env.PACKAGE_NAME }}
+          cut-off: ${{ env.DAYS_OLD }} days ago UTC
+          untagged-only: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
