@@ -68,7 +68,9 @@ jobs:
       - name: Generate tags
         id: tags
         run: |
-          echo "tags=ghcr.io/${{ github.repository_owner }}/kube-sentinel:main" >> $GITHUB_OUTPUT
+          SHA=$(echo ${{ github.event.workflow_run.head_sha }} | cut -c1-7)
+          TAGS="ghcr.io/${{ github.repository_owner }}/kube-sentinel:main,ghcr.io/${{ github.repository_owner }}/kube-sentinel:main-${SHA}"
+          echo "tags=${TAGS}" >> $GITHUB_OUTPUT
           echo "image_tag=main" >> $GITHUB_OUTPUT
 
       - name: Build
