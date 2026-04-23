@@ -79,14 +79,14 @@ func GetImageRegistryAndRepo(image string) (string, string) {
 var DataDir = "/data"
 
 // GetUserGlabConfigDir returns the directory path for a user's glab configuration.
-// It ensures the directory exists and has 0777 permissions.
+// It ensures the directory exists and has 0700 permissions.
 func GetUserGlabConfigDir(storageNamespace string) (string, error) {
 	path := filepath.Join(DataDir, storageNamespace, ".config", "glab-cli")
-	if err := os.MkdirAll(path, 0777); err != nil {
+	if err := os.MkdirAll(path, 0700); err != nil {
 		return "", fmt.Errorf("failed to create glab config directory: %w", err)
 	}
 	// Explicitly chmod to ensure permissions are correct regardless of umask
-	if err := os.Chmod(path, 0777); err != nil {
+	if err := os.Chmod(path, 0700); err != nil {
 		return "", fmt.Errorf("failed to chmod glab config directory: %w", err)
 	}
 	return path, nil
@@ -111,19 +111,19 @@ func WriteUserAWSCredentials(storageNamespace string, content string) error {
 	path := GetUserAWSCredentialsPath(storageNamespace)
 	dir := filepath.Dir(path)
 
-	if err := os.MkdirAll(dir, 0777); err != nil {
+	if err := os.MkdirAll(dir, 0700); err != nil {
 		return fmt.Errorf("failed to create aws config directory: %w", err)
 	}
 	// Explicitly chmod to ensure permissions are correct regardless of umask
-	if err := os.Chmod(dir, 0777); err != nil {
+	if err := os.Chmod(dir, 0700); err != nil {
 		return fmt.Errorf("failed to chmod aws config directory: %w", err)
 	}
 
-	if err := os.WriteFile(path, []byte(content), 0666); err != nil {
+	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
 		return fmt.Errorf("failed to write aws credentials file: %w", err)
 	}
 
-	if err := os.Chmod(path, 0666); err != nil {
+	if err := os.Chmod(path, 0600); err != nil {
 		return fmt.Errorf("failed to chmod aws credentials file: %w", err)
 	}
 
