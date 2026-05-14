@@ -199,6 +199,55 @@ export function ResourceTable<T>({
 
   // (moved below after error is defined)
 
+  // Update state when cluster or resource changes
+  useEffect(() => {
+    if (!currentCluster) return
+
+    // Namespace
+    if (!clusterScope) {
+      const storedNamespace = localStorage.getItem(
+        currentCluster + 'selectedNamespace'
+      )
+      setSelectedNamespace(storedNamespace || '_all')
+    } else {
+      setSelectedNamespace(undefined)
+    }
+
+    // Search Query
+    const searchKey = `${currentCluster}-${resourceName}-searchQuery`
+    setSearchQuery(sessionStorage.getItem(searchKey) || '')
+
+    // Pagination
+    const pageSizeKey = `${currentCluster}-${resourceName}-pageSize`
+    const savedPageSize = sessionStorage.getItem(pageSizeKey)
+    setPagination({
+      pageIndex: 0,
+      pageSize: savedPageSize ? Number(savedPageSize) : 20,
+    })
+
+    // Column Filters
+    const filterKey = `${currentCluster}-${resourceName}-columnFilters`
+    const savedFilters = sessionStorage.getItem(filterKey)
+    setColumnFilters(savedFilters ? JSON.parse(savedFilters) : [])
+
+    // Column Visibility
+    const visibilityKey = `${currentCluster}-${resourceName}-columnVisibility`
+    const savedVisibility = localStorage.getItem(visibilityKey)
+    if (savedVisibility) {
+      setColumnVisibility(JSON.parse(savedVisibility))
+    } else {
+      const initialVisibility: Record<string, boolean> = {}
+      defaultHiddenColumns.forEach((colId) => {
+        initialVisibility[colId] = false
+      })
+      setColumnVisibility(initialVisibility)
+    }
+
+    // Reset selection
+    setRowSelection({})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentCluster, resourceName, clusterScope, JSON.stringify(defaultHiddenColumns)])
+
   // Update sessionStorage when search query changes
   useEffect(() => {
     const currentCluster = localStorage.getItem('current-cluster')
